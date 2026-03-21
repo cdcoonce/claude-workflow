@@ -31,7 +31,9 @@ def tmp_repo(tmp_path: Path) -> Path:
     (core / "CLAUDE-base.md").write_text("# Base CLAUDE\n\n## Methodology\n")
     (core / "settings-base.json").write_text(json.dumps({
         "hooks": {
-            "PreToolUse": [{"matcher": "Edit|Write", "hooks": []}]
+            "PreToolUse": [{"matcher": "Edit|Write", "hooks": [
+                {"type": "command", "command": "python .claude/hooks/protect-files.py"}
+            ]}]
         }
     }))
 
