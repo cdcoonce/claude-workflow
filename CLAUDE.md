@@ -1,32 +1,47 @@
-# Development Standards
+# Claude Workflow Template System
 
 This file is auto-loaded every conversation. It defines how Claude should work in this repo.
+
+## What This Repo Is
+
+A template system for Claude Code configurations. It produces ready-to-copy `.claude/` directories + `CLAUDE.md` files for new projects.
+
+## Architecture
+
+- `core/` — Universal skills (17), methodology docs (4), file protection hook
+- `presets/` — Named project type configurations (python-api, data-pipeline, full-stack, claude-tooling, analysis)
+- `scripts/` — Python build/diff/smoke-test tooling
+- `dist/` — Build output (gitignored)
+
+## Commands
+
+- Build a preset: `uv run python scripts/build_preset.py <preset_name>`
+- Diff a project: `uv run python scripts/diff_preset.py <preset_name> <project_path>`
+- Smoke test: `uv run python scripts/smoke_test.py <preset_name>`
+- Run tests: `uv run pytest`
+- Run with coverage: `uv run pytest --cov=scripts --cov-report=term-missing`
 
 ## Methodology
 
 ### TDD — Test-Driven Development
 
-Write the test first. Watch it fail. Write minimal code to pass. No production code without a failing test.
-Full process: [.claude/docs/tdd.md](.claude/docs/tdd.md)
+Write the test first. Watch it fail. Write minimal code to pass.
+Full process: [core/docs/tdd.md](core/docs/tdd.md)
 
 ### Root Cause Tracing
 
-Never fix at the symptom. Trace backward through the call chain to the original trigger, then fix at the source.
-Full process: [.claude/docs/root-cause-tracing.md](.claude/docs/root-cause-tracing.md)
+Never fix at the symptom. Trace backward to the original trigger.
+Full process: [core/docs/root-cause-tracing.md](core/docs/root-cause-tracing.md)
 
 ### Subagent-Driven Development
 
-When executing a plan with multiple independent tasks, dispatch a fresh subagent per task with code review between each.
-Full process: [.claude/docs/subagent-development.md](.claude/docs/subagent-development.md)
+Dispatch a fresh subagent per task with code review between each.
+Full process: [core/docs/subagent-development.md](core/docs/subagent-development.md)
 
 ### Parallel Agent Dispatch
 
-When 3+ unrelated failures need investigation, dispatch one agent per independent problem domain concurrently.
-Full process: [.claude/docs/parallel-agents.md](.claude/docs/parallel-agents.md)
-
-## Planning
-
-Write implementation plans to `docs/plans/{file_name}.md` before starting non-trivial work. Once a plan has been fully implemented, move it to `docs/archive/`.
+When 3+ unrelated failures need investigation, dispatch one agent per problem domain.
+Full process: [core/docs/parallel-agents.md](core/docs/parallel-agents.md)
 
 ## Code Style
 
@@ -35,49 +50,11 @@ Write implementation plans to `docs/plans/{file_name}.md` before starting non-tr
 - Type hints on all function signatures
 - Numpy-style docstrings for public functions
 
-## Testing
+## Planning
 
-- Run tests: `uv run pytest`
-- Run with coverage: `uv run pytest --cov=src --cov-report=term-missing`
-- Prefer real code over mocks
-- Test fixtures in `tests/fixtures/`
+Write plans to `docs/plans/{file_name}.md`. Archive completed plans to `docs/archive/`.
 
 ## Skills
 
-Skills live in `.claude/skills/`. Each `SKILL.md` defines an invocable skill with trigger conditions.
-
-### `/daa-code-review`
-
-**Trigger when:** user asks for a "code review", "quality check", pre-commit review, or wants code analyzed for issues.
-**Output:** Save markdown report to `docs/code_reviews/{YYYY-MM-DD}_{file_name}.md`.
-
-### `/github-cli`
-
-**Trigger when:** user needs to interact with GitHub — issues, pull requests, PR reviews, CI/CD pipelines, or pushing changes.
-
-### `/commit`
-
-**Trigger when:** user asks to commit, make a commit, save work, or when Claude needs to commit changes after completing a task.
-
-### `/readme-generator`
-
-**Trigger when:** user asks to create, generate, update, or improve a README, or says "document this project".
-**References:** [.claude/skills/readme-generator/references/](.claude/skills/readme-generator/references/) — analysis methodology, mermaid guidelines, badge reference.
-
-### `/grill-me`
-
-**Trigger when:** user wants to stress-test a plan, get grilled on their design, or mentions "grill me".
-
-### `/plan-ceo-review`
-
-**Trigger when:** user asks for a plan review, CEO review, mega review, or wants a plan challenged/stress-tested before implementation.
-**References:** [.claude/skills/plan-ceo-review/references/](.claude/skills/plan-ceo-review/references/) — review sections, required outputs.
-
-### `/project-context`
-
-**Trigger when:** user asks to create, update, or refresh project context, says "update project.md", or when onboarding Claude to a new repo.
-**Output:** `.claude/docs/project.md`
-
-## Project Context
-
-See [.claude/docs/project.md](.claude/docs/project.md) for project-specific details (tech stack, architecture, test markers).
+Skills live in `core/skills/` (universal) and `presets/*/skills/` (preset-specific).
+See core CLAUDE.md for skill trigger conditions.
