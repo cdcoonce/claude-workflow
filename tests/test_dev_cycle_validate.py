@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.dev_cycle_validate import StateFile, parse_state_file
+from scripts.dev_cycle_validate import StateFile, parse_state_file, ValidationResult, validate_state_file
 
 
 class TestParseStateFile:
@@ -66,3 +66,60 @@ feature: dark-mode-toggle
 
         with pytest.raises(ValueError, match="status"):
             parse_state_file(state_file)
+
+
+class TestValidateStateFile:
+    """Tests for field value validation."""
+
+    def _write_state_file(
+        self, tmp_path: Path, **overrides: str
+    ) -> Path:
+        """Helper: write a valid state file, then override specific fields."""
+        defaults = {
+            "schema_version": "1",
+            "feature": "test-feature",
+            "status": "in_progress",
+            "current_phase": "plan",
+            "created": "2026-03-21",
+            "updated": "2026-03-21",
+            "branch": "",
+        }
+        defaults.update(overrides)
+        fields = "\n".join(f"{k}: {v}" for k, v in defaults.items() if v)
+        content = f"---\n{fields}\n---\n\n## Artifacts\n\n## Log\n"
+        path = tmp_path / f"{defaults['feature']}.md"
+        path.write_text(content)
+        return path
+
+    def test_valid_file_passes(self, tmp_path: Path) -> None:
+        path = self._write_state_file(tmp_path)
+        result = validate_state_file(path)
+        assert result.passed
+
+    def test_invalid_status_fails(self, tmp_path: Path) -> None:
+        path = self._write_state_file(tmp_path, status="bogus")
+        result = validate_state_file(path)
+        assert not result.passed
+        assert any("status" in e for e in result.errors)
+
+    def test_invalid_phase_fails(self, tmp_path: Path) -> None:
+        path = self._write_state_file(tmp_path, current_phase="testing")
+        result = validate_state_file(path)
+        assert not result.passed
+        assert any("current_phase" in e for e in result.errors)
+
+    def test_unsupported_schema_version_fails(self, tmp_path: Path) -> None:
+        path = self._write_state_file(tmp_path, schema_version="99")
+        result = validate_state_file(path)
+        assert not result.passed
+        assert any("schema_version" in e for e in result.errors)
+
+    def test_feature_slug_mismatch_fails(self, tmp_path: Path) -> None:
+        """Feature slug must match the filename."""
+        path = self._write_state_file(tmp_path, feature="wrong-name")
+        # File is named 'wrong-name.md' by the helper, so rename it
+        renamed = tmp_path / "different-name.md"
+        path.rename(renamed)
+        result = validate_state_file(renamed)
+        assert not result.passed
+        assert any("filename" in e for e in result.errors)

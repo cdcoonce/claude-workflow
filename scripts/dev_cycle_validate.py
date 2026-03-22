@@ -80,3 +80,62 @@ def parse_state_file(path: Path) -> StateFile:
         branch=raw_fields.get("branch", ""),
         path=path,
     )
+
+
+@dataclass
+class ValidationResult:
+    """Result of validating a state file."""
+
+    errors: list[str] = field(default_factory=list)
+
+    @property
+    def passed(self) -> bool:
+        return len(self.errors) == 0
+
+
+def validate_state_file(path: Path) -> ValidationResult:
+    """Validate a single dev-cycle state file.
+
+    Parameters
+    ----------
+    path : Path
+        Path to the state file.
+
+    Returns
+    -------
+    ValidationResult
+        Validation result with any errors found.
+    """
+    errors: list[str] = []
+
+    try:
+        state = parse_state_file(path)
+    except ValueError as exc:
+        return ValidationResult(errors=[str(exc)])
+
+    if state.schema_version > CURRENT_SCHEMA_VERSION:
+        errors.append(
+            f"Unsupported schema_version {state.schema_version} "
+            f"in {path.name} (max supported: {CURRENT_SCHEMA_VERSION})"
+        )
+
+    if state.status not in VALID_STATUSES:
+        errors.append(
+            f"Invalid status '{state.status}' in {path.name}. "
+            f"Valid values: {', '.join(VALID_STATUSES)}"
+        )
+
+    if state.current_phase not in VALID_PHASES:
+        errors.append(
+            f"Invalid current_phase '{state.current_phase}' in {path.name}. "
+            f"Valid values: {', '.join(VALID_PHASES)}"
+        )
+
+    expected_slug = path.stem
+    if state.feature != expected_slug:
+        errors.append(
+            f"Feature slug '{state.feature}' does not match "
+            f"filename '{expected_slug}' in {path.name}"
+        )
+
+    return ValidationResult(errors=errors)
