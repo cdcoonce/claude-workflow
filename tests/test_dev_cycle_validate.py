@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from scripts.dev_cycle_validate import StateFile, parse_state_file, ValidationResult, validate_state_file
+from scripts.dev_cycle_validate import validate_directory
 
 
 class TestParseStateFile:
@@ -123,3 +124,100 @@ class TestValidateStateFile:
         result = validate_state_file(renamed)
         assert not result.passed
         assert any("filename" in e for e in result.errors)
+
+
+class TestArtifactCompleteness:
+    """Completed phases must have non-empty artifacts."""
+
+    def test_completed_phase_without_artifact_fails(
+        self, tmp_path: Path
+    ) -> None:
+        content = """\
+---
+schema_version: 1
+feature: test-feature
+status: in_progress
+current_phase: plan
+created: 2026-03-21
+updated: 2026-03-21
+---
+
+## Artifacts
+
+| Phase       | Status      | Artifact |
+| ----------- | ----------- | -------- |
+| brainstorm  | completed   | —        |
+| plan        | in_progress | —        |
+
+## Log
+"""
+        path = tmp_path / "test-feature.md"
+        path.write_text(content)
+        result = validate_state_file(path)
+        assert not result.passed
+        assert any("brainstorm" in e and "artifact" in e.lower() for e in result.errors)
+
+    def test_completed_phase_with_artifact_passes(
+        self, tmp_path: Path
+    ) -> None:
+        content = """\
+---
+schema_version: 1
+feature: test-feature
+status: in_progress
+current_phase: plan
+created: 2026-03-21
+updated: 2026-03-21
+---
+
+## Artifacts
+
+| Phase       | Status      | Artifact                               |
+| ----------- | ----------- | -------------------------------------- |
+| brainstorm  | completed   | https://github.com/user/repo/issues/42 |
+| plan        | in_progress | docs/plans/test-feature.md             |
+
+## Log
+"""
+        path = tmp_path / "test-feature.md"
+        path.write_text(content)
+        result = validate_state_file(path)
+        assert result.passed
+
+
+class TestValidateDirectory:
+    """Tests for scanning docs/dev-cycle/ for slug collisions."""
+
+    def test_no_collisions_passes(self, tmp_path: Path) -> None:
+        dev_cycle = tmp_path / "docs" / "dev-cycle"
+        dev_cycle.mkdir(parents=True)
+        for name in ("feature-a", "feature-b"):
+            (dev_cycle / f"{name}.md").write_text(
+                f"---\nschema_version: 1\nfeature: {name}\n"
+                f"status: in_progress\ncurrent_phase: brainstorm\n"
+                f"created: 2026-03-21\nupdated: 2026-03-21\n---\n\n"
+                f"## Artifacts\n\n## Log\n"
+            )
+        result = validate_directory(dev_cycle)
+        assert result.passed
+
+    def test_detects_slug_collision(self, tmp_path: Path) -> None:
+        """Two files with the same feature slug is a collision."""
+        dev_cycle = tmp_path / "docs" / "dev-cycle"
+        dev_cycle.mkdir(parents=True)
+        for filename in ("feature-a.md", "feature-a-copy.md"):
+            (dev_cycle / filename).write_text(
+                "---\nschema_version: 1\nfeature: feature-a\n"
+                "status: in_progress\ncurrent_phase: brainstorm\n"
+                "created: 2026-03-21\nupdated: 2026-03-21\n---\n\n"
+                "## Artifacts\n\n## Log\n"
+            )
+        result = validate_directory(dev_cycle)
+        assert not result.passed
+        assert any("collision" in e.lower() or "duplicate" in e.lower() for e in result.errors)
+
+    def test_empty_directory_passes(self, tmp_path: Path) -> None:
+        dev_cycle = tmp_path / "docs" / "dev-cycle"
+        dev_cycle.mkdir(parents=True)
+        result = validate_directory(dev_cycle)
+        assert result.passed

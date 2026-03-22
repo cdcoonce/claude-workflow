@@ -19,8 +19,20 @@ CURRENT_SCHEMA_VERSION = 1
 
 _FRONTMATTER_RE = re.compile(r"\A---\n(.+?)\n---", re.DOTALL)
 _FIELD_RE = re.compile(r"^(\w+):\s*(.+?)(?:\s*#.*)?$", re.MULTILINE)
+_ARTIFACT_ROW_RE = re.compile(
+    r"^\|\s*(\w+)\s*\|\s*(\w+)\s*\|\s*(.+?)\s*\|$", re.MULTILINE
+)
 
 REQUIRED_FIELDS = ("schema_version", "feature", "status", "current_phase")
+
+
+@dataclass
+class ArtifactRow:
+    """A single row from the Artifacts table."""
+
+    phase: str
+    status: str
+    artifact: str
 
 
 @dataclass
@@ -35,6 +47,33 @@ class StateFile:
     updated: str = ""
     branch: str = ""
     path: Path = field(default_factory=lambda: Path())
+    artifacts: list[ArtifactRow] = field(default_factory=list)
+
+
+def _parse_artifacts(text: str) -> list[ArtifactRow]:
+    """Parse the Artifacts markdown table from state file body.
+
+    Parameters
+    ----------
+    text : str
+        Full text content of the state file.
+
+    Returns
+    -------
+    list[ArtifactRow]
+        Parsed artifact rows, excluding header and separator rows.
+    """
+    rows: list[ArtifactRow] = []
+    for match in _ARTIFACT_ROW_RE.finditer(text):
+        phase = match.group(1)
+        status = match.group(2)
+        artifact = match.group(3).strip()
+        if phase in ("Phase", "---") or status in ("Status", "---"):
+            continue
+        if phase not in VALID_PHASES:
+            continue
+        rows.append(ArtifactRow(phase=phase, status=status, artifact=artifact))
+    return rows
 
 
 def parse_state_file(path: Path) -> StateFile:
@@ -70,7 +109,7 @@ def parse_state_file(path: Path) -> StateFile:
                 f"Missing required field '{req}' in {path.name}"
             )
 
-    return StateFile(
+    state = StateFile(
         schema_version=int(raw_fields["schema_version"]),
         feature=raw_fields["feature"],
         status=raw_fields["status"],
@@ -80,6 +119,8 @@ def parse_state_file(path: Path) -> StateFile:
         branch=raw_fields.get("branch", ""),
         path=path,
     )
+    state.artifacts = _parse_artifacts(text)
+    return state
 
 
 @dataclass
@@ -137,5 +178,49 @@ def validate_state_file(path: Path) -> ValidationResult:
             f"Feature slug '{state.feature}' does not match "
             f"filename '{expected_slug}' in {path.name}"
         )
+
+    for row in state.artifacts:
+        if row.status == "completed" and row.artifact in ("—", "\u2014", "-", ""):
+            errors.append(
+                f"Phase '{row.phase}' is completed but has no artifact "
+                f"in {path.name}"
+            )
+
+    return ValidationResult(errors=errors)
+
+
+def validate_directory(directory: Path) -> ValidationResult:
+    """Validate all state files in a dev-cycle directory.
+
+    Parameters
+    ----------
+    directory : Path
+        Path to the docs/dev-cycle/ directory.
+
+    Returns
+    -------
+    ValidationResult
+        Combined validation result for all files.
+    """
+    errors: list[str] = []
+    slugs: dict[str, list[str]] = {}
+
+    state_files = sorted(directory.glob("*.md"))
+    for path in state_files:
+        file_result = validate_state_file(path)
+        errors.extend(file_result.errors)
+
+        try:
+            state = parse_state_file(path)
+            slugs.setdefault(state.feature, []).append(path.name)
+        except ValueError:
+            pass
+
+    for slug, filenames in slugs.items():
+        if len(filenames) > 1:
+            errors.append(
+                f"Duplicate feature slug '{slug}' found in files: "
+                f"{', '.join(filenames)}"
+            )
 
     return ValidationResult(errors=errors)
