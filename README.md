@@ -155,7 +155,7 @@ uv run pytest --cov=scripts --cov-report=term-missing
 Assemble core + preset into a ready-to-copy output directory:
 
 ```bash
-uv run python scripts/build_preset.py python-api
+uv run python -m scripts.build_preset python-api
 ```
 
 Output lands in `dist/python-api/`. Copy the `.claude/` directory and `CLAUDE.md` to your target project:
@@ -170,7 +170,7 @@ cp dist/python-api/CLAUDE.md /path/to/your-project/CLAUDE.md
 Check how a project's `.claude/` directory has drifted from the template:
 
 ```bash
-uv run python scripts/diff_preset.py python-api /path/to/your-project
+uv run python -m scripts.diff_preset python-api /path/to/your-project
 ```
 
 Reports modified, added, and removed files relative to the preset.
@@ -180,7 +180,7 @@ Reports modified, added, and removed files relative to the preset.
 Validate internal consistency after building:
 
 ```bash
-uv run python scripts/smoke_test.py python-api
+uv run python -m scripts.smoke_test python-api
 ```
 
 Checks that every skill referenced in `CLAUDE.md` has a directory, every hook in `settings.json` exists, and every doc path resolves.
@@ -188,7 +188,7 @@ Checks that every skill referenced in `CLAUDE.md` has a directory, every hook in
 ### Validate Dev-Cycle State Files
 
 ```bash
-uv run python scripts/dev_cycle_validate.py docs/dev-cycle/
+uv run python -m scripts.dev_cycle_validate docs/dev-cycle/
 ```
 
 Validates YAML frontmatter, phase transitions, artifact completeness, and slug uniqueness.

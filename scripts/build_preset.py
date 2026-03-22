@@ -172,7 +172,7 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: uv run python scripts/build_preset.py <preset_name>")
+        print("Usage: uv run python -m scripts.build_preset <preset_name>")
         sys.exit(1)
 
     preset = sys.argv[1]

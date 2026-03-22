@@ -80,7 +80,7 @@ All other backwards transitions are not supported.
 
 ## Validation
 
-Run `uv run python scripts/dev_cycle_validate.py docs/dev-cycle/` to validate all `*.state.md` files.
+Run `uv run python -m scripts.dev_cycle_validate docs/dev-cycle/` to validate all `*.state.md` files.
 
 ## Archive
 

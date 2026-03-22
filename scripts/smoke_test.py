@@ -120,7 +120,7 @@ if __name__ == "__main__":
     from scripts.build_preset import build_preset
 
     if len(sys.argv) != 2:
-        print("Usage: uv run python scripts/smoke_test.py <preset_name>")
+        print("Usage: uv run python -m scripts.smoke_test <preset_name>")
         sys.exit(1)
 
     preset_name = sys.argv[1]

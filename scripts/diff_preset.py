@@ -1,7 +1,7 @@
 """Compare a project's .claude/ against a freshly-built preset to identify drift (D14).
 
 Usage:
-    uv run python scripts/diff_preset.py <preset_name> <project_path>
+    uv run python -m scripts.diff_preset <preset_name> <project_path>
 """
 
 from __future__ import annotations
@@ -102,7 +102,7 @@ def diff_preset(
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Usage: uv run python scripts/diff_preset.py <preset_name> <project_path>")
+        print("Usage: uv run python -m scripts.diff_preset <preset_name> <project_path>")
         sys.exit(1)
 
     preset_name = sys.argv[1]
