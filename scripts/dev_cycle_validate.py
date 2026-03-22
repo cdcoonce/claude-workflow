@@ -168,7 +168,7 @@ def _validate_parsed_state(state: StateFile) -> list[str]:
             f"Valid values: {', '.join(VALID_PHASES)}"
         )
 
-    expected_slug = state.path.stem
+    expected_slug = state.path.name.removesuffix(".state.md")
     if state.feature != expected_slug:
         errors.append(
             f"Feature slug '{state.feature}' does not match "
@@ -222,7 +222,7 @@ def validate_directory(directory: Path) -> ValidationResult:
     errors: list[str] = []
     slugs: dict[str, list[str]] = {}
 
-    state_files = sorted(directory.glob("*.md"))
+    state_files = sorted(directory.glob("*.state.md"))
     for path in state_files:
         try:
             state = parse_state_file(path)
@@ -248,6 +248,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) != 2:
         print("Usage: uv run python scripts/dev_cycle_validate.py <dev-cycle-directory>")
+        print("  Validates all *.state.md files in the given directory.")
         sys.exit(1)
 
     directory = Path(sys.argv[1])
@@ -257,7 +258,7 @@ if __name__ == "__main__":
 
     result = validate_directory(directory)
     if result.passed:
-        state_count = len(list(directory.glob("*.md")))
+        state_count = len(list(directory.glob("*.state.md")))
         print(f"PASS: {state_count} state file(s) validated successfully")
     else:
         print(f"FAIL: {len(result.errors)} error(s) found:")

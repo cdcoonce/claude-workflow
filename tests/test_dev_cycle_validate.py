@@ -36,7 +36,7 @@ branch: feat/dark-mode-toggle
 
 - 2026-03-21 10:15 — Brainstorm complete.
 """
-        state_file = tmp_path / "dark-mode-toggle.md"
+        state_file = tmp_path / "dark-mode-toggle.state.md"
         state_file.write_text(content)
 
         result = parse_state_file(state_file)
@@ -88,7 +88,7 @@ class TestValidateStateFile:
         defaults.update(overrides)
         fields = "\n".join(f"{k}: {v}" for k, v in defaults.items() if v)
         content = f"---\n{fields}\n---\n\n## Artifacts\n\n## Log\n"
-        path = tmp_path / f"{defaults['feature']}.md"
+        path = tmp_path / f"{defaults['feature']}.state.md"
         path.write_text(content)
         return path
 
@@ -119,7 +119,7 @@ class TestValidateStateFile:
         """Feature slug must match the filename."""
         path = self._write_state_file(tmp_path, feature="wrong-name")
         # File is named 'wrong-name.md' by the helper, so rename it
-        renamed = tmp_path / "different-name.md"
+        renamed = tmp_path / "different-name.state.md"
         path.rename(renamed)
         result = validate_state_file(renamed)
         assert not result.passed
@@ -151,7 +151,7 @@ updated: 2026-03-21
 
 ## Log
 """
-        path = tmp_path / "test-feature.md"
+        path = tmp_path / "test-feature.state.md"
         path.write_text(content)
         result = validate_state_file(path)
         assert not result.passed
@@ -179,7 +179,7 @@ updated: 2026-03-21
 
 ## Log
 """
-        path = tmp_path / "test-feature.md"
+        path = tmp_path / "test-feature.state.md"
         path.write_text(content)
         result = validate_state_file(path)
         assert result.passed
@@ -192,7 +192,7 @@ class TestValidateDirectory:
         dev_cycle = tmp_path / "docs" / "dev-cycle"
         dev_cycle.mkdir(parents=True)
         for name in ("feature-a", "feature-b"):
-            (dev_cycle / f"{name}.md").write_text(
+            (dev_cycle / f"{name}.state.md").write_text(
                 f"---\nschema_version: 1\nfeature: {name}\n"
                 f"status: in_progress\ncurrent_phase: brainstorm\n"
                 f"created: 2026-03-21\nupdated: 2026-03-21\n---\n\n"
@@ -210,7 +210,7 @@ class TestValidateDirectory:
         """
         dev_cycle = tmp_path / "docs" / "dev-cycle"
         dev_cycle.mkdir(parents=True)
-        for filename in ("feature-a.md", "feature-a-copy.md"):
+        for filename in ("feature-a.state.md", "feature-a-copy.state.md"):
             (dev_cycle / filename).write_text(
                 "---\nschema_version: 1\nfeature: feature-a\n"
                 "status: in_progress\ncurrent_phase: brainstorm\n"
@@ -237,7 +237,7 @@ class TestCLI:
     def test_cli_reports_valid_directory(self, tmp_path: Path) -> None:
         dev_cycle = tmp_path / "docs" / "dev-cycle"
         dev_cycle.mkdir(parents=True)
-        (dev_cycle / "feat-a.md").write_text(
+        (dev_cycle / "feat-a.state.md").write_text(
             "---\nschema_version: 1\nfeature: feat-a\n"
             "status: in_progress\ncurrent_phase: brainstorm\n"
             "created: 2026-03-21\nupdated: 2026-03-21\n---\n\n"
@@ -253,7 +253,7 @@ class TestCLI:
     def test_cli_reports_errors(self, tmp_path: Path) -> None:
         dev_cycle = tmp_path / "docs" / "dev-cycle"
         dev_cycle.mkdir(parents=True)
-        (dev_cycle / "bad.md").write_text(
+        (dev_cycle / "bad.state.md").write_text(
             "---\nschema_version: 1\nfeature: bad\n"
             "status: bogus\ncurrent_phase: brainstorm\n"
             "created: 2026-03-21\nupdated: 2026-03-21\n---\n\n"
