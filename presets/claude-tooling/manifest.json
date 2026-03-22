@@ -1,0 +1,12 @@
+{
+  "name": "claude-tooling",
+  "description": "Developing Claude skills, hooks, agents, and template configurations",
+  "core": {
+    "skills": "all",
+    "docs": "all",
+    "hooks": ["protect-files.py"]
+  },
+  "exclude": [],
+  "preset_skills": [],
+  "preset_hooks": ["post-edit-lint.py"]
+}

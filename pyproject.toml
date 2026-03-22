@@ -1,0 +1,15 @@
+[project]
+name = "claude-workflow"
+version = "0.1.0"
+description = "Template system for Claude Code configurations"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["scripts"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Post-edit hook: auto-format Python files with Ruff and Markdown/JSON with Prettier."""
+"""Post-edit hook: auto-format with Prettier and lint JS/CSS/Python files."""
 
 import json
 import os
@@ -26,9 +26,17 @@ def run(cmd, label):
         pass
 
 
-# Prettier on Markdown and JSON files
-if file_path.endswith((".md", ".json")):
+# Prettier on supported file types
+if file_path.endswith((".html", ".css", ".js", ".ts", ".jsx", ".tsx", ".md", ".json")):
     run(["npx", "prettier", "--write", file_path], "prettier")
+
+# ESLint on JS/TS files
+if file_path.endswith((".js", ".ts", ".jsx", ".tsx")):
+    run(["npx", "eslint", "--fix", file_path], "eslint")
+
+# Stylelint on CSS files
+if file_path.endswith(".css"):
+    run(["npx", "stylelint", "--fix", file_path], "stylelint")
 
 # Ruff on Python files
 if file_path.endswith(".py") and shutil.which("ruff"):

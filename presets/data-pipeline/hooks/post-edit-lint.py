@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Post-edit hook: auto-format Python files with Ruff and Markdown/JSON with Prettier."""
+"""Post-edit hook: auto-format and lint Python files with Ruff."""
 
 import json
 import os
@@ -25,10 +25,6 @@ def run(cmd, label):
     except FileNotFoundError:
         pass
 
-
-# Prettier on Markdown and JSON files
-if file_path.endswith((".md", ".json")):
-    run(["npx", "prettier", "--write", file_path], "prettier")
 
 # Ruff on Python files
 if file_path.endswith(".py") and shutil.which("ruff"):

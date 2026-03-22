@@ -1,0 +1,12 @@
+{
+  "name": "analysis",
+  "description": "Notebooks, R/Python scripts, statistical analysis, exploratory work",
+  "core": {
+    "skills": "all",
+    "docs": "all",
+    "hooks": ["protect-files.py"]
+  },
+  "exclude": [],
+  "preset_skills": [],
+  "preset_hooks": ["post-edit-lint.py"]
+}

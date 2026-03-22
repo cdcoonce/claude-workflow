@@ -1,0 +1,12 @@
+{
+  "name": "full-stack",
+  "description": "React/Next.js frontend + Python backend",
+  "core": {
+    "skills": "all",
+    "docs": "all",
+    "hooks": ["protect-files.py"]
+  },
+  "exclude": [],
+  "preset_skills": ["setup-pre-commit"],
+  "preset_hooks": ["post-edit-lint.py"]
+}
