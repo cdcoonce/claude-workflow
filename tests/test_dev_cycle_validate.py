@@ -202,7 +202,12 @@ class TestValidateDirectory:
         assert result.passed
 
     def test_detects_slug_collision(self, tmp_path: Path) -> None:
-        """Two files with the same feature slug is a collision."""
+        """Two files with the same feature slug is a collision.
+
+        Note: feature-a-copy.md having feature=feature-a also triggers
+        the slug-mismatch check. This is by design — a true collision
+        necessarily co-produces a mismatch for at least one file.
+        """
         dev_cycle = tmp_path / "docs" / "dev-cycle"
         dev_cycle.mkdir(parents=True)
         for filename in ("feature-a.md", "feature-a-copy.md"):

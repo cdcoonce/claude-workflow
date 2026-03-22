@@ -134,6 +134,57 @@ class ValidationResult:
         return len(self.errors) == 0
 
 
+def _validate_parsed_state(state: StateFile) -> list[str]:
+    """Validate field values on an already-parsed StateFile.
+
+    Parameters
+    ----------
+    state : StateFile
+        A parsed state file object.
+
+    Returns
+    -------
+    list[str]
+        Validation error messages (empty if valid).
+    """
+    errors: list[str] = []
+    name = state.path.name
+
+    if state.schema_version > CURRENT_SCHEMA_VERSION:
+        errors.append(
+            f"Unsupported schema_version {state.schema_version} "
+            f"in {name} (max supported: {CURRENT_SCHEMA_VERSION})"
+        )
+
+    if state.status not in VALID_STATUSES:
+        errors.append(
+            f"Invalid status '{state.status}' in {name}. "
+            f"Valid values: {', '.join(VALID_STATUSES)}"
+        )
+
+    if state.current_phase not in VALID_PHASES:
+        errors.append(
+            f"Invalid current_phase '{state.current_phase}' in {name}. "
+            f"Valid values: {', '.join(VALID_PHASES)}"
+        )
+
+    expected_slug = state.path.stem
+    if state.feature != expected_slug:
+        errors.append(
+            f"Feature slug '{state.feature}' does not match "
+            f"filename '{expected_slug}' in {name}"
+        )
+
+    for row in state.artifacts:
+        if row.status == "completed" and row.artifact in ("—", "\u2014", "-", ""):
+            errors.append(
+                f"Phase '{row.phase}' is completed but has no artifact "
+                f"in {name}"
+            )
+
+    return errors
+
+
 def validate_state_file(path: Path) -> ValidationResult:
     """Validate a single dev-cycle state file.
 
@@ -147,46 +198,12 @@ def validate_state_file(path: Path) -> ValidationResult:
     ValidationResult
         Validation result with any errors found.
     """
-    errors: list[str] = []
-
     try:
         state = parse_state_file(path)
     except ValueError as exc:
         return ValidationResult(errors=[str(exc)])
 
-    if state.schema_version > CURRENT_SCHEMA_VERSION:
-        errors.append(
-            f"Unsupported schema_version {state.schema_version} "
-            f"in {path.name} (max supported: {CURRENT_SCHEMA_VERSION})"
-        )
-
-    if state.status not in VALID_STATUSES:
-        errors.append(
-            f"Invalid status '{state.status}' in {path.name}. "
-            f"Valid values: {', '.join(VALID_STATUSES)}"
-        )
-
-    if state.current_phase not in VALID_PHASES:
-        errors.append(
-            f"Invalid current_phase '{state.current_phase}' in {path.name}. "
-            f"Valid values: {', '.join(VALID_PHASES)}"
-        )
-
-    expected_slug = path.stem
-    if state.feature != expected_slug:
-        errors.append(
-            f"Feature slug '{state.feature}' does not match "
-            f"filename '{expected_slug}' in {path.name}"
-        )
-
-    for row in state.artifacts:
-        if row.status == "completed" and row.artifact in ("—", "\u2014", "-", ""):
-            errors.append(
-                f"Phase '{row.phase}' is completed but has no artifact "
-                f"in {path.name}"
-            )
-
-    return ValidationResult(errors=errors)
+    return ValidationResult(errors=_validate_parsed_state(state))
 
 
 def validate_directory(directory: Path) -> ValidationResult:
@@ -207,14 +224,14 @@ def validate_directory(directory: Path) -> ValidationResult:
 
     state_files = sorted(directory.glob("*.md"))
     for path in state_files:
-        file_result = validate_state_file(path)
-        errors.extend(file_result.errors)
-
         try:
             state = parse_state_file(path)
-            slugs.setdefault(state.feature, []).append(path.name)
-        except ValueError:
-            pass
+        except ValueError as exc:
+            errors.append(str(exc))
+            continue
+
+        errors.extend(_validate_parsed_state(state))
+        slugs.setdefault(state.feature, []).append(path.name)
 
     for slug, filenames in slugs.items():
         if len(filenames) > 1:
