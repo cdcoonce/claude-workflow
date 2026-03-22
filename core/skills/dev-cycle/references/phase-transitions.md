@@ -61,6 +61,7 @@ See the 7-Phase Pipeline table in SKILL.md for delegation targets. This document
   - If a PR already exists for this branch: update it instead of creating duplicate
 - **Handoff:** Invoke `commit` for conventional commit, then `github-cli` to open PR
 - **Record:** PR URL in artifacts table, set feature `status: completed`
+- **Archive:** Run archival step — `mkdir -p docs/archive/dev-cycle docs/archive/plans`, then `git mv` the state file to `docs/archive/dev-cycle/` and the plan file (read path from artifacts table) to `docs/archive/plans/`. Commit with `chore(dev-cycle): archive {slug}`.
 - **Failure:** If PR creation fails (no remote, auth error), set phase to `blocked`
 
 ---
@@ -97,6 +98,6 @@ If any phase fails:
 
 1. Set `status: abandoned`
 2. Log reason and timestamp
-3. State file remains as audit record
+3. Archive the state file and plan file: `mkdir -p docs/archive/dev-cycle docs/archive/plans`, then `git mv` both to their archive locations. Commit with `chore(dev-cycle): archive {slug} (abandoned)`.
 4. Feature branch (if any) is not auto-deleted
 5. Cannot be resumed — start a new feature to restart

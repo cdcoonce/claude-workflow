@@ -108,7 +108,7 @@ If architectural issues requiring plan rework → trigger backwards transition t
 
 ### Phase 7: PR
 
-Check for conflicts with default branch first. Invoke `commit` for conventional commit, then `github-cli` to open PR. Record PR URL, set `status: completed`.
+Check for conflicts with default branch first. Invoke `commit` for conventional commit, then `github-cli` to open PR. Record PR URL, set `status: completed`. Then run the archival step (see Archival below).
 
 ## State File
 
@@ -120,7 +120,7 @@ See [references/phase-transitions.md](references/phase-transitions.md) for:
 
 - Phase retry logic (blocked → retry on next invocation)
 - Backwards transitions (implement/code_review → plan)
-- Feature abandonment
+- Feature abandonment. Archived files are moved to `docs/archive/`.
 
 ## Branch Management
 
@@ -128,3 +128,17 @@ See [references/phase-transitions.md](references/phase-transitions.md) for:
 - **Phase 5:** Creates `feat/{feature-slug}` branch
 - **Phase 7:** PRs to the default branch (detected via `gh repo view --json defaultBranchRef`)
 - **Resume at Phase 5+:** Check out feature branch if not already on it
+
+## Archival
+
+When a feature reaches a terminal state (`completed` or `abandoned`), archive its artifacts:
+
+1. Create archive directories: `mkdir -p docs/archive/dev-cycle docs/archive/plans`
+2. Move the state file: `git mv docs/dev-cycle/{slug}.state.md docs/archive/dev-cycle/`
+3. Move the plan file: read the plan path from the artifacts table, then `git mv {plan_path} docs/archive/plans/`
+4. Commit the moves with message: `chore(dev-cycle): archive {slug}`
+
+Archival runs automatically:
+
+- At the end of Phase 7 (after PR URL is recorded and status is set to `completed`)
+- On feature abandonment (after status is set to `abandoned`)

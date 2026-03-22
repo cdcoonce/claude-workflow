@@ -81,3 +81,14 @@ All other backwards transitions are not supported.
 ## Validation
 
 Run `uv run python scripts/dev_cycle_validate.py docs/dev-cycle/` to validate all `*.state.md` files.
+
+## Archive
+
+When a feature reaches terminal state (`completed` or `abandoned`), files move to:
+
+- State file: `docs/archive/dev-cycle/{slug}.state.md`
+- Plan file: `docs/archive/plans/{feature}.md`
+
+The plan path is read from the artifacts table (plan phase row). Use `git mv` to preserve history.
+
+Active state files live in `docs/dev-cycle/`. The re-entry logic only scans this directory — archived files are not considered for resume.
