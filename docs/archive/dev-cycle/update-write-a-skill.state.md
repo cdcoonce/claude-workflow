@@ -1,4 +1,5 @@
 ---
+schema_version: 1
 feature: update-write-a-skill
 slug: update-write-a-skill
 status: in_progress

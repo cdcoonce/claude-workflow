@@ -68,6 +68,26 @@ feature: dark-mode-toggle
         with pytest.raises(ValueError, match="status"):
             parse_state_file(state_file)
 
+    def test_parse_missing_schema_version_defaults_to_1(self, tmp_path: Path) -> None:
+        content = """\
+---
+feature: test-feature
+status: in_progress
+current_phase: plan
+created: 2026-03-21
+updated: 2026-03-21
+---
+
+## Artifacts
+
+## Log
+"""
+        state_file = tmp_path / "test-feature.state.md"
+        state_file.write_text(content)
+
+        result = parse_state_file(state_file)
+        assert result.schema_version == 1
+
 
 class TestValidateStateFile:
     """Tests for field value validation."""
@@ -114,6 +134,12 @@ class TestValidateStateFile:
         result = validate_state_file(path)
         assert not result.passed
         assert any("schema_version" in e for e in result.errors)
+
+    def test_missing_schema_version_produces_warning(self, tmp_path: Path) -> None:
+        path = self._write_state_file(tmp_path, schema_version="")
+        result = validate_state_file(path)
+        assert result.passed
+        assert any("schema_version" in w for w in result.warnings)
 
     def test_feature_slug_mismatch_fails(self, tmp_path: Path) -> None:
         """Feature slug must match the filename."""
@@ -221,6 +247,19 @@ class TestValidateDirectory:
         assert not result.passed
         assert any("collision" in e.lower() or "duplicate" in e.lower() for e in result.errors)
 
+    def test_missing_schema_version_warning_in_directory(self, tmp_path: Path) -> None:
+        dev_cycle = tmp_path / "docs" / "dev-cycle"
+        dev_cycle.mkdir(parents=True)
+        (dev_cycle / "feat-a.state.md").write_text(
+            "---\nfeature: feat-a\n"
+            "status: in_progress\ncurrent_phase: brainstorm\n"
+            "created: 2026-03-21\nupdated: 2026-03-21\n---\n\n"
+            "## Artifacts\n\n## Log\n"
+        )
+        result = validate_directory(dev_cycle)
+        assert result.passed
+        assert len(result.warnings) > 0
+
     def test_empty_directory_passes(self, tmp_path: Path) -> None:
         dev_cycle = tmp_path / "docs" / "dev-cycle"
         dev_cycle.mkdir(parents=True)
@@ -249,6 +288,22 @@ class TestCLI:
         )
         assert result.returncode == 0
         assert "PASS" in result.stdout
+
+    def test_cli_prints_warnings_but_passes(self, tmp_path: Path) -> None:
+        dev_cycle = tmp_path / "docs" / "dev-cycle"
+        dev_cycle.mkdir(parents=True)
+        (dev_cycle / "feat-a.state.md").write_text(
+            "---\nfeature: feat-a\n"
+            "status: in_progress\ncurrent_phase: brainstorm\n"
+            "created: 2026-03-21\nupdated: 2026-03-21\n---\n\n"
+            "## Artifacts\n\n## Log\n"
+        )
+        result = subprocess.run(
+            ["uv", "run", "python", "scripts/dev_cycle_validate.py", str(dev_cycle)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert "WARNING" in result.stdout
 
     def test_cli_reports_errors(self, tmp_path: Path) -> None:
         dev_cycle = tmp_path / "docs" / "dev-cycle"
