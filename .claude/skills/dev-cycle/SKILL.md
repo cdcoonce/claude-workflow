@@ -24,7 +24,7 @@ Every phase is mandatory. No phase can be skipped.
 | 3   | **CEO Review**  | `plan-ceo-review` (recommend HOLD SCOPE)               | Review complete, user approves    |
 | 4   | **Issues**      | Orchestrator (plan slices → GitHub issues)             | All issue URLs recorded           |
 | 5   | **Implement**   | Orchestrator (`tdd` per issue, `subagent-development`) | All issues resolved, tests pass   |
-| 6   | **Code Review** | `code-review`                                          | Clean review                      |
+| 6   | **Code Review** | `daa-code-review`                                      | Clean review                      |
 | 7   | **PR**          | `commit` + `github-cli`                                | PR URL recorded                   |
 
 ## Re-entry Logic
@@ -102,7 +102,7 @@ Log per-subagent events:
 
 ### Phase 6: Code Review
 
-Invoke `code-review` against all changed files on the feature branch. If blocking issues found → fix, re-run. Loop until clean.
+Invoke `daa-code-review` against all changed files on the feature branch. If blocking issues found → fix, re-run. Loop until clean.
 
 If architectural issues requiring plan rework → trigger backwards transition to Phase 2.
 

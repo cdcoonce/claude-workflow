@@ -14,7 +14,7 @@ def tmp_repo(tmp_path: Path) -> Path:
 
     skills = core / "skills"
     skills.mkdir()
-    for skill_name in ["commit", "code-review", "tdd"]:
+    for skill_name in ["commit", "daa-code-review", "tdd"]:
         skill_dir = skills / skill_name
         skill_dir.mkdir()
         (skill_dir / "SKILL.md").write_text(f"# {skill_name} skill")

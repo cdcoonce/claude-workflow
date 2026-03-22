@@ -17,7 +17,7 @@ class TestBuildPreset:
         build_preset("python-api", repo_root=tmp_repo)
         dist = tmp_repo / "dist" / "python-api" / ".claude" / "skills"
         assert (dist / "commit" / "SKILL.md").exists()
-        assert (dist / "code-review" / "SKILL.md").exists()
+        assert (dist / "daa-code-review" / "SKILL.md").exists()
         assert (dist / "tdd" / "SKILL.md").exists()
 
     def test_build_copies_core_docs(self, tmp_repo: Path) -> None:

@@ -21,7 +21,7 @@ Every phase is mandatory. No phase can be skipped.
 | 3   | **CEO Review**  | `plan-ceo-review` (recommends HOLD SCOPE; skill's own mode selection runs)                 | Reviewed/revised plan                       | Review complete, user approves    |
 | 4   | **Issues**      | Orchestrator creates issues from plan's vertical slices (see Phase 4 note)                 | GitHub Issues (implementation tickets)      | All issue URLs recorded           |
 | 5   | **Implement**   | Orchestrator dispatch loop (`tdd` per issue, following `subagent-development` methodology) | Working code + passing tests                | All issues resolved, tests pass   |
-| 6   | **Code Review** | `code-review`                                                                              | Review report, issues fixed                 | Clean review (no blocking issues) |
+| 6   | **Code Review** | `daa-code-review`                                                                          | Review report, issues fixed                 | Clean review (no blocking issues) |
 | 7   | **PR**          | `commit` + `github-cli`                                                                    | Pull request                                | PR URL recorded                   |
 
 **Phase 1 (Brainstorm)** invokes `write-a-prd` as a single skill invocation. The skill's own internal flow handles both the interview/brainstorm and formalization into a GitHub issue. The orchestrator does not split the skill into two phases — it trusts the skill's built-in confirmation gates.
@@ -190,7 +190,7 @@ Each transition follows the same pattern: validate artifact → update state →
 ### Implement → Code Review
 
 - **Validate:** All implementation issues resolved, tests passing
-- **Handoff:** Invoke `code-review` against all changed files on the feature branch
+- **Handoff:** Invoke `daa-code-review` against all changed files on the feature branch
 - **Gate:** If blocking issues found → fix them, re-run review. Loop until clean.
 
 ### Code Review → PR

@@ -25,7 +25,7 @@ claude-workflow/
 │   ├── settings-base.json             ← Universal hook config: protect-files (D13)
 │   ├── skills/                        ← 17 universal skills (D7)
 │   │   ├── commit/
-│   │   ├── code-review/
+│   │   ├── daa-code-review/
 │   │   ├── github-cli/
 │   │   ├── tdd/
 │   │   ├── triage-issue/
@@ -175,10 +175,10 @@ mkdir -p core/skills core/docs core/hooks
 
 Move these 17 skill directories from `.claude/skills/` to `core/skills/`:
 
-- `commit`, `code-review`, `github-cli`, `tdd`, `triage-issue`, `project-context`, `grill-me`, `plan-ceo-review`, `write-a-prd`, `prd-to-plan`, `prd-to-issues`, `request-refactor-plan`, `improve-codebase-architecture`, `design-an-interface`, `readme-generator`, `git-guardrails-claude-code`, `write-a-skill`
+- `commit`, `daa-code-review`, `github-cli`, `tdd`, `triage-issue`, `project-context`, `grill-me`, `plan-ceo-review`, `write-a-prd`, `prd-to-plan`, `prd-to-issues`, `request-refactor-plan`, `improve-codebase-architecture`, `design-an-interface`, `readme-generator`, `git-guardrails-claude-code`, `write-a-skill`
 
 ```bash
-for skill in commit code-review github-cli tdd triage-issue project-context grill-me plan-ceo-review write-a-prd prd-to-plan prd-to-issues request-refactor-plan improve-codebase-architecture design-an-interface readme-generator git-guardrails-claude-code write-a-skill; do
+for skill in commit daa-code-review github-cli tdd triage-issue project-context grill-me plan-ceo-review write-a-prd prd-to-plan prd-to-issues request-refactor-plan improve-codebase-architecture design-an-interface readme-generator git-guardrails-claude-code write-a-skill; do
   mv .claude/skills/$skill core/skills/
 done
 ```
@@ -456,7 +456,7 @@ def tmp_repo(tmp_path: Path) -> Path:
     # Core skills
     skills = core / "skills"
     skills.mkdir()
-    for skill_name in ["commit", "code-review", "tdd"]:
+    for skill_name in ["commit", "daa-code-review", "tdd"]:
         skill_dir = skills / skill_name
         skill_dir.mkdir()
         (skill_dir / "SKILL.md").write_text(f"# {skill_name} skill")
@@ -565,7 +565,7 @@ class TestBuildPreset:
         build_preset("python-api", repo_root=tmp_repo)
         dist = tmp_repo / "dist" / "python-api" / ".claude" / "skills"
         assert (dist / "commit" / "SKILL.md").exists()
-        assert (dist / "code-review" / "SKILL.md").exists()
+        assert (dist / "daa-code-review" / "SKILL.md").exists()
         assert (dist / "tdd" / "SKILL.md").exists()
 
     def test_build_copies_core_docs(self, tmp_repo: Path) -> None:

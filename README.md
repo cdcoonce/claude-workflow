@@ -217,7 +217,7 @@ These ship with every preset:
 
 | Skill                            | Trigger                             | Description                                   |
 | -------------------------------- | ----------------------------------- | --------------------------------------------- |
-| `/code-review`                   | "code review", "quality check"      | Python, Markdown, and Mermaid analysis        |
+| `/daa-code-review`               | "code review", "quality check"      | Python, Markdown, and Mermaid analysis        |
 | `/commit`                        | "commit", "save work"               | Conventional commit style enforcement         |
 | `/design-an-interface`           | "design it twice", API design       | Parallel sub-agents for interface comparison  |
 | `/dev-cycle`                     | "dev cycle", "development workflow" | Full 7-phase GitHub-issues-driven pipeline    |
@@ -277,7 +277,7 @@ flowchart LR
     P -.- PTP["prd-to-plan"]
     R -.- CEO["plan-ceo-review"]
     IM -.- TDD["tdd + subagents"]
-    CR -.- REV["code-review"]
+    CR -.- REV["daa-code-review"]
     PR -.- GH["commit + github-cli"]
 ```
 

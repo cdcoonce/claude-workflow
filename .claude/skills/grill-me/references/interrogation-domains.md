@@ -17,6 +17,10 @@ Why are we building this? What does success look like?
 
 **Explore before asking:** Check the plan document, related issues, and commit messages for stated goals.
 
+**Batching hints:** Problem, success criteria, and done-definition questions batch well together. Rarely needs multiSelect.
+
+**Preview candidates:** Rarely needed — decisions here are strategic, not structural.
+
 ---
 
 ## Domain 2: Scope & Boundaries
@@ -29,6 +33,10 @@ What's in, what's out, and what's deferred?
 - Is there anything in the plan that could be cut without losing the core value?
 
 **Explore before asking:** Check for existing related code, open issues, or TODO comments that hint at boundary decisions.
+
+**Batching hints:** Scope-in vs scope-out and deferral questions batch naturally. Use multiSelect when asking which features to defer.
+
+**Preview candidates:** Rarely needed unless comparing feature scope lists.
 
 ---
 
@@ -43,6 +51,10 @@ How does this work, and why this approach over alternatives?
 
 **Explore before asking:** Read existing code patterns, project conventions, and similar implementations in the repo.
 
+**Batching hints:** Architecture choice and pattern-conformance questions batch well. Trade-off questions are usually single-select.
+
+**Preview candidates:** Use previews when comparing code patterns, architecture shapes, or interface designs. This domain benefits most from visual comparison.
+
 ---
 
 ## Domain 4: Data Flow & State
@@ -55,6 +67,10 @@ What data moves where, and what state changes?
 - Are there data integrity constraints that must be maintained?
 
 **Explore before asking:** Trace existing data flows in the codebase. Check database schemas, API contracts, and transformation logic.
+
+**Batching hints:** Input/output and state-management questions batch together. Data integrity constraints are usually single-select.
+
+**Preview candidates:** Use previews for comparing data transformation pipelines, schema shapes, or state machine diagrams.
 
 ---
 
@@ -69,6 +85,10 @@ What can go wrong, and what do we do about it?
 
 **Explore before asking:** Check existing error handling patterns in the codebase. Look for try/except blocks, logging calls, and retry logic.
 
+**Batching hints:** Failure modes can be batched. Recovery strategy questions may warrant multiSelect if multiple strategies apply.
+
+**Preview candidates:** Use previews when comparing error handling patterns or retry strategies in code.
+
 ---
 
 ## Domain 6: Dependencies & Constraints
@@ -81,6 +101,10 @@ What do we depend on, and what limits us?
 - Are there timing or ordering constraints (e.g., must run after X)?
 
 **Explore before asking:** Check imports, API calls, scheduled jobs, and dependency files (pyproject.toml, etc.).
+
+**Batching hints:** External dependency and constraint questions batch well. Rate limit and SLA questions are typically single-select.
+
+**Preview candidates:** Rarely needed — dependency decisions are usually conceptual.
 
 ---
 
@@ -95,6 +119,10 @@ How do we know this works?
 
 **Explore before asking:** Check existing test patterns, fixtures, and coverage in the repo.
 
+**Batching hints:** Test strategy, fixture, and coverage questions batch naturally. 'Which test types?' is a good multiSelect candidate.
+
+**Preview candidates:** Use previews when comparing test fixture structures or test organization patterns.
+
 ---
 
 ## Domain 8: Deployment & Operations
@@ -107,3 +135,7 @@ How does this get to production and stay healthy?
 - What does rollback look like if something goes wrong?
 
 **Explore before asking:** Check existing deployment configs, CI/CD pipelines, schedules, and monitoring setup.
+
+**Batching hints:** Deployment target and rollback questions batch well. Monitoring approach questions are a good multiSelect candidate since multiple strategies often coexist.
+
+**Preview candidates:** Use previews when comparing deployment configurations or infrastructure diagrams.
