@@ -17,9 +17,9 @@ Every phase is mandatory. No phase can be skipped.
 | #   | Phase           | Delegates To                                                                               | Artifact Produced                           | Gate Condition                    |
 | --- | --------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------- | --------------------------------- |
 | 1   | **Brainstorm**  | `write-a-prd` (full skill invocation)                                                      | Clarified requirements + GitHub Issue (PRD) | Issue URL recorded                |
-| 2   | **Plan**        | `prd-to-plan`                                                                              | `./plans/{feature}.md`                      | Plan file exists                  |
+| 2   | **Plan**        | `prd-to-plan`                                                                              | `docs/plans/{feature}.md`                   | Plan file exists                  |
 | 3   | **CEO Review**  | `plan-ceo-review` (recommends HOLD SCOPE; skill's own mode selection runs)                 | Reviewed/revised plan                       | Review complete, user approves    |
-| 4   | **Issues**      | `prd-to-issues`                                                                            | GitHub Issues (implementation tickets)      | All issue URLs recorded           |
+| 4   | **Issues**      | Orchestrator creates issues from plan's vertical slices (see Phase 4 note)                 | GitHub Issues (implementation tickets)      | All issue URLs recorded           |
 | 5   | **Implement**   | Orchestrator dispatch loop (`tdd` per issue, following `subagent-development` methodology) | Working code + passing tests                | All issues resolved, tests pass   |
 | 6   | **Code Review** | `code-review`                                                                              | Review report, issues fixed                 | Clean review (no blocking issues) |
 | 7   | **PR**          | `commit` + `github-cli`                                                                    | Pull request                                | PR URL recorded                   |
@@ -28,7 +28,17 @@ Every phase is mandatory. No phase can be skipped.
 
 **Phase 3 (CEO Review)** recommends HOLD SCOPE mode to the user but allows the skill's own mode-selection logic (Step 0F) to run. The orchestrator does not suppress the skill's mode selection — it provides a recommendation, not an override.
 
+**Phase 4 (Issues)** is owned by the orchestrator, not delegated to `prd-to-issues`. The orchestrator converts the CEO-reviewed plan's vertical slices directly into GitHub issues using `gh issue create`. This ensures the issues match the reviewed plan rather than being independently re-derived from the PRD. Each issue is recorded in the state file as it's created (see Failure & Recovery for partial-completion handling).
+
 **Phase 5 (Implement)** is owned by the orchestrator, not delegated to a skill. The orchestrator follows the `subagent-development` methodology (a core doc, not a skill) to dispatch one subagent per GitHub issue, each invoking the `tdd` skill. Code review runs between each subagent dispatch.
+
+**Phase 5 Logging & State Updates:** Phase 5 is the longest-running phase and most likely to span multiple conversations. The orchestrator updates the state file incrementally (not batched at the end):
+
+- Log each subagent dispatch: `"Subagent started for issue #N: {title}"`
+- Log each subagent completion: `"Subagent completed for issue #N: {pass/fail}"`
+- Log each inter-subagent code review result: `"Code review after issue #N: {clean/blocking issues found}"`
+- Update the Issues table status for each issue as its subagent completes
+- If the conversation ends mid-dispatch, the state file reflects which issues have been completed, enabling accurate resume
 
 ---
 
@@ -39,7 +49,7 @@ Each feature gets a tracking file at `docs/dev-cycle/{feature-slug}.md`. This is
 **Relationship to other directories:**
 
 - `docs/dev-cycle/` — Dev cycle state files (this spec)
-- `docs/plans/` (or `./plans/`) — Plan files created by `prd-to-plan` (Phase 2 artifact)
+- `docs/plans/` — Plan files created by `prd-to-plan` (Phase 2 artifact). **Note:** `prd-to-plan` currently outputs to `./plans/`; its SKILL.md must be updated to use `docs/plans/` as part of this implementation.
 - `docs/archive/` — Completed plans are archived here per existing convention
 
 When a feature completes (PR merged), its state file remains in `docs/dev-cycle/` as an audit record. The associated plan file follows the existing archive convention.
@@ -48,6 +58,7 @@ When a feature completes (PR merged), its state file remains in `docs/dev-cycle/
 
 ```markdown
 ---
+schema_version: 1
 feature: dark-mode-toggle
 status: in_progress # not_started | in_progress | completed | abandoned
 current_phase: plan # brainstorm | plan | ceo_review | issues | implement | code_review | pr
@@ -61,12 +72,20 @@ branch: feat/dark-mode-toggle
 | Phase       | Status      | Artifact                               |
 | ----------- | ----------- | -------------------------------------- |
 | brainstorm  | completed   | https://github.com/user/repo/issues/42 |
-| plan        | in_progress | ./plans/dark-mode-toggle.md            |
+| plan        | in_progress | docs/plans/dark-mode-toggle.md         |
 | ceo_review  | pending     | —                                      |
 | issues      | pending     | —                                      |
 | implement   | pending     | —                                      |
 | code_review | pending     | —                                      |
 | pr          | pending     | —                                      |
+
+## Issues
+
+Tracked individually for partial-completion recovery during Phase 4. Each issue is recorded as it's created.
+
+| Plan Slice                 | GitHub Issue | Status |
+| -------------------------- | ------------ | ------ |
+| (populated during Phase 4) |              |        |
 
 ## Log
 
@@ -76,13 +95,15 @@ branch: feat/dark-mode-toggle
 
 ### Field Definitions
 
-- **feature:** Kebab-case slug used as filename and human-readable identifier.
+- **schema_version:** Integer version of the state file format. Current version: `1`. Enables future migration tooling to detect and upgrade older state files.
+- **feature:** Kebab-case slug used as filename and human-readable identifier. On creation, the orchestrator checks `docs/dev-cycle/` for existing slugs; if a collision is found (abandoned or completed), the slug is suffixed (e.g., `dark-mode-2`).
 - **status:** Overall feature status. `not_started` on creation, `in_progress` once phase 1 begins, `completed` once PR is filed, `abandoned` if the user decides to stop.
 - **current_phase:** The phase currently being worked on. Valid values: `brainstorm`, `plan`, `ceo_review`, `issues`, `implement`, `code_review`, `pr`.
 - **created/updated:** ISO date stamps.
 - **branch:** Git feature branch name. Created at the start of Phase 5 (Implement). Format: `feat/{feature-slug}`.
 - **Artifacts table:** One row per phase. Status is `pending`, `in_progress`, `completed`, or `blocked`. Artifact column holds the output reference (URL, file path, or description).
-- **Log:** Timestamped append-only audit trail. Each phase transition adds an entry.
+- **Issues table:** One row per plan slice. Populated incrementally during Phase 4 as each GitHub issue is created. Enables partial-completion recovery — on retry, the orchestrator skips slices that already have a recorded issue URL.
+- **Log:** Timestamped append-only audit trail. Each phase transition adds an entry. Phase 5 additionally logs per-subagent events (see Phase 5 Logging).
 
 ### Valid Phase Transitions
 
@@ -100,7 +121,7 @@ brainstorm → plan → ceo_review → issues → implement → code_review → 
 
 - **Phases 1–4** (Brainstorm through Issues) run on whatever branch the user is on. These phases produce documentation and GitHub issues, not code.
 - **Phase 5 (Implement)** creates a feature branch `feat/{feature-slug}` before dispatching the first subagent. The branch name is recorded in the state file.
-- **Phase 7 (PR)** opens the pull request from `feat/{feature-slug}` to the repository's main branch.
+- **Phase 7 (PR)** opens the pull request from `feat/{feature-slug}` to the repository's default branch (detected via `gh repo view --json defaultBranchRef`).
 - **Resuming a feature** that is at Phase 5+ includes checking out the feature branch if not already on it.
 - **Concurrent features** work on separate branches. When listing in-progress features at re-entry, the orchestrator shows the branch name alongside the feature name and current phase.
 
@@ -139,7 +160,7 @@ When resuming a feature (cross-conversation or same-conversation), the orchestra
 
 ## Glue Layer — Phase Transitions
 
-Each transition follows the same pattern: validate artifact → update state → prepare context → invoke next skill.
+Each transition follows the same pattern: validate artifact → update state → prepare context → invoke next phase (see the 7-Phase Pipeline table above for which skill each phase delegates to). The sections below specify validation rules, handoff context, and artifact expectations — not delegation targets, which are defined once in the pipeline table.
 
 ### Brainstorm → Plan
 
@@ -155,14 +176,15 @@ Each transition follows the same pattern: validate artifact → update state →
 
 ### CEO Review → Issues
 
-- **Validate:** Plan has been reviewed and user approved the final version
-- **Handoff:** Pass finalized plan to `prd-to-issues` to decompose into GitHub issues
-- **Record:** All issue URLs in state file
+- **Validate:** Plan has been reviewed and user approved the final version. Plan file on disk reflects all revisions.
+- **Handoff:** Orchestrator reads the plan's vertical slices and creates one GitHub issue per slice using `gh issue create`. Each issue references the PRD issue and includes acceptance criteria from the plan. Issues are created in dependency order so blockers can be referenced by number.
+- **Record:** Each issue URL is recorded in the state file individually as it's created (not batched at the end). This enables partial-completion recovery on retry.
 
 ### Issues → Implement
 
-- **Validate:** All GitHub issues created and URLs recorded
-- **Handoff:** Create feature branch `feat/{feature-slug}`. Load plan file. Orchestrator dispatches one subagent per issue following `subagent-development` methodology, each invoking the `tdd` skill. Code review runs between each subagent dispatch.
+- **Validate:** All GitHub issues created and URLs recorded in the Issues table
+- **Branch creation:** Create feature branch `feat/{feature-slug}`. If the branch already exists: check the state file — if it belongs to this feature, check it out and continue; if it belongs to a different feature or is unrecognized, error with a clear message and ask the user to resolve.
+- **Handoff:** Load plan file. Orchestrator dispatches one subagent per issue following `subagent-development` methodology, each invoking the `tdd` skill. Code review runs between each subagent dispatch. State file is updated after each subagent completes (not batched).
 - **Record:** Branch name in state file. Each issue status as implementation progresses.
 
 ### Implement → Code Review
@@ -174,7 +196,8 @@ Each transition follows the same pattern: validate artifact → update state →
 ### Code Review → PR
 
 - **Validate:** Code review passed with no blocking issues
-- **Handoff:** Invoke `commit` for conventional commit, then `github-cli` to open PR from `feat/{feature-slug}` to main
+- **Conflict check:** Before creating the PR, check if the feature branch has conflicts with the default branch. If conflicts exist, rebase or merge the default branch and resolve conflicts before proceeding. If an existing PR already exists for this branch, update it instead of creating a duplicate.
+- **Handoff:** Invoke `commit` for conventional commit, then `github-cli` to open PR from `feat/{feature-slug}` to the default branch
 - **Record:** PR URL in state file, set feature status to `completed`
 
 ---
@@ -196,9 +219,10 @@ When implementation or code review reveals the approach is fundamentally wrong:
 
 1. The user or orchestrator identifies the need to rework the plan
 2. Log the reason for the backwards transition
-3. Reset phases from `plan` onward to `pending`
-4. Re-enter Phase 2 (Plan) — CEO Review and Issues must run again on the revised plan
-5. The feature branch is kept; implementation continues on the same branch after the revised plan
+3. **Code handling:** If a feature branch exists with code from the old plan, the orchestrator warns the user that existing code may conflict with the revised plan and asks how to proceed: (a) keep all existing code, (b) revert specific commits, or (c) create a new branch from the default branch. The user's choice is logged.
+4. Reset phases from `plan` onward to `pending`
+5. Re-enter Phase 2 (Plan) — CEO Review and Issues must run again on the revised plan
+6. The feature branch is kept (unless the user chose option c above)
 
 Valid backwards transitions:
 
@@ -250,6 +274,20 @@ core/skills/dev-cycle/
 - Phase transition rules and gate conditions
 - Backwards transition rules
 
+### State File Validator
+
+`scripts/dev_cycle_validate.py` — a Python script that validates state file integrity:
+
+- Parses YAML frontmatter and validates all required fields
+- Validates `schema_version` compatibility
+- Validates `current_phase` is a legal value
+- Validates phase transition order (no illegal backwards jumps)
+- Validates artifact completeness (completed phases must have artifacts)
+- Detects slug collisions in `docs/dev-cycle/`
+- Detects corrupted or partially-written state files
+
+Tested via `tests/test_dev_cycle_validate.py` using pytest. Follows the existing `scripts/` pattern (`build_preset.py`, `diff_preset.py`, `smoke_test.py`).
+
 ### Registration
 
 The skill gets added to `core/CLAUDE-base.md` alongside the existing 17 skills so it appears in every preset's built `CLAUDE.md`.
@@ -277,3 +315,9 @@ The skill gets added to `core/CLAUDE-base.md` alongside the existing 17 skills s
 9. **Feature branches at Phase 5:** Code-producing phases (Implement, Code Review, PR) run on a dedicated feature branch. Documentation phases (Brainstorm through Issues) run on the current branch since they produce docs and GitHub issues, not code.
 
 10. **Backwards transitions limited to plan rework:** Only `implement → plan` and `code_review → plan` are supported. If the PRD is wrong, the feature should be abandoned and restarted. This prevents unbounded loops in the pipeline.
+
+11. **Plan slices drive issues, not independent re-derivation:** Phase 4 creates GitHub issues directly from the CEO-reviewed plan's vertical slices rather than delegating to `prd-to-issues` (which would independently re-derive slices from the PRD, potentially diverging from the reviewed plan). Downstream phases consume upstream artifacts.
+
+12. **Schema versioning from day 1:** The state file includes `schema_version: 1` to enable future migration tooling. Prevents painful upgrades when the schema evolves.
+
+13. **State file validator as testable backbone:** `scripts/dev_cycle_validate.py` provides programmatic validation of state files, giving the prompt-based orchestrator a verifiable foundation that can catch drift that prompts alone cannot.
