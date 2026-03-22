@@ -226,3 +226,42 @@ class TestValidateDirectory:
         dev_cycle.mkdir(parents=True)
         result = validate_directory(dev_cycle)
         assert result.passed
+
+
+import subprocess
+
+
+class TestCLI:
+    """Tests for the command-line interface."""
+
+    def test_cli_reports_valid_directory(self, tmp_path: Path) -> None:
+        dev_cycle = tmp_path / "docs" / "dev-cycle"
+        dev_cycle.mkdir(parents=True)
+        (dev_cycle / "feat-a.md").write_text(
+            "---\nschema_version: 1\nfeature: feat-a\n"
+            "status: in_progress\ncurrent_phase: brainstorm\n"
+            "created: 2026-03-21\nupdated: 2026-03-21\n---\n\n"
+            "## Artifacts\n\n## Log\n"
+        )
+        result = subprocess.run(
+            ["uv", "run", "python", "scripts/dev_cycle_validate.py", str(dev_cycle)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert "PASS" in result.stdout
+
+    def test_cli_reports_errors(self, tmp_path: Path) -> None:
+        dev_cycle = tmp_path / "docs" / "dev-cycle"
+        dev_cycle.mkdir(parents=True)
+        (dev_cycle / "bad.md").write_text(
+            "---\nschema_version: 1\nfeature: bad\n"
+            "status: bogus\ncurrent_phase: brainstorm\n"
+            "created: 2026-03-21\nupdated: 2026-03-21\n---\n\n"
+            "## Artifacts\n\n## Log\n"
+        )
+        result = subprocess.run(
+            ["uv", "run", "python", "scripts/dev_cycle_validate.py", str(dev_cycle)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 1
+        assert "FAIL" in result.stdout

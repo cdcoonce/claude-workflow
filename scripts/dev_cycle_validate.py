@@ -241,3 +241,26 @@ def validate_directory(directory: Path) -> ValidationResult:
             )
 
     return ValidationResult(errors=errors)
+
+
+if __name__ == "__main__":
+    import sys
+
+    if len(sys.argv) != 2:
+        print("Usage: uv run python scripts/dev_cycle_validate.py <dev-cycle-directory>")
+        sys.exit(1)
+
+    directory = Path(sys.argv[1])
+    if not directory.is_dir():
+        print(f"Error: {directory} is not a directory")
+        sys.exit(1)
+
+    result = validate_directory(directory)
+    if result.passed:
+        state_count = len(list(directory.glob("*.md")))
+        print(f"PASS: {state_count} state file(s) validated successfully")
+    else:
+        print(f"FAIL: {len(result.errors)} error(s) found:")
+        for error in result.errors:
+            print(f"  - {error}")
+        sys.exit(1)
