@@ -5,3 +5,7 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 .ruff_cache/
+
+# macOS conflict copies (created when checkout hits dirty files)
+* 2.*
+* 3.*
