@@ -5,113 +5,55 @@ description: Create new agent skills with proper structure, progressive disclosu
 
 # Writing Skills
 
-## Process
+A 4-phase pipeline: **Gather → Grill → Plan → Implement**.
 
-1. **Gather requirements** - ask user about:
-   - What task/domain does the skill cover?
-   - What specific use cases should it handle?
-   - Does it need executable scripts or just instructions?
-   - Any reference materials to include?
+## Phase 1: Gather
 
-2. **Draft the skill** - create:
-   - SKILL.md with concise instructions
-   - Additional reference files if content exceeds 500 lines
-   - Utility scripts if deterministic operations needed
+Use `AskUserQuestion` with domain-batched questions across 4 domains. Each domain gets 1 call with 2-4 options and a recommendation (first option = `(Recommended)`).
 
-3. **Review with user** - present draft and ask:
-   - Does this cover your use cases?
-   - Anything missing or unclear?
-   - Should any section be more/less detailed?
+1. **Purpose** — What task/domain does the skill cover? Who uses it?
+2. **Use Cases** — What specific scenarios trigger this skill? What keywords?
+3. **Structure** — Does it need scripts? Reference files? Single SKILL.md or multi-file?
+4. **Tooling** — Which tools or other skills should it invoke or reference?
+
+## Phase 2: Grill
+
+Invoke the `grill-me` skill, passing gathered requirements. Direct it to use the skill-tailored domains in [skill-grill-domains.md](references/skill-grill-domains.md) (Intent, Scope, Design, Edge Cases). Skip irrelevant domains (Data Flow, Dependencies, Deployment, Testing).
+
+**Fallback (grill-me unavailable):** Run an inline mini-grill using `AskUserQuestion` directly. For each domain in [skill-grill-domains.md](references/skill-grill-domains.md), batch 2-4 questions per call with recommendations and options.
+
+## Phase 3: Plan
+
+Produce a structured skill blueprint using the template in [blueprint-template.md](references/blueprint-template.md). Present the blueprint in conversation context (not written to disk). The user must approve before proceeding. If the user requests changes, revise and re-present.
+
+## Phase 4: Implement
+
+Create all skill files following the approved blueprint. Fully automated — the agent writes everything.
+
+Then run **Phase 4b: Review** using criteria from [quality-criteria.md](references/quality-criteria.md):
+
+1. **Auto-verify** — Check measurable criteria (line count, description length, triggers, reference depth). Fix any failures before proceeding.
+2. **Subjective review** — Present the checklist to the user via `AskUserQuestion`. If the user flags issues, revise and re-verify.
 
 ## Skill Structure
 
 ```
 skill-name/
-├── SKILL.md           # Main instructions (required)
-├── REFERENCE.md       # Detailed docs (if needed)
-├── EXAMPLES.md        # Usage examples (if needed)
+├── SKILL.md           # Main instructions (required, <100 lines)
+├── references/        # Supporting docs (if needed)
+│   └── domain-ref.md
 └── scripts/           # Utility scripts (if needed)
-    └── helper.js
+    └── helper.sh
 ```
 
-## SKILL.md Template
+## Fallback (no AskUserQuestion)
 
-```md
----
-name: skill-name
-description: Brief description of capability. Use when [specific triggers].
----
+If `AskUserQuestion` is unavailable, fall back to text-based questions:
 
-# Skill Name
+**[Header] — [Topic]**
+**Recommended:** [Your recommendation and why]
+**Alternatives:** (A) [Option] — [trade-off] | (B) [Option] — [trade-off]
 
-## Quick start
+## Quality Standards
 
-[Minimal working example]
-
-## Workflows
-
-[Step-by-step processes with checklists for complex tasks]
-
-## Advanced features
-
-[Link to separate files: See [REFERENCE.md](REFERENCE.md)]
-```
-
-## Description Requirements
-
-The description is **the only thing your agent sees** when deciding which skill to load. It's surfaced in the system prompt alongside all other installed skills. Your agent reads these descriptions and picks the relevant skill based on the user's request.
-
-**Goal**: Give your agent just enough info to know:
-
-1. What capability this skill provides
-2. When/why to trigger it (specific keywords, contexts, file types)
-
-**Format**:
-
-- Max 1024 chars
-- Write in third person
-- First sentence: what it does
-- Second sentence: "Use when [specific triggers]"
-
-**Good example**:
-
-```
-Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDF files or when user mentions PDFs, forms, or document extraction.
-```
-
-**Bad example**:
-
-```
-Helps with documents.
-```
-
-The bad example gives your agent no way to distinguish this from other document skills.
-
-## When to Add Scripts
-
-Add utility scripts when:
-
-- Operation is deterministic (validation, formatting)
-- Same code would be generated repeatedly
-- Errors need explicit handling
-
-Scripts save tokens and improve reliability vs generated code.
-
-## When to Split Files
-
-Split into separate files when:
-
-- SKILL.md exceeds 100 lines
-- Content has distinct domains (finance vs sales schemas)
-- Advanced features are rarely needed
-
-## Review Checklist
-
-After drafting, verify:
-
-- [ ] Description includes triggers ("Use when...")
-- [ ] SKILL.md under 100 lines
-- [ ] No time-sensitive info
-- [ ] Consistent terminology
-- [ ] Concrete examples included
-- [ ] References one level deep
+See [quality-criteria.md](references/quality-criteria.md) for description requirements, auto-verify criteria, subjective review checklist, and guidance on when to add scripts or split files.

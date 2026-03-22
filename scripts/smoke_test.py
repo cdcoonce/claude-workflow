@@ -4,6 +4,7 @@ Checks:
 - Every skill referenced in CLAUDE.md has a directory in .claude/skills/
 - Every hook referenced in settings.json has a file in .claude/hooks/
 - Every doc path referenced in CLAUDE.md exists
+- Every intra-skill reference link in SKILL.md files resolves to an existing file
 """
 
 from __future__ import annotations
@@ -93,6 +94,24 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
                                 f"Hook '{hook_file}' referenced in settings.json "
                                 f"but not found in .claude/hooks/"
                             )
+
+    # Check intra-skill reference links in SKILL.md files
+    link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+    if skills_dir.exists():
+        for skill_md in skills_dir.rglob("SKILL.md"):
+            skill_content = skill_md.read_text()
+            for match in link_pattern.finditer(skill_content):
+                link_target = match.group(2)
+                # Skip external URLs, anchors, and project-root-relative paths
+                if link_target.startswith(("http://", "https://", "#", ".claude/")):
+                    continue
+                resolved = (skill_md.parent / link_target).resolve()
+                if not resolved.exists():
+                    skill_name = skill_md.parent.name
+                    result.errors.append(
+                        f"Skill '{skill_name}/SKILL.md' links to "
+                        f"'{link_target}' but file not found"
+                    )
 
     return result
 

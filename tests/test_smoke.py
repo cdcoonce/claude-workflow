@@ -57,3 +57,37 @@ class TestSmokeTest:
         result = smoke_test(dist)
         assert result.passed is False
         assert any("nonexistent.md" in e for e in result.errors)
+
+    def test_valid_intra_skill_link_passes(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        # Add a skill with a valid reference link
+        skill_dir = dist / ".claude" / "skills" / "test-skill"
+        skill_dir.mkdir(parents=True)
+        refs_dir = skill_dir / "references"
+        refs_dir.mkdir()
+        (refs_dir / "guide.md").write_text("# Guide\n")
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\n"
+            "See [guide](references/guide.md) for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
+
+    def test_broken_intra_skill_link_fails(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        # Add a skill with a broken reference link
+        skill_dir = dist / ".claude" / "skills" / "test-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\n"
+            "See [missing](references/nonexistent.md) for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is False
+        assert any("test-skill/SKILL.md" in e and "nonexistent.md" in e for e in result.errors)
