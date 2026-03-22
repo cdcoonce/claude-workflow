@@ -91,6 +91,11 @@ Skills live in `.claude/skills/`. Each `SKILL.md` defines an invocable skill wit
 
 **Trigger when:** user wants to convert a PRD to issues, create implementation tickets, or break down a PRD into work items.
 
+### `/dev-cycle`
+
+**Trigger when:** user says "dev cycle", "development workflow", "full development pipeline", or wants the full end-to-end lifecycle from brainstorm through PR. **Disambiguation:** if user only wants a PRD, route to `/write-a-prd`; only a plan, route to `/prd-to-plan`.
+**References:** [.claude/skills/dev-cycle/references/](.claude/skills/dev-cycle/references/) — phase transitions, state file schema.
+
 ### `/request-refactor-plan`
 
 **Trigger when:** user wants to plan a refactor, create a refactoring RFC, or break a refactor into safe incremental steps.
