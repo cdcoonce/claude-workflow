@@ -23,7 +23,7 @@ _ARTIFACT_ROW_RE = re.compile(
     r"^\|\s*(\w+)\s*\|\s*(\w+)\s*\|\s*(.+?)\s*\|$", re.MULTILINE
 )
 
-REQUIRED_FIELDS = ("schema_version", "feature", "status", "current_phase")
+REQUIRED_FIELDS = ("feature", "status", "current_phase")
 
 
 @dataclass
@@ -76,6 +76,18 @@ def _parse_artifacts(text: str) -> list[ArtifactRow]:
     return rows
 
 
+def _has_schema_version(path: Path) -> bool:
+    """Check if a state file contains a schema_version field in frontmatter."""
+    text = path.read_text()
+    match = _FRONTMATTER_RE.search(text)
+    if not match:
+        return False
+    raw_fields: dict[str, str] = {}
+    for field_match in _FIELD_RE.finditer(match.group(1)):
+        raw_fields[field_match.group(1)] = field_match.group(2).strip()
+    return "schema_version" in raw_fields
+
+
 def parse_state_file(path: Path) -> StateFile:
     """Parse a dev-cycle state file and return a StateFile object.
 
@@ -109,6 +121,9 @@ def parse_state_file(path: Path) -> StateFile:
                 f"Missing required field '{req}' in {path.name}"
             )
 
+    if "schema_version" not in raw_fields:
+        raw_fields["schema_version"] = "1"
+
     state = StateFile(
         schema_version=int(raw_fields["schema_version"]),
         feature=raw_fields["feature"],
@@ -128,6 +143,7 @@ class ValidationResult:
     """Result of validating a state file."""
 
     errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
     @property
     def passed(self) -> bool:
@@ -198,12 +214,20 @@ def validate_state_file(path: Path) -> ValidationResult:
     ValidationResult
         Validation result with any errors found.
     """
+    warnings: list[str] = []
+    had_schema_version = _has_schema_version(path)
+
     try:
         state = parse_state_file(path)
     except ValueError as exc:
         return ValidationResult(errors=[str(exc)])
 
-    return ValidationResult(errors=_validate_parsed_state(state))
+    if not had_schema_version:
+        warnings.append(
+            f"Missing 'schema_version' in {path.name} (defaulting to 1)"
+        )
+
+    return ValidationResult(errors=_validate_parsed_state(state), warnings=warnings)
 
 
 def validate_directory(directory: Path) -> ValidationResult:
@@ -220,18 +244,27 @@ def validate_directory(directory: Path) -> ValidationResult:
         Combined validation result for all files.
     """
     errors: list[str] = []
+    warnings: list[str] = []
     slugs: dict[str, list[str]] = {}
 
     state_files = sorted(directory.glob("*.state.md"))
     for path in state_files:
-        try:
-            state = parse_state_file(path)
-        except ValueError as exc:
-            errors.append(str(exc))
-            continue
-
-        errors.extend(_validate_parsed_state(state))
-        slugs.setdefault(state.feature, []).append(path.name)
+        file_result = validate_state_file(path)
+        errors.extend(file_result.errors)
+        warnings.extend(file_result.warnings)
+        if file_result.passed:
+            try:
+                state = parse_state_file(path)
+            except ValueError:
+                continue
+            slugs.setdefault(state.feature, []).append(path.name)
+        else:
+            # Still try to parse for slug collision detection
+            try:
+                state = parse_state_file(path)
+                slugs.setdefault(state.feature, []).append(path.name)
+            except ValueError:
+                pass
 
     for slug, filenames in slugs.items():
         if len(filenames) > 1:
@@ -240,7 +273,7 @@ def validate_directory(directory: Path) -> ValidationResult:
                 f"{', '.join(filenames)}"
             )
 
-    return ValidationResult(errors=errors)
+    return ValidationResult(errors=errors, warnings=warnings)
 
 
 if __name__ == "__main__":
@@ -257,6 +290,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     result = validate_directory(directory)
+    for warning in result.warnings:
+        print(f"WARNING: {warning}")
     if result.passed:
         state_count = len(list(directory.glob("*.state.md")))
         print(f"PASS: {state_count} state file(s) validated successfully")

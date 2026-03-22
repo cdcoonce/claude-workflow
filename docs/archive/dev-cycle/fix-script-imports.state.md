@@ -1,4 +1,5 @@
 ---
+schema_version: 1
 feature: fix-script-imports
 slug: fix-script-imports
 status: in_progress
