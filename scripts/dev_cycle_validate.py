@@ -247,7 +247,7 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) != 2:
-        print("Usage: uv run python scripts/dev_cycle_validate.py <dev-cycle-directory>")
+        print("Usage: uv run python -m scripts.dev_cycle_validate <dev-cycle-directory>")
         print("  Validates all *.state.md files in the given directory.")
         sys.exit(1)
 

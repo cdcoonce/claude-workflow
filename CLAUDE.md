@@ -15,9 +15,9 @@ A template system for Claude Code configurations. It produces ready-to-copy `.cl
 
 ## Commands
 
-- Build a preset: `uv run python scripts/build_preset.py <preset_name>`
-- Diff a project: `uv run python scripts/diff_preset.py <preset_name> <project_path>`
-- Smoke test: `uv run python scripts/smoke_test.py <preset_name>`
+- Build a preset: `uv run python -m scripts.build_preset <preset_name>`
+- Diff a project: `uv run python -m scripts.diff_preset <preset_name> <project_path>`
+- Smoke test: `uv run python -m scripts.smoke_test <preset_name>`
 - Run tests: `uv run pytest`
 - Run with coverage: `uv run pytest --cov=scripts --cov-report=term-missing`
 
