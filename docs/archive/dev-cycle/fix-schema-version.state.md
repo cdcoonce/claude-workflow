@@ -1,7 +1,7 @@
 ---
 schema_version: 1
 feature: fix-schema-version
-status: in_progress
+status: completed
 current_phase: pr
 created: 2026-03-22
 updated: 2026-03-22
@@ -18,7 +18,7 @@ branch: feat/fix-schema-version
 | issues      | completed | #25, #26                                              |
 | implement   | completed | feat/fix-schema-version branch                        |
 | code_review | completed | clean — no blocking issues                            |
-| pr          | pending   | —                                                     |
+| pr          | completed | https://github.com/cdcoonce/claude-workflow/pull/27   |
 
 ## Issues
 
@@ -34,3 +34,4 @@ branch: feat/fix-schema-version
 - 2026-03-22: Phase 4 (issues) — created #25 (validator defaults) and #26 (legacy file fixes)
 - 2026-03-22: Phase 5 (implement) — both slices implemented via TDD subagents, 48/48 tests pass
 - 2026-03-22: Phase 6 (code_review) — clean, no blocking issues found
+- 2026-03-22: Phase 7 (pr) — PR #27 created, status set to completed
