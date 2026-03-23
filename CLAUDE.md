@@ -8,7 +8,7 @@ A template system for Claude Code configurations. It produces ready-to-copy `.cl
 
 ## Architecture
 
-- `core/` — Universal skills (17), methodology docs (4), file protection hook
+- `core/` — Universal skills (17), methodology docs (4), file protection hook, agents (2), role defaults
 - `presets/` — Named project type configurations (python-api, data-pipeline, full-stack, claude-tooling, analysis)
 - `scripts/` — Python build/diff/smoke-test tooling
 - `dist/` — Build output (gitignored)
@@ -58,3 +58,31 @@ Write plans to `docs/plans/{file_name}.md`. Archive completed plans to `docs/arc
 
 Skills live in `core/skills/` (universal) and `presets/*/skills/` (preset-specific).
 See core CLAUDE.md for skill trigger conditions.
+
+## Agents
+
+Agents are specialized role definitions (`AGENT.md` with YAML frontmatter) that give subagents domain expertise.
+
+- `core/agents/` — Universal agents: `tdd-implementer` (implementer), `code-reviewer` (reviewer)
+- `presets/*/agents/` — Preset-specific agents (e.g., `api-builder`, `security-reviewer`)
+- `core/agent-role-defaults.json` — Default skill sets per role (`implementer` → `[tdd, commit]`, `reviewer` → `[daa-code-review]`)
+
+### Agent file format
+
+```yaml
+---
+name: agent-name # Must match directory name
+description: one-liner # Used for convention-based matching
+role: implementer # implementer or reviewer
+skills:
+  add: [tdd, commit]
+  remove: []
+---
+```
+
+### Manifest fields
+
+- `core.agents` — `"all"` (default) or list of agent names to include
+- `preset_agents` — List of preset-specific agent names (default `[]`)
+- Exclusion format: `agents/<name>`
+- Preset agent with same name as core agent replaces it (override semantics)
