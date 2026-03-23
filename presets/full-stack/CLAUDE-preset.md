@@ -12,5 +12,3 @@
 
 - Prefer real code over mocks
 - Test fixtures in `tests/fixtures/`
-
-## Skills (Preset-Specific)
