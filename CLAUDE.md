@@ -6,6 +6,8 @@ This file is auto-loaded every conversation. It defines how Claude should work i
 
 A template system for Claude Code configurations. It produces ready-to-copy `.claude/` directories + `CLAUDE.md` files for new projects.
 
+See [.claude/docs/project.md](.claude/docs/project.md) for detailed project context (tech stack, data flow, architecture patterns).
+
 ## Architecture
 
 - `core/` — Universal skills (17), methodology docs (4), file protection hook, agents (2), role defaults
