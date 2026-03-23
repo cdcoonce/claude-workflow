@@ -26,6 +26,10 @@ A **template system for Claude Code configurations**. Produces ready-to-copy `.c
 - [Skills](#skills)
   - [Universal Skills (18)](#universal-skills-18)
   - [Preset-Specific Skills](#preset-specific-skills)
+- [Agents](#agents)
+  - [Core Agents](#core-agents)
+  - [Preset Agents](#preset-agents)
+  - [Role Defaults](#role-defaults)
 - [Methodology](#methodology)
 - [Dev-Cycle Orchestrator](#dev-cycle-orchestrator)
   - [7-Phase Pipeline](#7-phase-pipeline)
@@ -41,8 +45,8 @@ Every new project that uses **Claude Code** needs a `.claude/` directory with sk
 
 **Claude Workflow** solves this with a layered template system:
 
-1. **Core** — 18 universal skills, 4 methodology docs, and a file-protection hook that apply to every project
-2. **Presets** — Named configurations (e.g., `python-api`, `full-stack`) that add project-type-specific standards, hooks, and skills
+1. **Core** — 18 universal skills, 2 agents, 4 methodology docs, and a file-protection hook that apply to every project
+2. **Presets** — Named configurations (e.g., `python-api`, `full-stack`) that add project-type-specific skills, hooks, and agents
 3. **Build tooling** — Python scripts that assemble core + preset into a ready-to-copy `dist/` output
 
 The result is a consistent, tested Claude Code configuration that can be dropped into any new repo in seconds.
@@ -63,8 +67,10 @@ graph TD
         SKILLS_CORE[skills/ — 18 universal]
         DOCS[docs/ — 4 methodology]
         HOOKS_CORE[hooks/ — protect-files.py]
+        AGENTS_CORE[agents/ — 2 universal]
         BASE_MD[CLAUDE-base.md]
         BASE_JSON[settings-base.json]
+        ROLE_DEFAULTS[agent-role-defaults.json]
     end
 
     subgraph "presets/preset-name/"
@@ -73,6 +79,7 @@ graph TD
         PRESET_JSON[settings-preset.json]
         SKILLS_PRESET[skills/ — overrides]
         HOOKS_PRESET[hooks/ — additions]
+        AGENTS_PRESET[agents/ — overrides]
     end
 
     subgraph "dist/preset-name/"
@@ -88,17 +95,19 @@ claude-workflow/
 ├── core/                    # Universal components shared by all presets
 │   ├── CLAUDE-base.md       # Base development standards
 │   ├── settings-base.json   # Base hook configuration
+│   ├── agents/              # 2 universal agents (tdd-implementer, code-reviewer)
 │   ├── docs/                # TDD, root-cause tracing, subagent, parallel agents
 │   ├── hooks/               # File protection hook
+│   ├── agent-role-defaults.json  # Role → skill mapping
 │   └── skills/              # 18 universal skills
 ├── presets/                  # Project-type configurations
-│   ├── python-api/          # Python backend services
-│   ├── data-pipeline/       # ETL/ELT pipelines
-│   ├── full-stack/          # React/Next.js + Python
-│   ├── claude-tooling/      # Claude skill/hook development
-│   └── analysis/            # Notebooks, statistical analysis
+│   ├── python-api/          # Python backend services (+ api-builder, security-reviewer)
+│   ├── data-pipeline/       # ETL/ELT pipelines (+ pipeline-builder, data-quality-reviewer)
+│   ├── full-stack/          # React/Next.js + Python (+ frontend/backend-builder, ux-reviewer)
+│   ├── claude-tooling/      # Claude skill/hook development (+ skill-builder, skill-reviewer)
+│   └── analysis/            # Notebooks, statistical analysis (+ analysis-builder)
 ├── scripts/                 # Build, diff, smoke-test, validation tooling
-├── tests/                   # 42 pytest tests
+├── tests/                   # 81 pytest tests
 ├── dist/                    # Build output (gitignored)
 ├── docs/                    # Plans, archives, dev-cycle state
 └── .claude/                 # Self-applicable template (dogfooding)
@@ -109,8 +118,8 @@ claude-workflow/
 ```mermaid
 flowchart LR
     A[Read manifest.json] --> B[Validate references]
-    B --> C[Copy core skills/docs/hooks]
-    C --> D[Copy preset skills — overrides core]
+    B --> C[Copy core skills/docs/hooks/agents]
+    C --> D[Copy preset skills/agents — overrides core]
     D --> E[Merge settings JSON — hook arrays append]
     E --> F[Concatenate CLAUDE-base.md + CLAUDE-preset.md]
     F --> G[Apply exclusions]
@@ -197,13 +206,13 @@ Validates YAML frontmatter, phase transitions, artifact completeness, and slug u
 
 ## Presets
 
-| Preset               | Target                                  | Preset Skills                | Key Conventions                            |
-| -------------------- | --------------------------------------- | ---------------------------- | ------------------------------------------ |
-| **`python-api`**     | Lambda, FastAPI, Flask backends         | `deploy`, `setup-pre-commit` | Ruff linting, structured logging           |
-| **`data-pipeline`**  | ETL/ELT, SQL transforms, scheduled jobs | —                            | SQL lowercase, idempotent stages           |
-| **`full-stack`**     | React/Next.js + Python backend          | `setup-pre-commit`           | Dual test runners, fixture patterns        |
-| **`claude-tooling`** | Claude skills, hooks, agents            | —                            | Skill structure requirements               |
-| **`analysis`**       | Notebooks, R/Python scripts             | —                            | Reproducible seeds, documented assumptions |
+| Preset               | Target                                  | Preset Skills                | Preset Agents                                        | Key Conventions                            |
+| -------------------- | --------------------------------------- | ---------------------------- | ---------------------------------------------------- | ------------------------------------------ |
+| **`python-api`**     | Lambda, FastAPI, Flask backends         | `deploy`, `setup-pre-commit` | `api-builder`, `security-reviewer`                   | Ruff linting, structured logging           |
+| **`data-pipeline`**  | ETL/ELT, SQL transforms, scheduled jobs | —                            | `pipeline-builder`, `data-quality-reviewer`          | SQL lowercase, idempotent stages           |
+| **`full-stack`**     | React/Next.js + Python backend          | `setup-pre-commit`           | `frontend-builder`, `backend-builder`, `ux-reviewer` | Dual test runners, fixture patterns        |
+| **`claude-tooling`** | Claude skills, hooks, agents            | —                            | `skill-builder`, `skill-reviewer`                    | Skill structure requirements               |
+| **`analysis`**       | Notebooks, R/Python scripts             | —                            | `analysis-builder`                                   | Reproducible seeds, documented assumptions |
 
 Each preset's `manifest.json` controls which core components to include, which to exclude, and what preset-specific overrides to layer on top.
 
@@ -242,6 +251,51 @@ These ship with every preset:
 | -------------------------- | ------------------- | --------------------------------- |
 | `python-api`               | `/deploy`           | Lambda/service deployment         |
 | `python-api`, `full-stack` | `/setup-pre-commit` | Husky + lint-staged configuration |
+
+---
+
+## Agents
+
+Agents are specialized role definitions (`AGENT.md` with YAML frontmatter) that give subagents domain expertise. Each agent declares a **role** (`implementer` or `reviewer`) and can customize which skills it carries.
+
+### Core Agents
+
+These ship with every preset:
+
+| Agent                 | Role          | Skills            | Description                                      |
+| --------------------- | ------------- | ----------------- | ------------------------------------------------ |
+| **`tdd-implementer`** | `implementer` | `tdd`, `commit`   | Implements features using red-green-refactor TDD |
+| **`code-reviewer`**   | `reviewer`    | `daa-code-review` | Reviews code for quality, structure, correctness |
+
+### Preset Agents
+
+Each preset adds domain-specific agents that override or extend the core set:
+
+| Preset           | Agent                       | Role          | Description                          |
+| ---------------- | --------------------------- | ------------- | ------------------------------------ |
+| `python-api`     | **`api-builder`**           | `implementer` | FastAPI/Flask/Lambda specialist      |
+| `python-api`     | **`security-reviewer`**     | `reviewer`    | Security-focused code review         |
+| `data-pipeline`  | **`pipeline-builder`**      | `implementer` | ETL/ELT pipeline construction        |
+| `data-pipeline`  | **`data-quality-reviewer`** | `reviewer`    | Data validation and quality review   |
+| `full-stack`     | **`frontend-builder`**      | `implementer` | React/Next.js frontend development   |
+| `full-stack`     | **`backend-builder`**       | `implementer` | Python backend API development       |
+| `full-stack`     | **`ux-reviewer`**           | `reviewer`    | UX and accessibility review          |
+| `claude-tooling` | **`skill-builder`**         | `implementer` | Claude skill/hook/MCP development    |
+| `claude-tooling` | **`skill-reviewer`**        | `reviewer`    | Skill correctness and best practices |
+| `analysis`       | **`analysis-builder`**      | `implementer` | Data analysis and notebook workflows |
+
+### Role Defaults
+
+`core/agent-role-defaults.json` defines the base skill set per role. Individual agents can override via `skills.add` and `skills.remove` in their YAML frontmatter.
+
+```json
+{
+  "implementer": { "skills": ["tdd", "commit"] },
+  "reviewer": { "skills": ["daa-code-review"] }
+}
+```
+
+A preset agent with the same name as a core agent **replaces** it (override semantics, not merge).
 
 ---
 
