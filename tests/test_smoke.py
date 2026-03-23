@@ -91,3 +91,57 @@ class TestSmokeTest:
         result = smoke_test(dist)
         assert result.passed is False
         assert any("test-skill/SKILL.md" in e and "nonexistent.md" in e for e in result.errors)
+
+
+class TestSmokeAgents:
+    """Smoke test validates agent integrity."""
+
+    def test_valid_agents_pass(self, tmp_repo: Path) -> None:
+        """Agents with valid frontmatter pass smoke test."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        result = smoke_test(dist)
+        assert result.passed
+
+    def test_missing_frontmatter_fails(self, tmp_repo: Path) -> None:
+        """Agent without frontmatter fails smoke test."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        agent_md = dist / ".claude" / "agents" / "tdd-implementer" / "AGENT.md"
+        agent_md.write_text("# No frontmatter here\n")
+        result = smoke_test(dist)
+        assert not result.passed
+        assert any("frontmatter" in e.lower() or "required" in e.lower() for e in result.errors)
+
+    def test_invalid_role_fails(self, tmp_repo: Path) -> None:
+        """Agent with invalid role fails smoke test."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        agent_md = dist / ".claude" / "agents" / "tdd-implementer" / "AGENT.md"
+        agent_md.write_text("---\nname: tdd-implementer\ndescription: test\nrole: invalid\n---\n")
+        result = smoke_test(dist)
+        assert not result.passed
+        assert any("role" in e for e in result.errors)
+
+    def test_name_mismatch_fails(self, tmp_repo: Path) -> None:
+        """Agent whose name doesn't match directory fails smoke test."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        agent_md = dist / ".claude" / "agents" / "tdd-implementer" / "AGENT.md"
+        agent_md.write_text("---\nname: wrong-name\ndescription: test\nrole: implementer\n---\n")
+        result = smoke_test(dist)
+        assert not result.passed
+        assert any("name" in e and "match" in e for e in result.errors)
+
+    def test_missing_skill_reference_fails(self, tmp_repo: Path) -> None:
+        """Agent referencing nonexistent skill in skills.add fails smoke test."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        agent_md = dist / ".claude" / "agents" / "tdd-implementer" / "AGENT.md"
+        agent_md.write_text(
+            "---\nname: tdd-implementer\ndescription: test\nrole: implementer\n"
+            "skills:\n  add: [nonexistent-skill]\n---\n"
+        )
+        result = smoke_test(dist)
+        assert not result.passed
+        assert any("nonexistent-skill" in e for e in result.errors)

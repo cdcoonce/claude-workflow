@@ -88,10 +88,17 @@ Record each issue URL in the Issues table immediately after creation. See [refer
 
 **Owned by the orchestrator.** Create feature branch `feat/{feature-slug}` (see branch handling in [references/phase-transitions.md](references/phase-transitions.md)).
 
+Before dispatching, resolve agent identities:
+
+1. **Scan** `.claude/agents/` for available agent definitions
+2. **Match implementers:** For each implementation issue, find the `implementer` agent whose `description` best matches the issue's domain
+3. **Match reviewer:** Identify the best-fit `reviewer` agent for code review between dispatches
+4. **Fall back:** When no `.claude/agents/` directory exists or no agents match, dispatch generic subagents with no agent identity
+
 Dispatch one subagent per GitHub issue following `subagent-development` methodology:
 
-- Each subagent invokes the `tdd` skill
-- Code review runs between each subagent dispatch
+- Each subagent invokes the `tdd` skill, using its matched implementer agent identity (if resolved)
+- Code review runs between each subagent dispatch, using the matched reviewer agent (if resolved)
 - State file is updated after each subagent completes (not batched)
 
 Log per-subagent events:

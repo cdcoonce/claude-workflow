@@ -28,6 +28,20 @@ def tmp_repo(tmp_path: Path) -> Path:
     hooks.mkdir()
     (hooks / "protect-files.py").write_text("# protect files hook")
 
+    agents = core / "agents"
+    agents.mkdir()
+    for agent_name, role in [("tdd-implementer", "implementer"), ("code-reviewer", "reviewer")]:
+        agent_dir = agents / agent_name
+        agent_dir.mkdir()
+        (agent_dir / "AGENT.md").write_text(
+            f"---\nname: {agent_name}\ndescription: {agent_name} agent\nrole: {role}\n---\n\n# {agent_name}\n"
+        )
+
+    (core / "agent-role-defaults.json").write_text(json.dumps({
+        "implementer": {"skills": ["tdd", "commit"]},
+        "reviewer": {"skills": ["daa-code-review"]},
+    }))
+
     (core / "CLAUDE-base.md").write_text("# Base CLAUDE\n\n## Methodology\n")
     (core / "settings-base.json").write_text(json.dumps({
         "hooks": {
@@ -66,6 +80,14 @@ def tmp_repo(tmp_path: Path) -> Path:
     preset_hooks = preset / "hooks"
     preset_hooks.mkdir()
     (preset_hooks / "post-edit-lint.py").write_text("# lint hook")
+
+    preset_agents = preset / "agents"
+    preset_agents.mkdir()
+    api_builder = preset_agents / "api-builder"
+    api_builder.mkdir()
+    (api_builder / "AGENT.md").write_text(
+        "---\nname: api-builder\ndescription: Builds API endpoints\nrole: implementer\n---\n\n# API Builder\n"
+    )
 
     (tmp_path / "dist").mkdir()
 
