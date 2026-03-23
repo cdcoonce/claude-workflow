@@ -1,4 +1,3 @@
-
 ## Testing
 
 - Run tests: `uv run pytest`
@@ -11,7 +10,3 @@
 ### `/deploy`
 
 **Trigger when:** user asks to deploy, redeploy, push to Lambda, update the service, or after updating lambda_function.py.
-
-### `/setup-pre-commit`
-
-**Trigger when:** user wants to add pre-commit hooks, set up Husky, or configure lint-staged.

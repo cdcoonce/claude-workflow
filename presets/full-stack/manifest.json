@@ -7,6 +7,6 @@
     "hooks": ["protect-files.py"]
   },
   "exclude": [],
-  "preset_skills": ["setup-pre-commit"],
+  "preset_skills": [],
   "preset_hooks": ["post-edit-lint.py"]
 }
