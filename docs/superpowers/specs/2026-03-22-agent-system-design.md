@@ -5,7 +5,7 @@
 
 ## Overview
 
-Add specialized agents as a first-class build artifact to the template system. Agents are domain-expert roles (`.claude/agents/*.md`) that orchestrating skills dispatch programmatically — implementer agents write code, reviewer agents check it. Projects built from presets ship with pre-configured agents ready for use by dev-cycle, subagent-development, and parallel-agents workflows.
+Add specialized agents as a first-class build artifact to the template system. Agents are domain-expert roles (`.claude/agents/*.md`) that orchestrate skills and get dispatched programmatically — implementer agents write code, reviewer agents check it. Projects built from presets ship with pre-configured agents ready for use by dev-cycle, subagent-development, and parallel-agents workflows.
 
 ## Key Decisions
 
@@ -23,7 +23,7 @@ Add specialized agents as a first-class build artifact to the template system. A
 
 ### Source layout
 
-```
+```text
 core/
 ├── agents/
 │   ├── code-reviewer/
@@ -47,7 +47,7 @@ presets/<preset-name>/
 
 ### Build output
 
-```
+```text
 dist/<preset>/.claude/
 ├── agents/
 │   ├── <core-agents>/
@@ -117,9 +117,17 @@ Defined in `core/agent-role-defaults.json`:
 
 Copied to `dist/<preset>/.claude/agent-role-defaults.json`. Orchestrators read this to resolve an agent's effective skill set:
 
-```
+```text
 effective_skills = role_defaults[agent.role].skills + agent.skills.add - agent.skills.remove
 ```
+
+### Role defaults are universal
+
+Role defaults are **not customizable per preset**. The per-agent `skills.add` / `skills.remove` fields are the escape hatch for preset-specific needs. This keeps the system simple — one file to understand, not a merge chain.
+
+### Skill reference validation
+
+Role defaults and agent `skills.add` fields are **advisory at build time** — the build pipeline does not validate that referenced skills exist in the output. The **smoke tests** catch unresolved skill references post-build, consistent with how other cross-references are validated today.
 
 ## Manifest Schema
 
@@ -144,8 +152,9 @@ The manifest gains an `agents` field:
 
 - `"agents": "all"` copies all core agents
 - A list like `["code-reviewer", "tdd-implementer"]` copies only those
-- `preset_agents` lists preset-specific agents to include
-- `exclude` can remove agents from output
+- **If `core.agents` is omitted**, it defaults to `"all"` — matching the behavior of `core.skills` and `core.docs`. Existing manifests will ship all core agents without modification
+- `preset_agents` lists preset-specific agents to include. Defaults to `[]` if omitted
+- `exclude` can remove agents from output using the path format `agents/<agent-name>` (e.g., `"exclude": ["agents/code-reviewer"]`), consistent with the existing `skills/<skill-name>` convention
 
 ## Build Pipeline Changes
 
@@ -172,12 +181,12 @@ When an orchestrator dispatches a subagent:
 
 1. **Scan** `.claude/agents/` — read all `AGENT.md` files, extract `name`, `description`, `role`
 2. **Filter by role** — `implementer` for implementation tasks, `reviewer` for review tasks
-3. **Match by description** — compare task/issue content against agent descriptions, pick best match
-4. **Fallback** — if no agent matches well, dispatch a generic subagent (today's behavior)
+3. **Match by description** — the orchestrator reads all filtered agent descriptions and uses its judgment to select the best fit based on relevance to the task/issue content. This is Claude's reasoning, not keyword matching. If two agents seem equally relevant, prefer the more specialized one over the generic core agent
+4. **Fallback** — if no agent matches well (or no agents exist in `.claude/agents/`), dispatch a generic subagent with no agent identity (today's behavior). The system never forces a bad match
 
 ### Dispatch prompt construction
 
-```
+```text
 You are the {agent-name} agent.
 
 {contents of AGENT.md body}
@@ -266,6 +275,7 @@ The orchestrator injects the agent's system prompt and resolved skill list into 
 - Every `AGENT.md` has required frontmatter: `name`, `description`, `role`
 - `role` is either `implementer` or `reviewer`
 - Skills in `add` exist in the project's skill set
+- Agent frontmatter `name` matches its directory name
 
 ### No runtime/integration tests
 
