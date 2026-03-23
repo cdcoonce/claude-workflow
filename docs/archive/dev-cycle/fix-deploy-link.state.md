@@ -1,8 +1,8 @@
 ---
 schema_version: 1
 feature: fix-deploy-link
-status: in_progress
-current_phase: implement
+status: completed
+current_phase: pr
 created: 2026-03-22
 updated: 2026-03-22
 branch:
@@ -16,14 +16,14 @@ branch:
 | plan        | completed | docs/plans/fix-deploy-link.md                         |
 | ceo_review  | completed | HOLD SCOPE — approved, no changes needed              |
 | issues      | completed | #23 (pre-existing)                                    |
-| implement   | pending   | —                                                     |
-| code_review | pending   | —                                                     |
-| pr          | pending   | —                                                     |
+| implement   | completed | skill-builder agent dispatched                        |
+| code_review | completed | skill-reviewer: clean, no issues                      |
+| pr          | completed | https://github.com/cdcoonce/claude-workflow/pull/42   |
 
 ## Issues
 
 | Plan Slice | GitHub Issue | Status |
-| Phase 1: Fix broken refs | #23 | open |
+| Phase 1: Fix broken refs | #23 | closed |
 
 ## Log
 
