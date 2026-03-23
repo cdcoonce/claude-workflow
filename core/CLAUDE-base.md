@@ -116,6 +116,12 @@ Skills live in `.claude/skills/`. Each `SKILL.md` defines an invocable skill wit
 
 **Trigger when:** user wants to create, write, or build a new Claude Code skill.
 
+### `/security-review`
+
+**Trigger when:** the user asks for "security review", "find vulnerabilities", "check for security issues", "audit security", "OWASP review", or to review code for injection, XSS, authentication, authorization, or cryptography issues.
+**Output:** Save markdown report to `docs/security-reviews/YYYY-MM-DD-<component>.md`.
+**References:** [.claude/skills/security-review/references/](.claude/skills/security-review/references/) — OWASP vulnerability categories, Python patterns, Docker and GitLab CI security.
+
 ## Project Context
 
 See [.claude/docs/project.md](.claude/docs/project.md) for project-specific details (tech stack, architecture, test markers).
