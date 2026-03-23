@@ -1,13 +1,14 @@
 # Claude Workflow
 
-![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white) ![Claude Code](https://img.shields.io/badge/Claude_Code-Opus_4.6-6B4FBB?logo=anthropic&logoColor=white) ![pytest](https://img.shields.io/badge/Tests-pytest-0A9EDC?logo=pytest&logoColor=white) ![uv](https://img.shields.io/badge/Package_Manager-uv-DE5FE9) ![Hatchling](https://img.shields.io/badge/Build-Hatchling-F5A623)
+![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white) ![Claude Code](https://img.shields.io/badge/Claude_Code-Opus_4.6-6B4FBB?logo=anthropic&logoColor=white) ![pytest](https://img.shields.io/badge/Tests-pytest-0A9EDC?logo=pytest&logoColor=white) ![uv](https://img.shields.io/badge/Package_Manager-uv-DE5FE9) ![Hatchling](https://img.shields.io/badge/Build-Hatchling-F5A623) ![GitLab](https://img.shields.io/badge/GitLab-glab_CLI-FC6D26?logo=gitlab&logoColor=white)
 
-A **template system for Claude Code configurations**. Produces ready-to-copy `.claude/` directories and `CLAUDE.md` files for new projects, assembled from a universal skill library and project-type presets.
+A **template system for Claude Code configurations** shared across the team. Build a preset for your project type, copy the output into your repo, and get a fully configured Claude Code environment with 19 skills, methodology docs, agents, and hooks — ready to go in seconds.
 
 ---
 
 ## Table of Contents
 
+- [Quick Start: Copy a Preset to Your Project](#quick-start-copy-a-preset-to-your-project)
 - [Overview](#overview)
 - [Architecture](#architecture)
   - [High-Level Architecture](#high-level-architecture)
@@ -24,7 +25,7 @@ A **template system for Claude Code configurations**. Produces ready-to-copy `.c
   - [Validate Dev-Cycle State Files](#validate-dev-cycle-state-files)
 - [Presets](#presets)
 - [Skills](#skills)
-  - [Universal Skills (18)](#universal-skills-18)
+  - [Universal Skills (19)](#universal-skills-19)
   - [Preset-Specific Skills](#preset-specific-skills)
 - [Agents](#agents)
   - [Core Agents](#core-agents)
@@ -36,6 +37,38 @@ A **template system for Claude Code configurations**. Produces ready-to-copy `.c
   - [State Management](#state-management)
 - [Troubleshooting](#troubleshooting)
 - [Contact](#contact)
+- [License](#license)
+
+---
+
+## Quick Start: Copy a Preset to Your Project
+
+Already have the repo cloned? Pick a preset and go:
+
+```bash
+# 1. Build the preset that matches your project type
+uv run python -m scripts.build_preset python-api
+
+# 2. Copy the output into your project
+cp -r dist/python-api/.claude/ /path/to/your-project/.claude/
+cp dist/python-api/CLAUDE.md /path/to/your-project/CLAUDE.md
+
+# 3. Done — Claude Code now has 19 skills, agents, hooks, and methodology docs
+```
+
+```mermaid
+flowchart LR
+    A["Pick a preset"] --> B["Build it"]
+    B --> C["Copy .claude/ + CLAUDE.md"]
+    C --> D["Start using Claude Code"]
+
+    style A fill:#f5f5f5,stroke:#333
+    style D fill:#e8f5e9,stroke:#2e7d32
+```
+
+**Available presets:** `python-api` | `data-pipeline` | `full-stack` | `claude-tooling` | `analysis`
+
+See [Presets](#presets) for details on what each one includes.
 
 ---
 
@@ -45,7 +78,7 @@ Every new project that uses **Claude Code** needs a `.claude/` directory with sk
 
 **Claude Workflow** solves this with a layered template system:
 
-1. **Core** — 18 universal skills, 2 agents, 4 methodology docs, and a file-protection hook that apply to every project
+1. **Core** — 19 universal skills, 2 agents, 4 methodology docs, and a file-protection hook that apply to every project
 2. **Presets** — Named configurations (e.g., `python-api`, `full-stack`) that add project-type-specific skills, hooks, and agents
 3. **Build tooling** — Python scripts that assemble core + preset into a ready-to-copy `dist/` output
 
@@ -64,7 +97,7 @@ graph TD
     BUILD --> DIST[dist/preset-name/]
 
     subgraph "core/"
-        SKILLS_CORE[skills/ — 18 universal]
+        SKILLS_CORE[skills/ — 19 universal]
         DOCS[docs/ — 4 methodology]
         HOOKS_CORE[hooks/ — protect-files.py]
         AGENTS_CORE[agents/ — 2 universal]
@@ -99,7 +132,7 @@ claude-workflow/
 │   ├── docs/                # TDD, root-cause tracing, subagent, parallel agents
 │   ├── hooks/               # File protection hook
 │   ├── agent-role-defaults.json  # Role → skill mapping
-│   └── skills/              # 18 universal skills
+│   └── skills/              # 19 universal skills
 ├── presets/                  # Project-type configurations
 │   ├── python-api/          # Python backend services (+ api-builder, security-reviewer)
 │   ├── data-pipeline/       # ETL/ELT pipelines (+ pipeline-builder, data-quality-reviewer)
@@ -115,6 +148,8 @@ claude-workflow/
 
 ### Build Pipeline
 
+The build script assembles a complete `.claude/` directory in 11 steps:
+
 ```mermaid
 flowchart LR
     A[Read manifest.json] --> B[Validate references]
@@ -126,6 +161,12 @@ flowchart LR
     G --> H[Write .template-version]
     H --> I["dist/{preset}/.claude/ + CLAUDE.md"]
 ```
+
+Key design decisions:
+- **Override semantics** — A preset skill or agent with the same name as a core one **replaces** it entirely
+- **Settings merge** — Base and preset JSON are shallow-merged; hook arrays are appended, not replaced
+- **Fail-fast validation** — All manifest references are checked upfront before any files are copied
+- **Path containment safety** — Exclusion paths are resolved and verified to prevent directory traversal
 
 ---
 
@@ -140,7 +181,7 @@ flowchart LR
 ### Installation
 
 ```bash
-git clone https://gitlab.com/cdcoonce/claude-workflow.git
+git clone https://gitlab.com/Charles.Coonce/claude-workflow.git
 cd claude-workflow
 uv sync
 ```
@@ -148,7 +189,7 @@ uv sync
 ### Running Tests
 
 ```bash
-# Run all tests
+# Run all 81 tests
 uv run pytest
 
 # Run with coverage
@@ -182,7 +223,7 @@ Check how a project's `.claude/` directory has drifted from the template:
 uv run python -m scripts.diff_preset python-api /path/to/your-project
 ```
 
-Reports modified, added, and removed files relative to the preset.
+Reports modified, added, and removed files relative to the preset. Useful for catching accidental changes or deciding whether to pull in template updates.
 
 ### Smoke Test a Built Preset
 
@@ -192,7 +233,7 @@ Validate internal consistency after building:
 uv run python -m scripts.smoke_test python-api
 ```
 
-Checks that every skill referenced in `CLAUDE.md` has a directory, every hook in `settings.json` exists, and every doc path resolves.
+Checks that every skill referenced in `CLAUDE.md` has a directory, every hook in `settings.json` exists, every doc path resolves, and all agent frontmatter is valid.
 
 ### Validate Dev-Cycle State Files
 
@@ -200,7 +241,7 @@ Checks that every skill referenced in `CLAUDE.md` has a directory, every hook in
 uv run python -m scripts.dev_cycle_validate docs/dev-cycle/
 ```
 
-Validates YAML frontmatter, phase transitions, artifact completeness, and slug uniqueness.
+Validates YAML frontmatter, phase transitions, artifact completeness, and slug uniqueness across all `*.state.md` files.
 
 ---
 
@@ -214,20 +255,20 @@ Validates YAML frontmatter, phase transitions, artifact completeness, and slug u
 | **`claude-tooling`** | Claude skills, hooks, agents            | —                            | `skill-builder`, `skill-reviewer`                    | Skill structure requirements               |
 | **`analysis`**       | Notebooks, R/Python scripts             | —                            | `analysis-builder`                                   | Reproducible seeds, documented assumptions |
 
-Each preset's `manifest.json` controls which core components to include, which to exclude, and what preset-specific overrides to layer on top.
+Each preset's `manifest.json` controls which core components to include, which to exclude, and what preset-specific overrides to layer on top. All presets inherit the full set of 19 core skills, 2 core agents, 4 methodology docs, and the file-protection hook.
 
 ---
 
 ## Skills
 
-### Universal Skills (18)
+### Universal Skills (19)
 
 These ship with every preset:
 
 | Skill                            | Trigger                             | Description                                   |
 | -------------------------------- | ----------------------------------- | --------------------------------------------- |
-| `/daa-code-review`               | "code review", "quality check"      | Python, Markdown, and Mermaid analysis        |
 | `/commit`                        | "commit", "save work"               | Conventional commit style enforcement         |
+| `/daa-code-review`               | "code review", "quality check"      | Python, Markdown, and Mermaid analysis        |
 | `/design-an-interface`           | "design it twice", API design       | Parallel sub-agents for interface comparison  |
 | `/dev-cycle`                     | "dev cycle", "development workflow" | Full 7-phase GitLab-issues-driven pipeline    |
 | `/git-guardrails-claude-code`    | git safety, block destructive ops   | PreToolUse hook for dangerous git commands    |
@@ -240,6 +281,7 @@ These ship with every preset:
 | `/project-context`               | "update project.md"                 | Generate `.claude/docs/project.md`            |
 | `/readme-generator`              | "README", "document this project"   | Codebase analysis + README generation         |
 | `/request-refactor-plan`         | "plan a refactor"                   | Tiny-commit refactor RFC as GitLab issue      |
+| `/setup-pre-commit`              | "set up pre-commit"                 | Pre-commit hooks for linting and formatting   |
 | `/tdd`                           | "red-green-refactor", TDD           | Test-driven development loop                  |
 | `/triage-issue`                  | "triage", bug report                | Root-cause investigation + issue creation     |
 | `/write-a-prd`                   | "write a PRD"                       | Interview-driven PRD as GitLab issue          |
@@ -247,10 +289,9 @@ These ship with every preset:
 
 ### Preset-Specific Skills
 
-| Preset                     | Skill               | Description                       |
-| -------------------------- | ------------------- | --------------------------------- |
-| `python-api`               | `/deploy`           | Lambda/service deployment         |
-| `python-api`, `full-stack` | `/setup-pre-commit` | Husky + lint-staged configuration |
+| Preset       | Skill               | Description                       |
+| ------------ | ------------------- | --------------------------------- |
+| `python-api` | `/deploy`           | Lambda/service deployment         |
 
 ---
 
@@ -362,4 +403,12 @@ Every phase is mandatory. Each phase gates on a specific artifact (issue URL, pl
 
 For questions or support, contact:
 
-- **Charles Coonce** — charlescoonce@gmail.com
+- **Charles Coonce** — Charles.Coonce@clearwayenergy.com
+
+---
+
+## License
+
+**Internal Use Only — Clearway Energy**
+
+Proprietary software. All rights reserved.
