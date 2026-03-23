@@ -2,10 +2,10 @@
 schema_version: 1
 feature: setup-pre-commit
 status: in_progress
-current_phase: implement
+current_phase: code_review
 created: 2026-03-22
 updated: 2026-03-22
-branch:
+branch: feat/setup-pre-commit
 ---
 
 ## Artifacts
@@ -16,17 +16,17 @@ branch:
 | plan        | completed | docs/plans/setup-pre-commit.md                        |
 | ceo_review  | completed | CEO review (HOLD SCOPE) — 3 improvements applied      |
 | issues      | completed | #29, #30, #31, #32                                    |
-| implement   | pending   | —                                                     |
+| implement   | completed | feat/setup-pre-commit                                 |
 | code_review | pending   | —                                                     |
 | pr          | pending   | —                                                     |
 
 ## Issues
 
 | Plan Slice | GitHub Issue | Status |
-| Phase 1: Core skill + Python path | #29 | open |
-| Phase 2: JS/TS path | #30 | open |
-| Phase 3: Both-languages mode | #31 | open |
-| Phase 4: Preset cleanup | #32 | open |
+| Phase 1: Core skill + Python path | #29 | closed |
+| Phase 2: JS/TS path | #30 | closed |
+| Phase 3: Both-languages mode | #31 | closed |
+| Phase 4: Preset cleanup | #32 | closed |
 
 ## Log
 
@@ -38,3 +38,8 @@ branch:
 - 2026-03-22: Starting Phase 4 (issues)
 - 2026-03-22: Issues created — #29, #30, #31, #32
 - 2026-03-22: Starting Phase 5 (implement)
+- 2026-03-22: Implemented #29 + #30 in parallel (SKILL.md, python-setup.md, js-setup.md)
+- 2026-03-22: #31 covered by both-languages section in python-setup.md
+- 2026-03-22: Implemented #32 — removed preset skills, updated manifests/docs
+- 2026-03-22: All 48 tests pass, full-stack smoke test passes
+- 2026-03-22: Starting Phase 6 (code review)
