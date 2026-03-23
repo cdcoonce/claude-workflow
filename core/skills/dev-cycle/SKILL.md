@@ -1,15 +1,15 @@
 ---
 name: dev-cycle
 description: >
-  Orchestrate the full GitHub-issues-driven development lifecycle.
-  7-phase pipeline from brainstorm through PR with state tracking
+  Orchestrate the full GitLab-issues-driven development lifecycle.
+  7-phase pipeline from brainstorm through MR with state tracking
   and cross-conversation resume. Use when user says "dev cycle",
   "development workflow", "full development pipeline", or invokes /dev-cycle.
 ---
 
 # Dev Cycle Orchestrator
 
-Orchestrate the full development lifecycle: brainstorm → plan → review → issues → implement → code review → PR.
+Orchestrate the full development lifecycle: brainstorm → plan → review → issues → implement → code review → MR.
 
 **Disambiguation:** If the user only wants a PRD, route to `/write-a-prd`. If they only want a plan, route to `/prd-to-plan`. This skill is for the full end-to-end lifecycle.
 
@@ -22,10 +22,10 @@ Every phase is mandatory. No phase can be skipped.
 | 1   | **Brainstorm**  | `write-a-prd`                                          | Issue URL recorded                |
 | 2   | **Plan**        | `prd-to-plan`                                          | Plan file exists at `docs/plans/` |
 | 3   | **CEO Review**  | `plan-ceo-review` (recommend HOLD SCOPE)               | Review complete, user approves    |
-| 4   | **Issues**      | Orchestrator (plan slices → GitHub issues)             | All issue URLs recorded           |
+| 4   | **Issues**      | Orchestrator (plan slices → GitLab issues)             | All issue URLs recorded           |
 | 5   | **Implement**   | Orchestrator (`tdd` per issue, `subagent-development`) | All issues resolved, tests pass   |
 | 6   | **Code Review** | `daa-code-review`                                      | Clean review                      |
-| 7   | **PR**          | `commit` + `github-cli`                                | PR URL recorded                   |
+| 7   | **MR**          | `commit` + `gitlab-cli`                                | MR URL recorded                   |
 
 ## Re-entry Logic
 
@@ -52,10 +52,10 @@ When creating a new state file, check `docs/dev-cycle/` for existing slugs. If t
 
 Before continuing, load ALL referenced artifacts:
 
-- **Brainstorm:** `gh issue view` the PRD issue
+- **Brainstorm:** `glab issue view` the PRD issue
 - **Plan:** Read plan file from disk
 - **CEO Review:** Read the plan file (includes review revisions)
-- **Issues:** `gh issue view` each implementation issue
+- **Issues:** `glab issue view` each implementation issue
 - **Implement:** Check git status on feature branch, review closed issues
 
 Present summary: "Resuming **{feature}** at **{phase}**. Here's where we left off: ..."
@@ -64,7 +64,7 @@ Present summary: "Resuming **{feature}** at **{phase}**. Here's where we left of
 
 ### Phase 1: Brainstorm
 
-Invoke `write-a-prd`. Trust the skill's internal flow (interview → PRD → GitHub issue). Record the issue URL in the state file.
+Invoke `write-a-prd`. Trust the skill's internal flow (interview → PRD → GitLab issue). Record the issue URL in the state file.
 
 ### Phase 2: Plan
 
@@ -76,7 +76,7 @@ Pass plan file path to `plan-ceo-review`. Recommend HOLD SCOPE mode but let the 
 
 ### Phase 4: Issues
 
-**Owned by the orchestrator.** Read the plan's vertical slices. For each slice, create a GitHub issue using `gh issue create` that:
+**Owned by the orchestrator.** Read the plan's vertical slices. For each slice, create a GitLab issue using `glab issue create` that:
 
 - References the PRD issue
 - Includes acceptance criteria from the plan
@@ -95,7 +95,7 @@ Before dispatching, resolve agent identities:
 3. **Match reviewer:** Identify the best-fit `reviewer` agent for code review between dispatches
 4. **Fall back:** When no `.claude/agents/` directory exists or no agents match, dispatch generic subagents with no agent identity
 
-Dispatch one subagent per GitHub issue following `subagent-development` methodology:
+Dispatch one subagent per GitLab issue following `subagent-development` methodology:
 
 - Each subagent invokes the `tdd` skill, using its matched implementer agent identity (if resolved)
 - Code review runs between each subagent dispatch, using the matched reviewer agent (if resolved)
@@ -113,9 +113,9 @@ Invoke `daa-code-review` against all changed files on the feature branch. If blo
 
 If architectural issues requiring plan rework → trigger backwards transition to Phase 2.
 
-### Phase 7: PR
+### Phase 7: MR
 
-Check for conflicts with default branch first. Invoke `commit` for conventional commit, then `github-cli` to open PR. Record PR URL, set `status: completed`. Then run the archival step (see Archival below).
+Check for conflicts with default branch first. Invoke `commit` for conventional commit, then `gitlab-cli` to open MR. Record MR URL, set `status: completed`. Then run the archival step (see Archival below).
 
 ## State File
 
@@ -133,7 +133,7 @@ See [references/phase-transitions.md](references/phase-transitions.md) for:
 
 - **Phases 1–4:** Run on current branch (documentation only)
 - **Phase 5:** Creates `feat/{feature-slug}` branch
-- **Phase 7:** PRs to the default branch (detected via `gh repo view --json defaultBranchRef`)
+- **Phase 7:** MRs to the default branch (detected via `glab repo view --output json`)
 - **Resume at Phase 5+:** Check out feature branch if not already on it
 
 ## Archival
@@ -147,5 +147,5 @@ When a feature reaches a terminal state (`completed` or `abandoned`), archive it
 
 Archival runs automatically:
 
-- At the end of Phase 7 (after PR URL is recorded and status is set to `completed`)
+- At the end of Phase 7 (after MR URL is recorded and status is set to `completed`)
 - On feature abandonment (after status is set to `abandoned`)

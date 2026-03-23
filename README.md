@@ -140,7 +140,7 @@ flowchart LR
 ### Installation
 
 ```bash
-git clone https://github.com/cdcoonce/claude-workflow.git
+git clone https://gitlab.com/cdcoonce/claude-workflow.git
 cd claude-workflow
 uv sync
 ```
@@ -229,20 +229,20 @@ These ship with every preset:
 | `/daa-code-review`               | "code review", "quality check"      | Python, Markdown, and Mermaid analysis        |
 | `/commit`                        | "commit", "save work"               | Conventional commit style enforcement         |
 | `/design-an-interface`           | "design it twice", API design       | Parallel sub-agents for interface comparison  |
-| `/dev-cycle`                     | "dev cycle", "development workflow" | Full 7-phase GitHub-issues-driven pipeline    |
+| `/dev-cycle`                     | "dev cycle", "development workflow" | Full 7-phase GitLab-issues-driven pipeline    |
 | `/git-guardrails-claude-code`    | git safety, block destructive ops   | PreToolUse hook for dangerous git commands    |
-| `/github-cli`                    | GitHub operations                   | Issues, PRs, branches, reviews via `gh`       |
+| `/gitlab-cli`                    | GitLab operations                   | Issues, MRs, branches, reviews via `glab`     |
 | `/grill-me`                      | "grill me", stress-test a plan      | Systematic interrogation via AskUserQuestion  |
 | `/improve-codebase-architecture` | architecture improvement            | Deep-module refactoring opportunities         |
 | `/plan-ceo-review`               | "CEO review", "mega review"         | 3-mode plan review (expand/hold/reduce scope) |
-| `/prd-to-issues`                 | "convert PRD to issues"             | Vertical-slice GitHub issue creation          |
+| `/prd-to-issues`                 | "convert PRD to issues"             | Vertical-slice GitLab issue creation          |
 | `/prd-to-plan`                   | "break down PRD", "tracer bullets"  | Multi-phase implementation planning           |
 | `/project-context`               | "update project.md"                 | Generate `.claude/docs/project.md`            |
 | `/readme-generator`              | "README", "document this project"   | Codebase analysis + README generation         |
-| `/request-refactor-plan`         | "plan a refactor"                   | Tiny-commit refactor RFC as GitHub issue      |
+| `/request-refactor-plan`         | "plan a refactor"                   | Tiny-commit refactor RFC as GitLab issue      |
 | `/tdd`                           | "red-green-refactor", TDD           | Test-driven development loop                  |
 | `/triage-issue`                  | "triage", bug report                | Root-cause investigation + issue creation     |
-| `/write-a-prd`                   | "write a PRD"                       | Interview-driven PRD as GitHub issue          |
+| `/write-a-prd`                   | "write a PRD"                       | Interview-driven PRD as GitLab issue          |
 | `/write-a-skill`                 | "create a skill"                    | Skill authoring with proper structure         |
 
 ### Preset-Specific Skills
@@ -314,7 +314,7 @@ Four methodology documents in `core/docs/` define how Claude Code agents should 
 
 ## Dev-Cycle Orchestrator
 
-The `/dev-cycle` skill orchestrates end-to-end feature development through GitHub issues.
+The `/dev-cycle` skill orchestrates end-to-end feature development through GitLab issues.
 
 ### 7-Phase Pipeline
 
@@ -325,14 +325,14 @@ flowchart LR
     R --> I[Issues]
     I --> IM[Implement]
     IM --> CR[Code Review]
-    CR --> PR[PR]
+    CR --> MR[MR]
 
     B -.- PRD["write-a-prd"]
     P -.- PTP["prd-to-plan"]
     R -.- CEO["plan-ceo-review"]
     IM -.- TDD["tdd + subagents"]
     CR -.- REV["daa-code-review"]
-    PR -.- GH["commit + github-cli"]
+    MR -.- GL["commit + gitlab-cli"]
 ```
 
 Every phase is mandatory. Each phase gates on a specific artifact (issue URL, plan file, approval, etc.) before advancing.
