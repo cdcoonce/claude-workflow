@@ -8,5 +8,6 @@
   },
   "exclude": [],
   "preset_skills": [],
-  "preset_hooks": ["post-edit-lint.py"]
+  "preset_hooks": ["post-edit-lint.py"],
+  "preset_agents": ["pipeline-builder", "data-quality-reviewer"]
 }

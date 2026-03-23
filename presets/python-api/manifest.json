@@ -8,5 +8,6 @@
   },
   "exclude": [],
   "preset_skills": ["deploy"],
-  "preset_hooks": ["post-edit-lint.py"]
+  "preset_hooks": ["post-edit-lint.py"],
+  "preset_agents": ["api-builder", "security-reviewer"]
 }

@@ -31,7 +31,15 @@ Group failures by what's broken:
 
 Each domain is independent—fixing validation doesn't affect connection pooling.
 
-### 2. Create Focused Agent Tasks
+### 2. Agent Discovery
+
+Scan `.claude/agents/` once before dispatching to resolve agent identities:
+
+- **One scan, multiple matches:** Each parallel task can map to a different agent based on its domain (e.g., a validation task may match a data-focused agent, while an API task matches a backend agent)
+- **Independent matching:** Match each task to its best-fit agent independently — filter by `role`, then rank by `description` specificity
+- **No agents required:** When no `.claude/agents/` directory exists, skip discovery and dispatch all tasks as generic agents
+
+### 3. Create Focused Agent Tasks
 
 Each agent gets:
 
@@ -40,7 +48,7 @@ Each agent gets:
 - **Constraints:** Don't change other code
 - **Expected output:** Summary of what you found and fixed
 
-### 3. Dispatch in Parallel
+### 4. Dispatch in Parallel
 
 ```python
 # In Claude Code environment
@@ -50,7 +58,7 @@ Task("Fix tests/test_db_pool.py failures")
 # All three run concurrently
 ```
 
-### 4. Review and Integrate
+### 5. Review and Integrate
 
 When agents return:
 

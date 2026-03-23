@@ -22,14 +22,30 @@ Execute a plan by dispatching a fresh subagent per task, with code review after 
 
 Read plan file, create TodoWrite with all tasks.
 
-### 2. Execute Task with Subagent
+### 2. Agent Discovery
 
-For each task, dispatch fresh subagent:
+Before dispatching each subagent, resolve the best-fit agent identity:
+
+1. **Scan** `.claude/agents/` for agent definition files
+2. **Filter by role:** Use `implementer` agents for implementation tasks, `reviewer` agents for review tasks
+3. **Match by domain:** Compare each agent's `description` to the task domain. Prefer the most specific match
+4. **Select:** If multiple agents match, pick the one whose description most closely fits the task. If none match, fall back to a generic subagent with no agent identity
+
+> **Backward compatibility:** When no `.claude/agents/` directory exists, skip agent discovery and dispatch a generic subagent.
+
+### 3. Execute Task with Subagent
+
+For each task, dispatch fresh subagent with resolved agent identity:
 
 ```
 Task tool (general-purpose):
   description: "Implement Task N: [task name]"
   prompt: |
+    # Agent Identity (injected from agent discovery, omit if generic)
+    You are [{agent.name}]: {agent.description}
+    Your skills: {agent.resolved_skills}
+
+    # Task
     You are implementing Task N from [plan-file].
 
     Read that task carefully. Your job is to:
@@ -44,7 +60,7 @@ Task tool (general-purpose):
 
 **Subagent reports back** with summary of work.
 
-### 3. Review Subagent's Work
+### 4. Review Subagent's Work
 
 Dispatch code-reviewer subagent:
 
@@ -58,7 +74,7 @@ Task tool (code-reviewer):
 
 **Code reviewer returns:** Strengths, Issues (Critical/Important/Minor), Assessment
 
-### 4. Apply Review Feedback
+### 5. Apply Review Feedback
 
 **If issues found:**
 
@@ -72,13 +88,13 @@ Task tool (code-reviewer):
 "Fix issues from code review: [list issues]"
 ```
 
-### 5. Mark Complete, Next Task
+### 6. Mark Complete, Next Task
 
 - Mark task as completed in TodoWrite
 - Move to next task
-- Repeat steps 2-5
+- Repeat steps 3-6
 
-### 6. Final Review
+### 7. Final Review
 
 After all tasks complete, dispatch final code-reviewer:
 
@@ -86,7 +102,7 @@ After all tasks complete, dispatch final code-reviewer:
 - Checks all plan requirements met
 - Validates overall architecture
 
-### 7. Complete Development
+### 8. Complete Development
 
 After final review passes:
 

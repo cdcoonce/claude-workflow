@@ -6,10 +6,12 @@ Build order (D16):
 3. Copy core hooks listed in manifest -> dist/<preset>/.claude/hooks/
 4. Copy preset-specific skills (overrides core on collision, D17)
 5. Copy preset-specific hooks
-6. Merge settings-base.json + settings-preset.json -> .claude/settings.json (D13)
-7. Concatenate CLAUDE-base.md + CLAUDE-preset.md -> CLAUDE.md (D12)
-8. Apply exclusions from manifest (D11)
-9. Write .template-version (D25)
+6. Copy core agents -> dist/<preset>/.claude/agents/
+7. Copy agent-role-defaults.json -> dist/<preset>/.claude/
+8. Merge settings-base.json + settings-preset.json -> .claude/settings.json (D13)
+9. Concatenate CLAUDE-base.md + CLAUDE-preset.md -> CLAUDE.md (D12)
+10. Apply exclusions from manifest (D11)
+11. Write .template-version (D25)
 """
 
 from __future__ import annotations
@@ -59,12 +61,24 @@ def _validate_manifest(
         if not (preset_path / "hooks" / hook_name).exists():
             errors.append(f"Preset hook not found: {hook_name}")
 
+    for agent_name in manifest.get("preset_agents", []):
+        if not (preset_path / "agents" / agent_name).exists():
+            errors.append(f"Preset agent not found: {agent_name}")
+
     preset_skill_names = {f"skills/{s}" for s in manifest.get("preset_skills", [])}
     excluded = set(manifest.get("exclude", []))
     conflicts = preset_skill_names & excluded
     if conflicts:
         errors.append(
             f"Skills in both preset_skills and exclude: {', '.join(conflicts)}. "
+            f"A preset override cannot also be excluded."
+        )
+
+    preset_agent_names = {f"agents/{a}" for a in manifest.get("preset_agents", [])}
+    agent_conflicts = preset_agent_names & excluded
+    if agent_conflicts:
+        errors.append(
+            f"Agents in both preset_agents and exclude: {', '.join(agent_conflicts)}. "
             f"A preset override cannot also be excluded."
         )
 
@@ -145,6 +159,35 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     for hook_name in manifest.get("preset_hooks", []):
         shutil.copy2(preset_path / "hooks" / hook_name, hooks_dir / hook_name)
 
+    # Copy core agents
+    core_agents_dir = core_path / "agents"
+    agents_setting = manifest["core"].get("agents", "all")
+    if core_agents_dir.exists():
+        dest_agents = claude_dir / "agents"
+        if agents_setting == "all":
+            shutil.copytree(core_agents_dir, dest_agents)
+        elif isinstance(agents_setting, list):
+            dest_agents.mkdir(parents=True, exist_ok=True)
+            for agent_name in agents_setting:
+                src = core_agents_dir / agent_name
+                if src.exists():
+                    shutil.copytree(src, dest_agents / agent_name)
+
+    # Copy preset agents (override core on collision)
+    for agent_name in manifest.get("preset_agents", []):
+        src = preset_path / "agents" / agent_name
+        dest = claude_dir / "agents" / agent_name
+        if dest.exists():
+            print(f"WARNING: preset agent '{agent_name}' overrides core agent '{agent_name}'")
+            shutil.rmtree(dest)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(src, dest)
+
+    # Copy agent role defaults
+    role_defaults = core_path / "agent-role-defaults.json"
+    if role_defaults.exists():
+        shutil.copy2(role_defaults, claude_dir / "agent-role-defaults.json")
+
     merged_settings = _merge_settings(
         core_path / "settings-base.json",
         preset_path / "settings-preset.json",
@@ -158,7 +201,11 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     (dist_path / "CLAUDE.md").write_text(base_md + preset_md)
 
     for exclusion in manifest.get("exclude", []):
-        excluded_path = claude_dir / exclusion
+        excluded_path = (claude_dir / exclusion).resolve()
+        # Path containment check: ensure resolved path is within claude_dir
+        if not str(excluded_path).startswith(str(claude_dir.resolve())):
+            print(f"WARNING: exclusion '{exclusion}' resolves outside build directory, skipping")
+            continue
         if excluded_path.exists():
             if excluded_path.is_dir():
                 shutil.rmtree(excluded_path)
