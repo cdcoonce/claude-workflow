@@ -16,7 +16,7 @@ branch:
 | plan        | completed | docs/plans/agent-system.md                            |
 | ceo_review  | completed | 5 improvements incorporated into plan                 |
 | issues      | completed | 6 issues created (#35-#40)                            |
-| implement   | pending   | —                                                     |
+| implement   | pending   | branch: feat/agent-system (not yet created)           |
 | code_review | pending   | —                                                     |
 | pr          | pending   | —                                                     |
 
