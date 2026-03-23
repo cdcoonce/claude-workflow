@@ -13,7 +13,9 @@ Durable decisions that apply across all phases:
 - **Python hooks**: ruff via `ruff-pre-commit` repo, mypy/pytest as `local` hooks via `uv run`
 - **JS framework**: Husky v9+ with lint-staged
 - **Both-languages mode**: `pre-commit` framework manages everything, JS tools as `local` hooks (no Husky)
-- **Shared flow**: detect → ask → install → configure → install hooks → verify → handle failures → commit
+- **Shared flow**: prerequisites → detect → ask → install → configure → install hooks → verify → handle failures → commit
+- **Prerequisites check**: verify git repo initialized and relevant package manager available before proceeding
+- **Empty selection guard**: if user selects no checks, inform them and exit gracefully
 
 ---
 
@@ -29,7 +31,9 @@ Create the skill directory with `SKILL.md` containing frontmatter, detection log
 
 - [ ] `core/skills/setup-pre-commit/SKILL.md` exists with correct frontmatter (`name`, `description` with trigger keywords)
 - [ ] `SKILL.md` contains detection logic checking for `pyproject.toml` and `package.json`
-- [ ] `SKILL.md` contains the shared 8-step flow
+- [ ] `SKILL.md` contains prerequisites check (git repo exists, package manager available)
+- [ ] `SKILL.md` contains the shared flow (prerequisites → detect → ask → install → configure → verify → commit)
+- [ ] `SKILL.md` handles empty check selection gracefully (inform user, exit)
 - [ ] `SKILL.md` routes to `python-setup.md` when Python is detected
 - [ ] `core/skills/setup-pre-commit/python-setup.md` exists with complete Python setup steps
 - [ ] Python path uses `AskUserQuestion` to let user select which checks to enable
@@ -71,7 +75,7 @@ Create `js-setup.md` with the full JS/TS path: detect package manager from lock 
 
 ### What to build
 
-Update `SKILL.md` detection logic to handle the "both present" case: offer three options (Python only, JS only, both) via `AskUserQuestion`. When "both" is selected, the `pre-commit` framework manages everything. Add a "Both-Languages Mode" section to `python-setup.md` that includes JS tools (Prettier, ESLint) as `local` hooks in `.pre-commit-config.yaml`, running via `npx`. This avoids the `.git/hooks/pre-commit` ownership conflict between `pre-commit` and Husky.
+Update `SKILL.md` detection logic to handle the "both present" case: offer three options (Python only, JS only, both) via `AskUserQuestion`. "Python only" routes to `python-setup.md`, "JS only" routes to `js-setup.md` (Husky path), "both" routes to `python-setup.md` with the both-languages section. When "both" is selected, the `pre-commit` framework manages everything. Add a "Both-Languages Mode" section to `python-setup.md` that installs JS tools as project dependencies (`npm install --save-dev prettier eslint`) and includes them as `local` hooks in `.pre-commit-config.yaml`, running via `npx`. This avoids the `.git/hooks/pre-commit` ownership conflict between `pre-commit` and Husky.
 
 ### Acceptance criteria
 
@@ -79,6 +83,7 @@ Update `SKILL.md` detection logic to handle the "both present" case: offer three
 - [ ] "Both" mode uses `pre-commit` framework as single hook manager
 - [ ] Prettier added as `local` hook running `npx prettier --ignore-unknown --write`
 - [ ] ESLint added as `local` hook running `npx eslint --fix` on `*.{js,ts,jsx,tsx}` (only if config exists)
+- [ ] JS tools installed as project dependencies (`npm install --save-dev`) so `npx` resolves correctly
 - [ ] No Husky installed in "both" mode
 - [ ] Combined hook order maintains fastest-first principle
 
