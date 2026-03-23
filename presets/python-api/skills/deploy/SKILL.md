@@ -95,13 +95,9 @@ Check that the response includes:
 
 ## Troubleshooting
 
-| Problem                                          | Solution                                                                                                               |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `No module named 'pydantic_core._pydantic_core'` | Missing `--platform` flag during pip install — dependencies were built for macOS instead of Linux                      |
-| `Unable to load paramfile fileb://`              | Wrong working directory — run the deploy command from the repository root                                              |
-| `ResourceNotFoundException`                      | Lambda function doesn't exist yet — use `aws lambda create-function` (see `docs/plans/chat-agent/aws-setup.md` Step 7) |
-| `CodeStorageExceededException`                   | Deployment zip too large — check for unnecessary dependencies in `requirements.txt`                                    |
-
-## Reference Documentation
-
-- [aws-setup.md](../../../docs/plans/chat-agent/aws-setup.md) — full AWS account setup, IAM roles, initial Lambda creation, and Function URL configuration
+| Problem                                          | Solution                                                                                          |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `No module named 'pydantic_core._pydantic_core'` | Missing `--platform` flag during pip install — dependencies were built for macOS instead of Linux |
+| `Unable to load paramfile fileb://`              | Wrong working directory — run the deploy command from the repository root                         |
+| `ResourceNotFoundException`                      | Lambda function doesn't exist yet — create it with `aws lambda create-function` first             |
+| `CodeStorageExceededException`                   | Deployment zip too large — check for unnecessary dependencies in `requirements.txt`               |
