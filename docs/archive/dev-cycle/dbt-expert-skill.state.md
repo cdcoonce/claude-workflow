@@ -1,7 +1,7 @@
 ---
 schema_version: 1
 feature: dbt-expert-skill
-status: in_progress
+status: completed
 current_phase: mr
 created: 2026-03-24
 updated: 2026-03-24
@@ -18,7 +18,7 @@ branch: feat/dbt-expert-skill
 | issues      | completed   | #12, #13, #14 |
 | implement   | completed   | feat/dbt-expert-skill |
 | code_review | completed   | clean, no blocking issues |
-| mr          | pending     | —        |
+| mr          | completed   | GitLab MR !6 |
 
 ## Issues
 
@@ -36,3 +36,4 @@ branch: feat/dbt-expert-skill
 - 2026-03-24: Phase 4 (issues) complete. Created #12 (Phase 1), #13 (Phase 2), #14 (Phase 3).
 - 2026-03-24: Phase 5 (implement) complete. 8 files changed, 654 insertions. All tests pass (66), smoke test passes, no Cloud/MCP refs.
 - 2026-03-24: Phase 6 (code review) complete. Clean review, no blocking issues.
+- 2026-03-24: Phase 7 (MR) complete. GitLab MR !6 created (feat/dbt-expert-skill → main).
