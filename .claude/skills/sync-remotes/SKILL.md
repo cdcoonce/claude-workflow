@@ -3,7 +3,7 @@ name: sync-remotes
 description: >
   Syncs merged GitHub PRs to GitLab and cleans up feature branches.
   Use when the user says "sync remotes", "sync to gitlab", "push to gitlab",
-  or after merging a PR on GitHub that targets the gitlab branch.
+  or after merging a PR on GitHub that targets the gitlab-workflows branch.
 ---
 
 # Sync Remotes
@@ -29,14 +29,14 @@ Identify the current branch.
 - If PR state is not `MERGED` → stop: "PR is not merged yet. Merge the PR on GitHub first."
 - Save `baseRefName` (base branch), `title`, and `body` for later steps.
 
-**If already on a base branch (`gitlab` or `main`):**
+**If already on a base branch (`gitlab-workflows` or `main`):**
 - Skip Step 4 (cleanup). Run Steps 2-3 only.
 - Run `gh pr list --state merged --base <branch> --limit 1 --json title,body` for MR description.
 
 ### Step 2 — Sync to GitLab
 
 ```
-git checkout <base-branch>          # e.g. gitlab
+git checkout <base-branch>          # e.g. gitlab-workflows
 git pull origin <base-branch>       # pull merged changes from GitHub
 git push gitlab <base-branch>       # push to GitLab remote
 ```
@@ -47,10 +47,10 @@ If `git push` fails with non-fast-forward → stop: "GitLab remote has diverged.
 
 | Base Branch | Action |
 |-------------|--------|
-| `gitlab` | Create MR: `glab mr create --source-branch gitlab --target-branch main --title <title> --description <body>` |
+| `gitlab-workflows` | Create MR: `glab mr create --source-branch gitlab-workflows --target-branch main --title <title> --description <body>` |
 | `main` | Skip — personal project, no GitLab sync needed. Report: "Synced to GitLab. No MR needed (personal branch)." |
 
-Before creating, check if an MR already exists for `gitlab` → `main`. If so, report the existing URL and skip creation.
+Before creating, check if an MR already exists for `gitlab-workflows` → `main`. If so, report the existing URL and skip creation.
 
 ### Step 4 — Cleanup (skip if invoked from base branch)
 

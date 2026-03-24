@@ -6,8 +6,8 @@ A workflow skill that syncs merged GitHub PRs to GitLab and cleans up feature br
 
 ### Topology
 
-- `origin` (GitHub): `main` branch (personal), `gitlab` branch (work)
-- `gitlab` (GitLab): `main` branch (mirrors `origin/gitlab`)
+- `origin` (GitHub): `main` branch (personal), `gitlab-workflows` branch (work)
+- `gitlab` (GitLab): `main` branch (mirrors `origin/gitlab-workflows`)
 - Feature branches: based on whichever environment they target
 
 ### Decisions
@@ -43,7 +43,7 @@ name: sync-remotes
 description: >
   Syncs merged GitHub PRs to GitLab and cleans up feature branches.
   Use when the user says "sync remotes", "sync to gitlab", "push to gitlab",
-  or after merging a PR on GitHub that targets the gitlab branch.
+  or after merging a PR on GitHub that targets the gitlab-workflows branch.
 ---
 ```
 
@@ -66,20 +66,20 @@ description: >
 
 **Step 1 — Detect context:**
 - Identify current branch
-- If already on a base branch (`gitlab` or `main`): skip Step 4 (cleanup), run Steps 2-3 only. Use `gh pr list --state merged --base <branch> --limit 1 --json title,body` to get the most recent merged PR info.
+- If already on a base branch (`gitlab-workflows` or `main`): skip Step 4 (cleanup), run Steps 2-3 only. Use `gh pr list --state merged --base <branch> --limit 1 --json title,body` to get the most recent merged PR info.
 - If on a feature branch: gather PR info via `gh pr view --json baseRefName,state,title,body`. Verify PR state is `MERGED` — if not, stop and inform user.
 
 **Step 2 — Sync to GitLab:**
-- `git checkout <base-branch>` (e.g. `gitlab`)
+- `git checkout <base-branch>` (e.g. `gitlab-workflows`)
 - `git pull origin <base-branch>` (pull merged changes from GitHub)
 - `git push gitlab <base-branch>` (push to GitLab remote)
 
 **Step 3 — Create MR on GitLab (conditional):**
-- Only if base branch is `gitlab` (work environment)
+- Only if base branch is `gitlab-workflows` (work environment)
 - Skip if base branch is `main` (personal projects — no GitLab sync needed)
 - Use PR title and body from Step 1 (already fetched)
-- `glab mr create --source-branch gitlab --target-branch main --title <pr-title> --description <pr-body>`
-- If an MR already exists for `gitlab` → `main`, report the existing URL instead of creating a duplicate
+- `glab mr create --source-branch gitlab-workflows --target-branch main --title <pr-title> --description <pr-body>`
+- If an MR already exists for `gitlab-workflows` → `main`, report the existing URL instead of creating a duplicate
 
 **Step 4 — Cleanup:**
 - `git branch -D <feature-branch>` (force delete local — `-D` needed because GitHub squash merges don't preserve branch commit history, so `-d` would fail)
@@ -91,7 +91,7 @@ description: >
 
 | PR Base Branch | GitLab Sync | MR Target | Cleanup |
 |---------------|-------------|-----------|---------|
-| `gitlab` | Yes — push to `gitlab` remote | `main` | Local + origin |
+| `gitlab-workflows` | Yes — push to `gitlab` remote | `main` | Local + origin |
 | `main` | No — personal project | N/A | Local + origin |
 
 ### Error Handling
