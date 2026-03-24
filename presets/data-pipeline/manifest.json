@@ -7,7 +7,7 @@
     "hooks": ["protect-files.py"]
   },
   "exclude": [],
-  "preset_skills": [],
+  "preset_skills": ["dagster-expert"],
   "preset_hooks": ["post-edit-lint.py"],
   "preset_agents": ["pipeline-builder", "data-quality-reviewer"]
 }

@@ -107,7 +107,7 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
         result.errors.append("CLAUDE.md not found in dist output")
         return result
 
-    content = claude_md.read_text()
+    content = claude_md.read_text(encoding="utf-8")
 
     # Check skill references: lines like ### `/skill-name`
     skill_pattern = re.compile(r"###\s+`/([^`]+)`")
@@ -133,7 +133,7 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
     # Check hook references in settings.json
     settings_path = claude_dir / "settings.json"
     if settings_path.exists():
-        settings = json.loads(settings_path.read_text())
+        settings = json.loads(settings_path.read_text(encoding="utf-8"))
         hooks_dir = claude_dir / "hooks"
         for hook_type, hook_entries in settings.get("hooks", {}).items():
             for entry in hook_entries:
@@ -154,7 +154,7 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
     link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
     if skills_dir.exists():
         for skill_md in skills_dir.rglob("SKILL.md"):
-            skill_content = skill_md.read_text()
+            skill_content = skill_md.read_text(encoding="utf-8")
             for match in link_pattern.finditer(skill_content):
                 link_target = match.group(2)
                 # Skip external URLs, anchors, and project-root-relative paths
@@ -181,7 +181,7 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
                 )
                 continue
 
-            frontmatter = _parse_frontmatter(agent_md.read_text())
+            frontmatter = _parse_frontmatter(agent_md.read_text(encoding="utf-8"))
             if frontmatter is None:
                 result.errors.append(
                     f"Agent '{agent_dir.name}/AGENT.md' has no valid frontmatter"
