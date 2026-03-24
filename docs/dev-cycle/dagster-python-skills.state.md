@@ -2,10 +2,10 @@
 schema_version: 1
 feature: dagster-python-skills
 status: in_progress
-current_phase: implement
+current_phase: mr
 created: 2026-03-23
 updated: 2026-03-23
-branch:
+branch: feat/dagster-python-skills
 ---
 
 ## Artifacts
@@ -16,16 +16,16 @@ branch:
 | plan        | completed   | docs/plans/dagster-python-skills.md |
 | ceo_review  | completed   | HOLD SCOPE — 0 blocking, 1 warning (upstream sync), 2 known limitations |
 | issues      | completed   | #8, #9, #10 |
-| implement   | pending     | —        |
-| code_review | pending     | —        |
+| implement   | completed   | feat/dagster-python-skills |
+| code_review | completed   | 1 fix applied (path references), 3 suggestions accepted as-is |
 | mr          | pending     | —        |
 
 ## Issues
 
 | Plan Slice | GitLab Issue | Status |
-| Phase 1: dignified-python core skill | #8 | open |
-| Phase 2: dagster-expert preset skill | #9 | open |
-| Phase 3: cross-preset verification | #10 | open |
+| Phase 1: dignified-python core skill | #8 | closed |
+| Phase 2: dagster-expert preset skill | #9 | closed |
+| Phase 3: cross-preset verification | #10 | closed |
 
 ## Log
 
@@ -33,3 +33,5 @@ branch:
 - 2026-03-23: Plan completed. 3 phases: dignified-python core skill, dagster-expert preset skill, cross-preset verification
 - 2026-03-23: CEO Review completed (HOLD SCOPE). Plan updated with known limitations and future work sections
 - 2026-03-23: Issues created: #8 (Phase 1), #9 (Phase 2), #10 (Phase 3)
+- 2026-03-23: Implementation complete. #8 (14 files), #9 (164 files), #10 (all 5 presets verified). Fixed pre-existing smoke_test encoding bug.
+- 2026-03-23: Code review complete. Fixed misleading path references in dignified-python SKILL.md. 3 suggestions accepted as-is.

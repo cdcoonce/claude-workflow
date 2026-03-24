@@ -3,7 +3,7 @@ name: code-reviewer
 description: Reviews code for quality, structure, and correctness
 role: reviewer
 skills:
-  add: [daa-code-review]
+  add: [daa-code-review, dignified-python]
   remove: []
 ---
 
