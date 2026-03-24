@@ -271,7 +271,6 @@ These ship with every preset:
 | `/daa-code-review`               | "code review", "quality check"      | Python, Markdown, and Mermaid analysis        |
 | `/design-an-interface`           | "design it twice", API design       | Parallel sub-agents for interface comparison  |
 | `/dev-cycle`                     | "dev cycle", "development workflow" | Full 7-phase GitLab-issues-driven pipeline    |
-| `/git-guardrails-claude-code`    | git safety, block destructive ops   | PreToolUse hook for dangerous git commands    |
 | `/gitlab-cli`                    | GitLab operations                   | Issues, MRs, branches, reviews via `glab`     |
 | `/grill-me`                      | "grill me", stress-test a plan      | Systematic interrogation via AskUserQuestion  |
 | `/improve-codebase-architecture` | architecture improvement            | Deep-module refactoring opportunities         |

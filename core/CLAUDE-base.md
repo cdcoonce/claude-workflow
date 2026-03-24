@@ -108,10 +108,6 @@ Skills live in `.claude/skills/`. Each `SKILL.md` defines an invocable skill wit
 
 **Trigger when:** user wants to design an API, explore interface options, compare module shapes, or mentions "design it twice".
 
-### `/git-guardrails-claude-code`
-
-**Trigger when:** user wants to prevent destructive git operations, add git safety hooks, or block git push/reset in Claude Code.
-
 ### `/write-a-skill`
 
 **Trigger when:** user wants to create, write, or build a new Claude Code skill.
