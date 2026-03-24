@@ -39,7 +39,6 @@ claude-workflow/
 │   │   ├── improve-codebase-architecture/
 │   │   ├── design-an-interface/
 │   │   ├── readme-generator/
-│   │   ├── git-guardrails-claude-code/
 │   │   └── write-a-skill/
 │   ├── docs/                          ← 4 methodology docs (D8)
 │   │   ├── tdd.md
@@ -175,10 +174,10 @@ mkdir -p core/skills core/docs core/hooks
 
 Move these 17 skill directories from `.claude/skills/` to `core/skills/`:
 
-- `commit`, `daa-code-review`, `github-cli`, `tdd`, `triage-issue`, `project-context`, `grill-me`, `plan-ceo-review`, `write-a-prd`, `prd-to-plan`, `prd-to-issues`, `request-refactor-plan`, `improve-codebase-architecture`, `design-an-interface`, `readme-generator`, `git-guardrails-claude-code`, `write-a-skill`
+- `commit`, `daa-code-review`, `github-cli`, `tdd`, `triage-issue`, `project-context`, `grill-me`, `plan-ceo-review`, `write-a-prd`, `prd-to-plan`, `prd-to-issues`, `request-refactor-plan`, `improve-codebase-architecture`, `design-an-interface`, `readme-generator`, `write-a-skill`
 
 ```bash
-for skill in commit daa-code-review github-cli tdd triage-issue project-context grill-me plan-ceo-review write-a-prd prd-to-plan prd-to-issues request-refactor-plan improve-codebase-architecture design-an-interface readme-generator git-guardrails-claude-code write-a-skill; do
+for skill in commit daa-code-review github-cli tdd triage-issue project-context grill-me plan-ceo-review write-a-prd prd-to-plan prd-to-issues request-refactor-plan improve-codebase-architecture design-an-interface readme-generator write-a-skill; do
   mv .claude/skills/$skill core/skills/
 done
 ```
@@ -359,10 +358,6 @@ Skills live in `.claude/skills/`. Each `SKILL.md` defines an invocable skill wit
 ### `/design-an-interface`
 
 **Trigger when:** user wants to design an API, explore interface options, compare module shapes, or mentions "design it twice".
-
-### `/git-guardrails-claude-code`
-
-**Trigger when:** user wants to prevent destructive git operations, add git safety hooks, or block git push/reset in Claude Code.
 
 ### `/write-a-skill`
 
