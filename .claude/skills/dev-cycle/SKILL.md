@@ -108,7 +108,7 @@ If architectural issues requiring plan rework → trigger backwards transition t
 
 ### Phase 7: MR
 
-Check for conflicts with default branch first. Invoke `commit` for conventional commit, then `gitlab-cli` to open MR. Record MR URL, set `status: completed`. Then run the archival step (see Archival below).
+Check for conflicts with default branch first. Invoke `commit` for conventional commit, then `gitlab-cli` to open MR. Include `Closes #N` for the PRD issue and all implementation issues in the MR description so GitLab auto-closes them on merge. Record MR URL, set `status: completed`. Then run the archival step (see Archival below).
 
 ## State File
 
