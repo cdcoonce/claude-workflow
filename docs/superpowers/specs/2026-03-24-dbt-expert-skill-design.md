@@ -213,6 +213,13 @@ Only the `preset_skills` array changes. All other fields remain the same.
 
 ---
 
+## Implementation Notes
+
+- **dagster-dbt boundary:** The `dagster-expert` skill already has detailed `dagster-dbt` integration references at `references/integrations/dagster-dbt/`. The `dbt-expert` skill should focus on dbt-native concepts only. The pipeline-builder agent's "dbt Transformations" section can mention `dagster-dbt` as the orchestration bridge, but detailed integration patterns belong in `dagster-expert`.
+- **docs.md URL conventions:** The `.md` URL convention and `llms.txt`/`llms-full.txt` files are features of the dbt documentation website (docs.getdbt.com), not the local `dbt docs serve` output. The `docs.md` reference should make this distinction clear.
+
+---
+
 ## Estimated Sizes
 
 | File | Lines |
