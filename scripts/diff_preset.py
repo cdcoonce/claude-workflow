@@ -34,7 +34,7 @@ def _collect_files(directory: Path, relative_to: Path) -> dict[str, Path]:
     if directory.exists():
         for file_path in directory.rglob("*"):
             if file_path.is_file() and file_path.name != ".template-version":
-                rel = str(file_path.relative_to(relative_to))
+                rel = file_path.relative_to(relative_to).as_posix()
                 files[rel] = file_path
     return files
 
