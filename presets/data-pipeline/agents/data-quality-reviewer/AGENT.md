@@ -3,7 +3,7 @@ name: data-quality-reviewer
 description: Reviews data pipelines for correctness, completeness, and reliability
 role: reviewer
 skills:
-  add: [daa-code-review, dagster-expert, dignified-python]
+  add: [daa-code-review, dagster-expert, dbt-expert, dignified-python]
   remove: []
 ---
 
@@ -71,6 +71,17 @@ You review data pipeline code for correctness, completeness, and reliability. Yo
 - Verify that cross-partition operations (joins, aggregations) are handled efficiently
 - Check that partition maintenance (compaction, expiry) is automated
 - Ensure backfill operations write to correct partitions without corrupting current data
+
+## dbt-Specific Review
+
+Review dbt models and tests for correctness and adherence to project conventions.
+
+- Verify models have descriptions and appropriate materialization strategy
+- Check that tests cover primary keys, not-null constraints, and accepted values
+- Validate ref/source usage — no hardcoded table names
+- Ensure model naming follows staging/intermediate/marts convention
+- Check that unit tests mock upstream dependencies correctly
+- Verify incremental models handle late-arriving data
 
 ## Dagster-Specific Review
 
