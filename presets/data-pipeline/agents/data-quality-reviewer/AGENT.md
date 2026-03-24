@@ -3,7 +3,7 @@ name: data-quality-reviewer
 description: Reviews data pipelines for correctness, completeness, and reliability
 role: reviewer
 skills:
-  add: [daa-code-review]
+  add: [daa-code-review, dagster-expert, dignified-python]
   remove: []
 ---
 
@@ -71,3 +71,16 @@ You review data pipeline code for correctness, completeness, and reliability. Yo
 - Verify that cross-partition operations (joins, aggregations) are handled efficiently
 - Check that partition maintenance (compaction, expiry) is automated
 - Ensure backfill operations write to correct partitions without corrupting current data
+
+## Dagster-Specific Review
+
+Review Dagster-specific implementation patterns. Use the `dagster-expert` skill for detailed API validation.
+
+- Verify assets have meaningful metadata (descriptions, tags, group assignments)
+- Check partition definitions align with data arrival patterns and query access patterns
+- Validate IO manager configuration matches the target storage system
+- Ensure resources are properly scoped — no shared mutable state between assets
+- Check that asset dependencies form a valid DAG with no unnecessary coupling
+- Verify sensors have appropriate minimum interval and error handling
+- Confirm automation conditions match the intended materialization frequency
+- Review component usage — custom components should follow the resolved framework patterns

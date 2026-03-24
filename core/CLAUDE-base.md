@@ -122,6 +122,10 @@ Skills live in `.claude/skills/`. Each `SKILL.md` defines an invocable skill wit
 **Output:** Save markdown report to `docs/security-reviews/YYYY-MM-DD-<component>.md`.
 **References:** [.claude/skills/security-review/references/](.claude/skills/security-review/references/) — OWASP vulnerability categories, Python patterns, Docker and GitLab CI security.
 
+### `/dignified-python`
+
+**Trigger when:** writing, reviewing, or refactoring Python code. Also when user asks about type hints, LBYL patterns, pathlib, code quality, or "make this pythonic".
+
 ## Project Context
 
 See [.claude/docs/project.md](.claude/docs/project.md) for project-specific details (tech stack, architecture, test markers).
