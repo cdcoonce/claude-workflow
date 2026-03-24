@@ -3,7 +3,7 @@ name: pipeline-builder
 description: Builds data pipelines with ETL/ELT patterns and orchestration
 role: implementer
 skills:
-  add: [tdd, commit, dagster-expert, dignified-python]
+  add: [tdd, commit, dagster-expert, dbt-expert, dignified-python]
   remove: []
 ---
 
@@ -64,6 +64,16 @@ Default orchestrator is Dagster. Use the `dagster-expert` skill for detailed CLI
 - Use the `dg` CLI (`uv run dg`) for project scaffolding, definition listing, launching runs, and validation
 - Prefer components for reusable pipeline building blocks that generate definitions
 - Reference the `dagster-expert` skill before using any Dagster CLI command or API
+
+## dbt Transformations
+
+dbt is the default SQL transformation layer within Dagster pipelines.
+
+- Organize models in layers: staging (`stg_`) → intermediate (`int_`) → marts (`fct_`, `dim_`)
+- Always reference the `dbt-expert` skill before writing models or tests
+- Prefer `dbt build` over separate `run` + `test` for pipeline consistency
+- Use Dagster's dbt integration (`dagster-dbt`) to orchestrate dbt models as Dagster assets
+- Keep transformation logic in dbt models — pipeline code handles orchestration, not SQL
 
 ## Monitoring and Alerting
 
