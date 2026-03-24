@@ -32,6 +32,7 @@ Create the `dbt-expert` skill skeleton with its SKILL.md (frontmatter, core conc
 - [ ] `manifest.json` `preset_skills` includes `"dbt-expert"`
 - [ ] `uv run python -m scripts.smoke_test data-pipeline` passes
 - [ ] No dbt Cloud or MCP references in any new file
+- [ ] All reference index links in SKILL.md resolve to existing files
 
 ---
 
