@@ -5,7 +5,7 @@ status: in_progress
 current_phase: implement
 created: 2026-03-23
 updated: 2026-03-23
-branch:
+branch: feat/dagster-python-skills
 ---
 
 ## Artifacts
@@ -16,7 +16,7 @@ branch:
 | plan        | completed   | docs/plans/dagster-python-skills.md |
 | ceo_review  | completed   | HOLD SCOPE — 0 blocking, 1 warning (upstream sync), 2 known limitations |
 | issues      | completed   | #8, #9, #10 |
-| implement   | pending     | —        |
+| implement   | in_progress | feat/dagster-python-skills |
 | code_review | pending     | —        |
 | mr          | pending     | —        |
 
