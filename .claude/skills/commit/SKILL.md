@@ -35,7 +35,7 @@ Stage and commit changes following conventional commit style and atomic commit p
 | `test`     | Adding or updating tests                                | `test: add edge case coverage for validator`      |
 | `chore`    | Build process, tooling, dependencies, config            | `chore: update dependency lockfile`               |
 | `perf`     | Performance improvement                                 | `perf: cache repeated database lookups`           |
-| `ci`       | CI/CD pipeline changes                                  | `ci: add lint step to PR workflow`                |
+| `ci`       | CI/CD pipeline changes                                  | `ci: add lint step to MR workflow`                |
 
 ### Scope (Optional)
 

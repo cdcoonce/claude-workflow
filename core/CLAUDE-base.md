@@ -44,9 +44,9 @@ Skills live in `.claude/skills/`. Each `SKILL.md` defines an invocable skill wit
 **Trigger when:** user asks for a "code review", "quality check", pre-commit review, or wants code analyzed for issues.
 **Output:** Save markdown report to `docs/code_reviews/{YYYY-MM-DD}_{file_name}.md`.
 
-### `/github-cli`
+### `/gitlab-cli`
 
-**Trigger when:** user needs to interact with GitHub — issues, pull requests, PR reviews, CI/CD pipelines, or pushing changes.
+**Trigger when:** user needs to interact with GitLab — issues, merge requests, MR reviews, CI/CD pipelines, or pushing changes.
 
 ### `/commit`
 
@@ -93,7 +93,7 @@ Skills live in `.claude/skills/`. Each `SKILL.md` defines an invocable skill wit
 
 ### `/dev-cycle`
 
-**Trigger when:** user says "dev cycle", "development workflow", "full development pipeline", or wants the full end-to-end lifecycle from brainstorm through PR. **Disambiguation:** if user only wants a PRD, route to `/write-a-prd`; only a plan, route to `/prd-to-plan`.
+**Trigger when:** user says "dev cycle", "development workflow", "full development pipeline", or wants the full end-to-end lifecycle from brainstorm through MR. **Disambiguation:** if user only wants a PRD, route to `/write-a-prd`; only a plan, route to `/prd-to-plan`.
 **References:** [.claude/skills/dev-cycle/references/](.claude/skills/dev-cycle/references/) — phase transitions, state file schema.
 
 ### `/request-refactor-plan`
@@ -111,6 +111,16 @@ Skills live in `.claude/skills/`. Each `SKILL.md` defines an invocable skill wit
 ### `/write-a-skill`
 
 **Trigger when:** user wants to create, write, or build a new Claude Code skill.
+
+### `/security-review`
+
+**Trigger when:** the user asks for "security review", "find vulnerabilities", "check for security issues", "audit security", "OWASP review", or to review code for injection, XSS, authentication, authorization, or cryptography issues.
+**Output:** Save markdown report to `docs/security-reviews/YYYY-MM-DD-<component>.md`.
+**References:** [.claude/skills/security-review/references/](.claude/skills/security-review/references/) — OWASP vulnerability categories, Python patterns, Docker and GitLab CI security.
+
+### `/dignified-python`
+
+**Trigger when:** writing, reviewing, or refactoring Python code. Also when user asks about type hints, LBYL patterns, pathlib, code quality, or "make this pythonic".
 
 ## Project Context
 

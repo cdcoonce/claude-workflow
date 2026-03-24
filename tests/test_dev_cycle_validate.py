@@ -28,7 +28,7 @@ branch: feat/dark-mode-toggle
 
 | Phase       | Status      | Artifact                               |
 | ----------- | ----------- | -------------------------------------- |
-| brainstorm  | completed   | https://github.com/user/repo/issues/42 |
+| brainstorm  | completed   | https://gitlab.com/user/repo/-/issues/42 |
 | plan        | in_progress | docs/plans/dark-mode-toggle.md         |
 | ceo_review  | pending     | —                                      |
 
@@ -200,7 +200,7 @@ updated: 2026-03-21
 
 | Phase       | Status      | Artifact                               |
 | ----------- | ----------- | -------------------------------------- |
-| brainstorm  | completed   | https://github.com/user/repo/issues/42 |
+| brainstorm  | completed   | https://gitlab.com/user/repo/-/issues/42 |
 | plan        | in_progress | docs/plans/test-feature.md             |
 
 ## Log
