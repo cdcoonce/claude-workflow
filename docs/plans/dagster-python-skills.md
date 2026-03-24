@@ -14,6 +14,15 @@ Durable decisions that apply across all phases:
 - **Build system**: No code changes — existing `build_preset.py` handles `preset_skills` and `core.skills: "all"` correctly
 - **Ordering constraint**: Skill directories must exist before manifest references them (`_validate_manifest` checks directory existence)
 
+## Known limitations
+
+- **Agent skill reference validation**: The `skills.add` list in AGENT.md frontmatter is not validated against actual skill directories during build. A typo in a skill name will silently produce an agent that references a nonexistent skill. This is a pre-existing gap in the build system, not introduced by this plan.
+- **Agent frontmatter verification**: Phase 3 verification of agent skill lists is manual (read the built AGENT.md files). No automated test parses agent frontmatter to validate skill references.
+
+## Future work
+
+- **Upstream sync**: This port is a snapshot of `dagster-io/skills` at the time of implementation. To update from upstream, diff `skills/dagster-expert/skills/dagster-expert/` against `presets/data-pipeline/skills/dagster-expert/` and apply changes. Same for `skills/dignified-python/skills/dignified-python/` against `core/skills/dignified-python/`. Consider automating with a periodic diff script if upstream changes frequently.
+
 ---
 
 ## Phase 1: dignified-python Core Skill
