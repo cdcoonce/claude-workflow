@@ -230,7 +230,6 @@ These ship with every preset:
 | `/commit`                        | "commit", "save work"               | Conventional commit style enforcement         |
 | `/design-an-interface`           | "design it twice", API design       | Parallel sub-agents for interface comparison  |
 | `/dev-cycle`                     | "dev cycle", "development workflow" | Full 7-phase GitHub-issues-driven pipeline    |
-| `/git-guardrails-claude-code`    | git safety, block destructive ops   | PreToolUse hook for dangerous git commands    |
 | `/github-cli`                    | GitHub operations                   | Issues, PRs, branches, reviews via `gh`       |
 | `/grill-me`                      | "grill me", stress-test a plan      | Systematic interrogation via AskUserQuestion  |
 | `/improve-codebase-architecture` | architecture improvement            | Deep-module refactoring opportunities         |
