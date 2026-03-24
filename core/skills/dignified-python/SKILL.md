@@ -5,17 +5,6 @@ description:
   reviewing, or refactoring Python to ensure adherence to modern type syntax, LBYL exception
   handling, pathlib operations, ABC-based interfaces, and production-tested patterns. Not
   Dagster-specific - applies to any Python project.
-references:
-  - core-standards
-  - cli-patterns
-  - versions/python-3.10
-  - versions/python-3.11
-  - versions/python-3.12
-  - versions/python-3.13
-  - advanced/api-design
-  - advanced/exception-handling
-  - advanced/interfaces
-  - advanced/typing-advanced
 ---
 
 # Dignified Python Coding Standards Skill
@@ -77,24 +66,25 @@ detect specific patterns:
 
 Pattern detection examples:
 
-- If task mentions "click" or "CLI" -> Load `references/cli-patterns.md`
-- If task mentions "subprocess" -> Load subprocess patterns from core-standards
+- If task mentions "click" or "CLI" -> Load `cli-patterns.md`
+- If task mentions "subprocess" -> Load `subprocess.md`
 
 ## Reference Documentation Structure
 
-The `references/` directory contains detailed guidance organized by topic:
+Reference documents are organized across top-level files and subdirectories:
 
-### Core References
+### Core References (alongside SKILL.md)
 
-- **`core-standards.md`** - Essential standards (always loaded)
+- **`dignified-python-core.md`** - Essential standards (always loaded)
 - **`cli-patterns.md`** - Command-line interface patterns (click, argparse)
+- **`subprocess.md`** - Subprocess operations
 
-### Version-Specific References (`references/versions/`)
+### Version-Specific References (`versions/`)
 
-- **`python-3.10.md`** - Features available in Python 3.10+
-- **`python-3.11.md`** - Features available in Python 3.11+
-- **`python-3.12.md`** - Features available in Python 3.12+
-- **`python-3.13.md`** - Features available in Python 3.13+
+- **`versions/python-3.10.md`** - Features available in Python 3.10+
+- **`versions/python-3.11.md`** - Features available in Python 3.11+
+- **`versions/python-3.12.md`** - Features available in Python 3.12+
+- **`versions/python-3.13.md`** - Features available in Python 3.13+
 
 ### Advanced Topics (`references/advanced/`)
 
