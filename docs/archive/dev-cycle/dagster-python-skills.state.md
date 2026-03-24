@@ -1,7 +1,7 @@
 ---
 schema_version: 1
 feature: dagster-python-skills
-status: in_progress
+status: completed
 current_phase: mr
 created: 2026-03-23
 updated: 2026-03-23
@@ -18,7 +18,7 @@ branch: feat/dagster-python-skills
 | issues      | completed   | #8, #9, #10 |
 | implement   | completed   | feat/dagster-python-skills |
 | code_review | completed   | 1 fix applied (path references), 3 suggestions accepted as-is |
-| mr          | pending     | —        |
+| mr          | completed   | GitHub PR #45 (merged), GitLab MR !4 |
 
 ## Issues
 
@@ -35,3 +35,4 @@ branch: feat/dagster-python-skills
 - 2026-03-23: Issues created: #8 (Phase 1), #9 (Phase 2), #10 (Phase 3)
 - 2026-03-23: Implementation complete. #8 (14 files), #9 (164 files), #10 (all 5 presets verified). Fixed pre-existing smoke_test encoding bug.
 - 2026-03-23: Code review complete. Fixed misleading path references in dignified-python SKILL.md. 3 suggestions accepted as-is.
+- 2026-03-23: MR complete. GitHub PR #45 merged (squash). Synced to GitLab. GitLab MR !4 created (gitlab → main).
