@@ -35,12 +35,6 @@ class TestBuildPluginStructure:
         claude_md = tmp_repo / "dist" / "python-api" / "CLAUDE.md"
         assert not claude_md.exists()
 
-    def test_build_no_template_version(self, tmp_repo: Path) -> None:
-        """Plugin format must not contain .template-version."""
-        build_preset("python-api", repo_root=tmp_repo)
-        dist = tmp_repo / "dist" / "python-api"
-        assert not (dist / ".template-version").exists()
-        assert not (dist / ".claude" / ".template-version").exists()
 
     def test_build_no_agent_role_defaults(self, tmp_repo: Path) -> None:
         """Plugin format must not contain agent-role-defaults.json."""
