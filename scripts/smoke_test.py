@@ -1,13 +1,15 @@
-"""Validate internal consistency of a built preset (D23).
+"""Validate internal consistency of a built plugin.
 
 Checks:
-- Every skill referenced in CLAUDE.md has a directory in .claude/skills/
-- Every hook referenced in settings.json has a file in .claude/hooks/
-- Every doc path referenced in CLAUDE.md exists
-- Every intra-skill reference link in SKILL.md files resolves to an existing file
-- Every agent in .claude/agents/ has valid frontmatter (name, description, role)
+- .claude-plugin/plugin.json exists with required fields (name, version, description)
+- Every directory in skills/ has a SKILL.md
+- Every directory in agents/ has a valid AGENT.md (frontmatter with name, description, role)
 - Agent names match their directory names
-- Agent skills.add references resolve to existing skills
+- Agent roles are 'implementer' or 'reviewer'
+- Agent skills.add references resolve to existing skills in skills/
+- hooks/hooks.json references scripts that exist in hooks/scripts/
+- Every relative link in SKILL.md files resolves within the skill directory
+- settings.json at root is valid JSON
 """
 
 from __future__ import annotations
@@ -28,10 +30,6 @@ class SmokeTestResult:
     @property
     def passed(self) -> bool:
         return len(self.errors) == 0
-
-
-class SmokeTestFailure(Exception):
-    """Raised when smoke test fails."""
 
 
 def _parse_frontmatter(text: str) -> dict | None:
@@ -87,12 +85,12 @@ def _parse_frontmatter(text: str) -> dict | None:
 
 
 def smoke_test(dist_path: Path) -> SmokeTestResult:
-    """Validate internal consistency of a built preset.
+    """Validate internal consistency of a built plugin.
 
     Parameters
     ----------
     dist_path
-        Path to the built preset directory (e.g., dist/python-api/).
+        Path to the built plugin directory (e.g., dist/python-api/).
 
     Returns
     -------
@@ -100,76 +98,38 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
         Result with any errors found.
     """
     result = SmokeTestResult()
-    claude_dir = dist_path / ".claude"
-    claude_md = dist_path / "CLAUDE.md"
 
-    if not claude_md.exists():
-        result.errors.append("CLAUDE.md not found in dist output")
+    # 1. Validate .claude-plugin/plugin.json
+    plugin_json_path = dist_path / ".claude-plugin" / "plugin.json"
+    if not plugin_json_path.exists():
+        result.errors.append("plugin.json not found at .claude-plugin/plugin.json")
         return result
 
-    content = claude_md.read_text(encoding="utf-8")
+    try:
+        plugin_data = json.loads(plugin_json_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        result.errors.append("plugin.json is not valid JSON")
+        return result
 
-    # Check skill references: lines like ### `/skill-name`
-    skill_pattern = re.compile(r"###\s+`/([^`]+)`")
-    skills_dir = claude_dir / "skills"
-    for match in skill_pattern.finditer(content):
-        skill_name = match.group(1)
-        possible_names = [skill_name, skill_name.replace("daa-", "")]
-        if not any((skills_dir / name).is_dir() for name in possible_names):
+    for required_field in ["name", "version", "description"]:
+        if required_field not in plugin_data:
             result.errors.append(
-                f"Skill '/{skill_name}' referenced in CLAUDE.md but no directory "
-                f"found in .claude/skills/"
+                f"plugin.json missing required field '{required_field}'"
             )
 
-    # Check doc references: [.claude/docs/something.md](.claude/docs/something.md)
-    doc_pattern = re.compile(r"\[\.claude/docs/([^\]]+)\]\(\.claude/docs/[^)]+\)")
-    for match in doc_pattern.finditer(content):
-        doc_path = match.group(1)
-        if not (claude_dir / "docs" / doc_path).exists():
-            result.errors.append(
-                f"Doc '.claude/docs/{doc_path}' referenced in CLAUDE.md but file not found"
-            )
-
-    # Check hook references in settings.json
-    settings_path = claude_dir / "settings.json"
-    if settings_path.exists():
-        settings = json.loads(settings_path.read_text(encoding="utf-8"))
-        hooks_dir = claude_dir / "hooks"
-        for hook_type, hook_entries in settings.get("hooks", {}).items():
-            for entry in hook_entries:
-                for hook in entry.get("hooks", []):
-                    command = hook.get("command", "")
-                    hook_match = re.search(
-                        r'hooks/([^\s"]+)', command
-                    )
-                    if hook_match:
-                        hook_file = hook_match.group(1)
-                        if not (hooks_dir / hook_file).exists():
-                            result.errors.append(
-                                f"Hook '{hook_file}' referenced in settings.json "
-                                f"but not found in .claude/hooks/"
-                            )
-
-    # Check intra-skill reference links in SKILL.md files
-    link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+    # 2. Validate skills: every directory in skills/ has a SKILL.md
+    skills_dir = dist_path / "skills"
     if skills_dir.exists():
-        for skill_md in skills_dir.rglob("SKILL.md"):
-            skill_content = skill_md.read_text(encoding="utf-8")
-            for match in link_pattern.finditer(skill_content):
-                link_target = match.group(2)
-                # Skip external URLs, anchors, and project-root-relative paths
-                if link_target.startswith(("http://", "https://", "#", ".claude/")):
-                    continue
-                resolved = (skill_md.parent / link_target).resolve()
-                if not resolved.exists():
-                    skill_name = skill_md.parent.name
-                    result.errors.append(
-                        f"Skill '{skill_name}/SKILL.md' links to "
-                        f"'{link_target}' but file not found"
-                    )
+        for skill_dir in sorted(skills_dir.iterdir()):
+            if not skill_dir.is_dir():
+                continue
+            if not (skill_dir / "SKILL.md").exists():
+                result.errors.append(
+                    f"Skill '{skill_dir.name}' directory has no SKILL.md"
+                )
 
-    # Check agent frontmatter in .claude/agents/
-    agents_dir = claude_dir / "agents"
+    # 3. Validate agents: every directory in agents/ has a valid AGENT.md
+    agents_dir = dist_path / "agents"
     if agents_dir.exists():
         for agent_dir in sorted(agents_dir.iterdir()):
             if not agent_dir.is_dir():
@@ -216,12 +176,64 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
             skills_config = frontmatter.get("skills", {})
             if isinstance(skills_config, dict):
                 for skill_ref in skills_config.get("add", []):
-                    if skills_dir.exists() and not (skills_dir / skill_ref).is_dir():
+                    if not skills_dir.exists() or not (skills_dir / skill_ref).is_dir():
                         result.errors.append(
                             f"Agent '{agent_dir.name}/AGENT.md' references skill "
                             f"'{skill_ref}' in skills.add but skill not found "
-                            f"in .claude/skills/"
+                            f"in skills/"
                         )
+
+    # 4. Validate hooks: hooks.json references scripts that exist in hooks/scripts/
+    hooks_json_path = dist_path / "hooks" / "hooks.json"
+    if hooks_json_path.exists():
+        try:
+            hooks_data = json.loads(hooks_json_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            result.errors.append("hooks/hooks.json is not valid JSON")
+            hooks_data = {}
+
+        hooks_scripts_dir = dist_path / "hooks" / "scripts"
+        for hook_type, hook_entries in hooks_data.get("hooks", {}).items():
+            for entry in hook_entries:
+                for hook in entry.get("hooks", []):
+                    command = hook.get("command", "")
+                    # Extract script filename from $CLAUDE_PLUGIN_ROOT/hooks/scripts/<file>
+                    hook_match = re.search(
+                        r'hooks/scripts/([^\s"]+)', command
+                    )
+                    if hook_match:
+                        script_name = hook_match.group(1)
+                        if not (hooks_scripts_dir / script_name).exists():
+                            result.errors.append(
+                                f"Hook script '{script_name}' referenced in "
+                                f"hooks.json but not found in hooks/scripts/"
+                            )
+
+    # 5. Validate intra-skill reference links in SKILL.md files
+    link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+    if skills_dir.exists():
+        for skill_md in skills_dir.rglob("SKILL.md"):
+            skill_content = skill_md.read_text(encoding="utf-8")
+            for match in link_pattern.finditer(skill_content):
+                link_target = match.group(2)
+                # Skip external URLs, anchors, and project-root-relative paths
+                if link_target.startswith(("http://", "https://", "#", ".claude/")):
+                    continue
+                resolved = (skill_md.parent / link_target).resolve()
+                if not resolved.exists():
+                    skill_name = skill_md.parent.name
+                    result.errors.append(
+                        f"Skill '{skill_name}/SKILL.md' links to "
+                        f"'{link_target}' but file not found"
+                    )
+
+    # 6. Validate settings.json is valid JSON
+    settings_path = dist_path / "settings.json"
+    if settings_path.exists():
+        try:
+            json.loads(settings_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            result.errors.append("settings.json is not valid JSON")
 
     return result
 
@@ -238,9 +250,9 @@ if __name__ == "__main__":
     result = smoke_test(dist_path)
 
     if result.passed:
-        print(f"PASS: preset '{preset_name}' is internally consistent")
+        print(f"PASS: plugin '{preset_name}' is internally consistent")
     else:
-        print(f"FAIL: preset '{preset_name}' has {len(result.errors)} error(s):")
+        print(f"FAIL: plugin '{preset_name}' has {len(result.errors)} error(s):")
         for error in result.errors:
             print(f"  - {error}")
         sys.exit(1)

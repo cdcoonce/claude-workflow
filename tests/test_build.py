@@ -1,89 +1,76 @@
-"""Tests for build_preset.py — verifies correct assembly of core + preset delta."""
+"""Tests for build_preset.py — verifies plugin-format output assembly."""
 
+import json
 from pathlib import Path
 
 from scripts.build_preset import build_preset
 
 
-class TestBuildPreset:
-    """Build produces correct output structure."""
+class TestBuildPluginStructure:
+    """Build produces correct plugin output structure."""
 
     def test_build_creates_dist_directory(self, tmp_repo: Path) -> None:
         build_preset("python-api", repo_root=tmp_repo)
         dist = tmp_repo / "dist" / "python-api"
         assert dist.exists()
 
-    def test_build_copies_core_skills(self, tmp_repo: Path) -> None:
+    def test_build_creates_plugin_json(self, tmp_repo: Path) -> None:
         build_preset("python-api", repo_root=tmp_repo)
-        dist = tmp_repo / "dist" / "python-api" / ".claude" / "skills"
-        assert (dist / "commit" / "SKILL.md").exists()
-        assert (dist / "daa-code-review" / "SKILL.md").exists()
-        assert (dist / "tdd" / "SKILL.md").exists()
+        plugin_json = tmp_repo / "dist" / "python-api" / ".claude-plugin" / "plugin.json"
+        assert plugin_json.exists()
+        data = json.loads(plugin_json.read_text())
+        assert data["name"] == "python-api"
+        assert data["version"] == "1.0.0"
+        assert data["description"] == "Python backend services"
 
-    def test_build_copies_core_docs(self, tmp_repo: Path) -> None:
+    def test_build_no_claude_subdir(self, tmp_repo: Path) -> None:
+        """Plugin format must not contain a .claude/ subdirectory."""
         build_preset("python-api", repo_root=tmp_repo)
-        dist = tmp_repo / "dist" / "python-api" / ".claude" / "docs"
-        assert (dist / "tdd.md").exists()
-        assert (dist / "root-cause-tracing.md").exists()
+        claude_dir = tmp_repo / "dist" / "python-api" / ".claude"
+        assert not claude_dir.exists()
 
-    def test_build_copies_core_hooks(self, tmp_repo: Path) -> None:
-        build_preset("python-api", repo_root=tmp_repo)
-        dist = tmp_repo / "dist" / "python-api" / ".claude" / "hooks"
-        assert (dist / "protect-files.py").exists()
-
-    def test_build_copies_preset_skills(self, tmp_repo: Path) -> None:
-        build_preset("python-api", repo_root=tmp_repo)
-        dist = tmp_repo / "dist" / "python-api" / ".claude" / "skills"
-        assert (dist / "deploy" / "SKILL.md").exists()
-
-    def test_build_copies_preset_hooks(self, tmp_repo: Path) -> None:
-        build_preset("python-api", repo_root=tmp_repo)
-        dist = tmp_repo / "dist" / "python-api" / ".claude" / "hooks"
-        assert (dist / "post-edit-lint.py").exists()
-
-    def test_build_merges_settings(self, tmp_repo: Path) -> None:
-        import json
-
-        build_preset("python-api", repo_root=tmp_repo)
-        settings_path = tmp_repo / "dist" / "python-api" / ".claude" / "settings.json"
-        settings = json.loads(settings_path.read_text())
-        assert "PreToolUse" in settings["hooks"]
-        assert "PostToolUse" in settings["hooks"]
-
-    def test_build_concatenates_claude_md(self, tmp_repo: Path) -> None:
+    def test_build_no_claude_md(self, tmp_repo: Path) -> None:
+        """Plugin format must not contain CLAUDE.md."""
         build_preset("python-api", repo_root=tmp_repo)
         claude_md = tmp_repo / "dist" / "python-api" / "CLAUDE.md"
-        content = claude_md.read_text()
-        assert "## Methodology" in content
-        assert "## Testing" in content
+        assert not claude_md.exists()
 
-    def test_build_writes_template_version(self, tmp_repo: Path) -> None:
+    def test_build_no_template_version(self, tmp_repo: Path) -> None:
+        """Plugin format must not contain .template-version."""
         build_preset("python-api", repo_root=tmp_repo)
-        version_file = tmp_repo / "dist" / "python-api" / ".claude" / ".template-version"
-        assert version_file.exists()
-        content = version_file.read_text().strip()
-        assert len(content) > 0
+        dist = tmp_repo / "dist" / "python-api"
+        assert not (dist / ".template-version").exists()
+        assert not (dist / ".claude" / ".template-version").exists()
 
-
-class TestBuildExclusions:
-    """Exclusions remove core items from output."""
-
-    def test_exclude_removes_core_skill(self, tmp_repo: Path) -> None:
-        import json
-
-        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
-        manifest = json.loads(manifest_path.read_text())
-        manifest["exclude"] = ["skills/tdd"]
-        manifest_path.write_text(json.dumps(manifest))
-
+    def test_build_no_agent_role_defaults(self, tmp_repo: Path) -> None:
+        """Plugin format must not contain agent-role-defaults.json."""
         build_preset("python-api", repo_root=tmp_repo)
-        dist = tmp_repo / "dist" / "python-api" / ".claude" / "skills"
-        assert not (dist / "tdd").exists()
-        assert (dist / "commit").exists()
+        dist = tmp_repo / "dist" / "python-api"
+        assert not (dist / "agent-role-defaults.json").exists()
+        assert not (dist / ".claude" / "agent-role-defaults.json").exists()
+
+    def test_build_no_docs_dir(self, tmp_repo: Path) -> None:
+        """Plugin format must not contain a docs/ directory."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        assert not (dist / "docs").exists()
+        assert not (dist / ".claude" / "docs").exists()
 
 
-class TestBuildOverrides:
-    """Preset skills with same name as core skills override them (D17)."""
+class TestBuildPluginSkills:
+    """Skills are placed at root level in plugin format."""
+
+    def test_build_copies_core_skills_to_root(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        skills = tmp_repo / "dist" / "python-api" / "skills"
+        assert (skills / "commit" / "SKILL.md").exists()
+        assert (skills / "daa-code-review" / "SKILL.md").exists()
+        assert (skills / "tdd" / "SKILL.md").exists()
+
+    def test_build_copies_preset_skills_to_root(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        skills = tmp_repo / "dist" / "python-api" / "skills"
+        assert (skills / "deploy" / "SKILL.md").exists()
 
     def test_preset_skill_overrides_core(self, tmp_repo: Path) -> None:
         override = tmp_repo / "presets" / "python-api" / "skills" / "tdd"
@@ -91,123 +78,53 @@ class TestBuildOverrides:
         (override / "SKILL.md").write_text("# OVERRIDDEN tdd skill")
 
         manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
-        import json
         manifest = json.loads(manifest_path.read_text())
         manifest["preset_skills"].append("tdd")
         manifest_path.write_text(json.dumps(manifest))
 
         build_preset("python-api", repo_root=tmp_repo)
-        dist = tmp_repo / "dist" / "python-api" / ".claude" / "skills" / "tdd"
-        content = (dist / "SKILL.md").read_text()
-        assert "OVERRIDDEN" in content
+        skill_md = tmp_repo / "dist" / "python-api" / "skills" / "tdd" / "SKILL.md"
+        assert "OVERRIDDEN" in skill_md.read_text()
 
 
-class TestBuildAgents:
-    """Build copies core agents to output."""
+class TestBuildPluginAgents:
+    """Agents are placed at root level in plugin format."""
 
-    def test_build_copies_core_agents(self, tmp_repo: Path) -> None:
-        """Core agents are copied when manifest has core.agents: 'all'."""
-        import json
-        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
-        manifest = json.loads(manifest_path.read_text())
-        manifest["core"]["agents"] = "all"
-        manifest_path.write_text(json.dumps(manifest))
-
+    def test_build_copies_core_agents_to_root(self, tmp_repo: Path) -> None:
         build_preset("python-api", repo_root=tmp_repo)
-        agents_dir = tmp_repo / "dist" / "python-api" / ".claude" / "agents"
-        assert (agents_dir / "tdd-implementer" / "AGENT.md").exists()
-        assert (agents_dir / "code-reviewer" / "AGENT.md").exists()
+        agents = tmp_repo / "dist" / "python-api" / "agents"
+        assert (agents / "tdd-implementer" / "AGENT.md").exists()
+        assert (agents / "code-reviewer" / "AGENT.md").exists()
 
-    def test_build_copies_core_agents_default(self, tmp_repo: Path) -> None:
-        """Core agents default to 'all' when core.agents is omitted."""
+    def test_build_copies_core_agents_default_all(self, tmp_repo: Path) -> None:
+        """core.agents defaults to 'all' when omitted."""
         build_preset("python-api", repo_root=tmp_repo)
-        agents_dir = tmp_repo / "dist" / "python-api" / ".claude" / "agents"
-        assert (agents_dir / "tdd-implementer" / "AGENT.md").exists()
-        assert (agents_dir / "code-reviewer" / "AGENT.md").exists()
+        agents = tmp_repo / "dist" / "python-api" / "agents"
+        assert (agents / "tdd-implementer" / "AGENT.md").exists()
+        assert (agents / "code-reviewer" / "AGENT.md").exists()
 
     def test_build_copies_specific_core_agents(self, tmp_repo: Path) -> None:
-        """Only listed core agents are copied when manifest lists specific names."""
-        import json
         manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
         manifest = json.loads(manifest_path.read_text())
         manifest["core"]["agents"] = ["tdd-implementer"]
         manifest_path.write_text(json.dumps(manifest))
 
         build_preset("python-api", repo_root=tmp_repo)
-        agents_dir = tmp_repo / "dist" / "python-api" / ".claude" / "agents"
-        assert (agents_dir / "tdd-implementer" / "AGENT.md").exists()
-        assert not (agents_dir / "code-reviewer").exists()
-
-    def test_build_copies_role_defaults(self, tmp_repo: Path) -> None:
-        """agent-role-defaults.json is copied to .claude/."""
-        build_preset("python-api", repo_root=tmp_repo)
-        defaults_path = tmp_repo / "dist" / "python-api" / ".claude" / "agent-role-defaults.json"
-        assert defaults_path.exists()
-        import json
-        data = json.loads(defaults_path.read_text())
-        assert "implementer" in data
-        assert "reviewer" in data
-
-    def test_build_skips_agents_when_dir_missing(self, tmp_repo: Path) -> None:
-        """Gracefully skip core agent copy when core/agents/ doesn't exist."""
-        import shutil
-        shutil.rmtree(tmp_repo / "core" / "agents")
-        build_preset("python-api", repo_root=tmp_repo)
-        agents_dir = tmp_repo / "dist" / "python-api" / ".claude" / "agents"
-        assert not agents_dir.exists()
-
-    def test_build_skips_role_defaults_when_missing(self, tmp_repo: Path) -> None:
-        """Gracefully skip role defaults copy when file doesn't exist."""
-        (tmp_repo / "core" / "agent-role-defaults.json").unlink()
-        build_preset("python-api", repo_root=tmp_repo)
-        defaults_path = tmp_repo / "dist" / "python-api" / ".claude" / "agent-role-defaults.json"
-        assert not defaults_path.exists()
-
-    def test_exclude_removes_agent(self, tmp_repo: Path) -> None:
-        """Exclusion with agents/<name> format removes agent from output."""
-        import json
-        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
-        manifest = json.loads(manifest_path.read_text())
-        manifest["exclude"] = ["agents/tdd-implementer"]
-        manifest_path.write_text(json.dumps(manifest))
-
-        build_preset("python-api", repo_root=tmp_repo)
-        agents_dir = tmp_repo / "dist" / "python-api" / ".claude" / "agents"
-        assert not (agents_dir / "tdd-implementer").exists()
-        assert (agents_dir / "code-reviewer" / "AGENT.md").exists()
-
-    def test_exclusion_path_containment(self, tmp_repo: Path) -> None:
-        """Exclusion paths that escape claude_dir are rejected."""
-        import json
-        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
-        manifest = json.loads(manifest_path.read_text())
-        manifest["exclude"] = ["../../etc/passwd"]
-        manifest_path.write_text(json.dumps(manifest))
-
-        build_preset("python-api", repo_root=tmp_repo)
-        # Should not crash and should not delete anything outside claude_dir
-        assert (tmp_repo / "dist" / "python-api" / ".claude").exists()
-
-
-class TestBuildPresetAgents:
-    """Preset agents are assembled into build output."""
+        agents = tmp_repo / "dist" / "python-api" / "agents"
+        assert (agents / "tdd-implementer" / "AGENT.md").exists()
+        assert not (agents / "code-reviewer").exists()
 
     def test_build_copies_preset_agents(self, tmp_repo: Path) -> None:
-        """Preset agents listed in manifest are copied to output."""
-        import json
         manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
         manifest = json.loads(manifest_path.read_text())
         manifest["preset_agents"] = ["api-builder"]
         manifest_path.write_text(json.dumps(manifest))
 
         build_preset("python-api", repo_root=tmp_repo)
-        agents_dir = tmp_repo / "dist" / "python-api" / ".claude" / "agents"
-        assert (agents_dir / "api-builder" / "AGENT.md").exists()
+        agents = tmp_repo / "dist" / "python-api" / "agents"
+        assert (agents / "api-builder" / "AGENT.md").exists()
 
     def test_preset_agent_overrides_core(self, tmp_repo: Path) -> None:
-        """Preset agent with same name as core agent replaces it."""
-        import json
-        # Create preset agent that collides with core agent
         override_dir = tmp_repo / "presets" / "python-api" / "agents" / "tdd-implementer"
         override_dir.mkdir(parents=True, exist_ok=True)
         (override_dir / "AGENT.md").write_text(
@@ -220,21 +137,180 @@ class TestBuildPresetAgents:
         manifest_path.write_text(json.dumps(manifest))
 
         build_preset("python-api", repo_root=tmp_repo)
-        agent_md = tmp_repo / "dist" / "python-api" / ".claude" / "agents" / "tdd-implementer" / "AGENT.md"
+        agent_md = tmp_repo / "dist" / "python-api" / "agents" / "tdd-implementer" / "AGENT.md"
         assert "OVERRIDDEN" in agent_md.read_text()
 
-    def test_preset_agents_defaults_empty(self, tmp_repo: Path) -> None:
-        """preset_agents defaults to [] when omitted — no preset agents copied."""
+    def test_build_skips_agents_when_dir_missing(self, tmp_repo: Path) -> None:
+        import shutil
+        shutil.rmtree(tmp_repo / "core" / "agents")
         build_preset("python-api", repo_root=tmp_repo)
-        agents_dir = tmp_repo / "dist" / "python-api" / ".claude" / "agents"
-        # Only core agents should exist
-        assert (agents_dir / "tdd-implementer").exists()
-        assert (agents_dir / "code-reviewer").exists()
-        assert not (agents_dir / "api-builder").exists()
+        agents = tmp_repo / "dist" / "python-api" / "agents"
+        assert not agents.exists()
+
+    def test_preset_agents_defaults_empty(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        agents = tmp_repo / "dist" / "python-api" / "agents"
+        assert (agents / "tdd-implementer").exists()
+        assert (agents / "code-reviewer").exists()
+        assert not (agents / "api-builder").exists()
+
+
+class TestBuildPluginHooks:
+    """Hook scripts go to hooks/scripts/, hook config goes to hooks/hooks.json."""
+
+    def test_build_copies_core_hook_scripts(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        scripts_dir = tmp_repo / "dist" / "python-api" / "hooks" / "scripts"
+        assert (scripts_dir / "protect-files.py").exists()
+
+    def test_build_copies_preset_hook_scripts(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        scripts_dir = tmp_repo / "dist" / "python-api" / "hooks" / "scripts"
+        assert (scripts_dir / "post-edit-lint.py").exists()
+
+    def test_build_creates_hooks_json(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        hooks_json = tmp_repo / "dist" / "python-api" / "hooks" / "hooks.json"
+        assert hooks_json.exists()
+        data = json.loads(hooks_json.read_text())
+        assert "hooks" in data
+
+    def test_hooks_json_has_rewritten_paths(self, tmp_repo: Path) -> None:
+        """Hook commands reference hooks/scripts/ not .claude/hooks/."""
+        build_preset("python-api", repo_root=tmp_repo)
+        hooks_json = tmp_repo / "dist" / "python-api" / "hooks" / "hooks.json"
+        data = json.loads(hooks_json.read_text())
+
+        # Check PreToolUse hook command has rewritten path
+        pre_hooks = data["hooks"]["PreToolUse"]
+        assert len(pre_hooks) >= 1
+        cmd = pre_hooks[0]["hooks"][0]["command"]
+        assert "hooks/scripts/protect-files.py" in cmd
+        assert ".claude/hooks/" not in cmd
+
+    def test_hooks_json_uses_plugin_root(self, tmp_repo: Path) -> None:
+        """Hook commands use $CLAUDE_PLUGIN_ROOT."""
+        build_preset("python-api", repo_root=tmp_repo)
+        hooks_json = tmp_repo / "dist" / "python-api" / "hooks" / "hooks.json"
+        data = json.loads(hooks_json.read_text())
+
+        pre_hooks = data["hooks"]["PreToolUse"]
+        cmd = pre_hooks[0]["hooks"][0]["command"]
+        assert "$CLAUDE_PLUGIN_ROOT" in cmd
+
+    def test_hooks_json_includes_preset_hooks(self, tmp_repo: Path) -> None:
+        """Merged hooks from preset appear in hooks.json."""
+        build_preset("python-api", repo_root=tmp_repo)
+        hooks_json = tmp_repo / "dist" / "python-api" / "hooks" / "hooks.json"
+        data = json.loads(hooks_json.read_text())
+
+        assert "PostToolUse" in data["hooks"]
+        post_hooks = data["hooks"]["PostToolUse"]
+        assert len(post_hooks) >= 1
+        cmd = post_hooks[0]["hooks"][0]["command"]
+        assert "hooks/scripts/post-edit-lint.py" in cmd
+
+
+class TestBuildPluginSettings:
+    """Settings at root level without hooks section."""
+
+    def test_build_creates_root_settings(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        settings = tmp_repo / "dist" / "python-api" / "settings.json"
+        assert settings.exists()
+
+    def test_settings_has_no_hooks(self, tmp_repo: Path) -> None:
+        """Settings at root should not contain hooks (they are in hooks.json)."""
+        build_preset("python-api", repo_root=tmp_repo)
+        settings = tmp_repo / "dist" / "python-api" / "settings.json"
+        data = json.loads(settings.read_text())
+        assert "hooks" not in data
+
+
+class TestBuildPluginReadme:
+    """README.md is generated with plugin info."""
+
+    def test_build_creates_readme(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        readme = tmp_repo / "dist" / "python-api" / "README.md"
+        assert readme.exists()
+
+    def test_readme_contains_plugin_name(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        readme = tmp_repo / "dist" / "python-api" / "README.md"
+        content = readme.read_text()
+        assert "python-api" in content
+
+    def test_readme_contains_description(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        readme = tmp_repo / "dist" / "python-api" / "README.md"
+        content = readme.read_text()
+        assert "Python backend services" in content
+
+    def test_readme_contains_claude_md_template_section(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        readme = tmp_repo / "dist" / "python-api" / "README.md"
+        content = readme.read_text()
+        assert "## CLAUDE.md Template" in content
+
+    def test_readme_claude_md_template_references_plugin_name(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        readme = tmp_repo / "dist" / "python-api" / "README.md"
+        content = readme.read_text()
+        # The template section should mention the plugin name
+        template_start = content.index("## CLAUDE.md Template")
+        template_section = content[template_start:]
+        assert "python-api" in template_section
+
+    def test_readme_claude_md_template_has_code_block(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        readme = tmp_repo / "dist" / "python-api" / "README.md"
+        content = readme.read_text()
+        template_start = content.index("## CLAUDE.md Template")
+        template_section = content[template_start:]
+        assert "```" in template_section
+
+
+class TestBuildExclusions:
+    """Exclusions remove items from plugin output using root-level paths."""
+
+    def test_exclude_removes_skill(self, tmp_repo: Path) -> None:
+        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["exclude"] = ["skills/tdd"]
+        manifest_path.write_text(json.dumps(manifest))
+
+        build_preset("python-api", repo_root=tmp_repo)
+        skills = tmp_repo / "dist" / "python-api" / "skills"
+        assert not (skills / "tdd").exists()
+        assert (skills / "commit").exists()
+
+    def test_exclude_removes_agent(self, tmp_repo: Path) -> None:
+        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["exclude"] = ["agents/tdd-implementer"]
+        manifest_path.write_text(json.dumps(manifest))
+
+        build_preset("python-api", repo_root=tmp_repo)
+        agents = tmp_repo / "dist" / "python-api" / "agents"
+        assert not (agents / "tdd-implementer").exists()
+        assert (agents / "code-reviewer" / "AGENT.md").exists()
+
+    def test_exclusion_path_containment(self, tmp_repo: Path) -> None:
+        """Exclusion paths that escape dist_path are rejected."""
+        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["exclude"] = ["../../etc/passwd"]
+        manifest_path.write_text(json.dumps(manifest))
+
+        build_preset("python-api", repo_root=tmp_repo)
+        assert (tmp_repo / "dist" / "python-api").exists()
+
+
+class TestBuildPresetAgentValidation:
+    """Validation for preset agents."""
 
     def test_validation_fails_missing_preset_agent(self, tmp_repo: Path) -> None:
-        """Manifest validation fails if preset_agents references nonexistent agent."""
-        import json
         import pytest
         from scripts.build_preset import BuildValidationError
 
@@ -247,8 +323,6 @@ class TestBuildPresetAgents:
             build_preset("python-api", repo_root=tmp_repo)
 
     def test_validation_catches_agent_in_both_preset_and_exclude(self, tmp_repo: Path) -> None:
-        """Validation fails when agent is in both preset_agents and exclude."""
-        import json
         import pytest
         from scripts.build_preset import BuildValidationError
 
@@ -265,21 +339,22 @@ class TestBuildPresetAgents:
 class TestSettingsMerge:
     """Settings merge handles edge cases correctly."""
 
-    def test_duplicate_hook_type_appends(self, tmp_repo: Path) -> None:
-        import json
-
+    def test_duplicate_hook_type_appends_in_hooks_json(self, tmp_repo: Path) -> None:
+        """When base and preset both define PreToolUse, hooks.json appends them."""
         preset_settings = tmp_repo / "presets" / "python-api" / "settings-preset.json"
         preset_settings.write_text(json.dumps({
             "hooks": {
                 "PreToolUse": [{"matcher": "Bash", "hooks": []}],
-                "PostToolUse": [{"matcher": "Edit|Write", "hooks": []}],
+                "PostToolUse": [{"matcher": "Edit|Write", "hooks": [
+                    {"type": "command", "command": 'python3 "$CLAUDE_PLUGIN_ROOT"/hooks/scripts/post-edit-lint.py'}
+                ]}],
             }
         }))
 
         build_preset("python-api", repo_root=tmp_repo)
-        settings_path = tmp_repo / "dist" / "python-api" / ".claude" / "settings.json"
-        settings = json.loads(settings_path.read_text())
+        hooks_json = tmp_repo / "dist" / "python-api" / "hooks" / "hooks.json"
+        data = json.loads(hooks_json.read_text())
 
-        assert len(settings["hooks"]["PreToolUse"]) == 2
-        assert settings["hooks"]["PreToolUse"][0]["matcher"] == "Edit|Write"
-        assert settings["hooks"]["PreToolUse"][1]["matcher"] == "Bash"
+        assert len(data["hooks"]["PreToolUse"]) == 2
+        assert data["hooks"]["PreToolUse"][0]["matcher"] == "Edit|Write"
+        assert data["hooks"]["PreToolUse"][1]["matcher"] == "Bash"

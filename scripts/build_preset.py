@@ -1,44 +1,28 @@
-"""Assemble a Claude config preset from core + delta.
+"""Assemble a Claude plugin from core + preset delta.
 
-Build order (D16):
-1. Copy all core/skills/ -> dist/<preset>/.claude/skills/
-2. Copy all core/docs/ -> dist/<preset>/.claude/docs/
-3. Copy core hooks listed in manifest -> dist/<preset>/.claude/hooks/
-4. Copy preset-specific skills (overrides core on collision, D17)
-5. Copy preset-specific hooks
-6. Copy core agents -> dist/<preset>/.claude/agents/
-7. Copy agent-role-defaults.json -> dist/<preset>/.claude/
-8. Merge settings-base.json + settings-preset.json -> .claude/settings.json (D13)
-9. Concatenate CLAUDE-base.md + CLAUDE-preset.md -> CLAUDE.md (D12)
-10. Apply exclusions from manifest (D11)
-11. Write .template-version (D25)
+Build order (plugin format):
+1. Copy core skills -> dist/<preset>/skills/
+2. Copy preset skills -> dist/<preset>/skills/ (override on collision)
+3. Copy core agents -> dist/<preset>/agents/
+4. Copy preset agents -> dist/<preset>/agents/ (override on collision)
+5. Copy hook scripts to dist/<preset>/hooks/scripts/
+6. Generate hooks/hooks.json (merged hook config)
+7. Generate settings.json at root (hooks removed)
+8. Generate .claude-plugin/plugin.json
+9. Generate README.md
+10. Apply exclusions
 """
 
 from __future__ import annotations
 
 import json
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
 
 class BuildValidationError(Exception):
     """Raised when manifest validation fails."""
-
-
-def _get_version() -> str:
-    """Get current git tag or short commit hash for .template-version (D25)."""
-    try:
-        result = subprocess.run(
-            ["git", "describe", "--tags", "--always"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        return result.stdout.strip()
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        return "unknown"
 
 
 def _validate_manifest(
@@ -104,8 +88,68 @@ def _merge_settings(base_path: Path, preset_path: Path) -> dict:
     return merged
 
 
+def _generate_readme(manifest: dict, skills: list[str], agents: list[str]) -> str:
+    """Generate a simple README.md for the plugin.
+
+    Parameters
+    ----------
+    manifest
+        The preset manifest dict.
+    skills
+        List of skill directory names in the output.
+    agents
+        List of agent directory names in the output.
+
+    Returns
+    -------
+    str
+        README content.
+    """
+    name = manifest["name"]
+    description = manifest.get("description", "")
+    lines = [
+        f"# {name}",
+        "",
+        description,
+        "",
+    ]
+
+    if skills:
+        lines.append("## Skills")
+        lines.append("")
+        for skill in sorted(skills):
+            lines.append(f"- {skill}")
+        lines.append("")
+
+    if agents:
+        lines.append("## Agents")
+        lines.append("")
+        for agent in sorted(agents):
+            lines.append(f"- {agent}")
+        lines.append("")
+
+    lines.append("## CLAUDE.md Template")
+    lines.append("")
+    lines.append("Copy the following into your project's `CLAUDE.md` to reference this plugin:")
+    lines.append("")
+    lines.append("```")
+    lines.append("# Project Name")
+    lines.append("")
+    lines.append("## Plugins")
+    lines.append("")
+    lines.append(f"This project uses the {name} plugin for Claude Code configuration.")
+    lines.append("")
+    lines.append("## Methodology")
+    lines.append("")
+    lines.append("See plugin documentation for TDD, root cause tracing, and subagent development processes.")
+    lines.append("```")
+    lines.append("")
+
+    return "\n".join(lines)
+
+
 def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
-    """Build a preset into dist/<preset_name>/.
+    """Build a preset into dist/<preset_name>/ in plugin format.
 
     Parameters
     ----------
@@ -123,7 +167,6 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     core_path = root / "core"
     preset_path = root / "presets" / preset_name
     dist_path = root / "dist" / preset_name
-    claude_dir = dist_path / ".claude"
 
     if not preset_path.exists():
         raise BuildValidationError(
@@ -135,35 +178,26 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
 
     if dist_path.exists():
         shutil.rmtree(dist_path)
-    claude_dir.mkdir(parents=True)
+    dist_path.mkdir(parents=True)
 
+    # 1. Copy core skills -> skills/ (root level)
     if manifest["core"].get("skills") == "all":
-        shutil.copytree(core_path / "skills", claude_dir / "skills")
+        shutil.copytree(core_path / "skills", dist_path / "skills")
 
-    if manifest["core"].get("docs") == "all":
-        shutil.copytree(core_path / "docs", claude_dir / "docs")
-
-    hooks_dir = claude_dir / "hooks"
-    hooks_dir.mkdir(exist_ok=True)
-    for hook_name in manifest["core"].get("hooks", []):
-        shutil.copy2(core_path / "hooks" / hook_name, hooks_dir / hook_name)
-
+    # 2. Copy preset skills -> skills/ (override on collision)
     for skill_name in manifest.get("preset_skills", []):
         src = preset_path / "skills" / skill_name
-        dest = claude_dir / "skills" / skill_name
+        dest = dist_path / "skills" / skill_name
         if dest.exists():
             print(f"WARNING: preset skill '{skill_name}' overrides core skill '{skill_name}'")
             shutil.rmtree(dest)
         shutil.copytree(src, dest)
 
-    for hook_name in manifest.get("preset_hooks", []):
-        shutil.copy2(preset_path / "hooks" / hook_name, hooks_dir / hook_name)
-
-    # Copy core agents
+    # 3. Copy core agents -> agents/ (root level)
     core_agents_dir = core_path / "agents"
     agents_setting = manifest["core"].get("agents", "all")
     if core_agents_dir.exists():
-        dest_agents = claude_dir / "agents"
+        dest_agents = dist_path / "agents"
         if agents_setting == "all":
             shutil.copytree(core_agents_dir, dest_agents)
         elif isinstance(agents_setting, list):
@@ -173,37 +207,68 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
                 if src.exists():
                     shutil.copytree(src, dest_agents / agent_name)
 
-    # Copy preset agents (override core on collision)
+    # 4. Copy preset agents -> agents/ (override on collision)
     for agent_name in manifest.get("preset_agents", []):
         src = preset_path / "agents" / agent_name
-        dest = claude_dir / "agents" / agent_name
+        dest = dist_path / "agents" / agent_name
         if dest.exists():
             print(f"WARNING: preset agent '{agent_name}' overrides core agent '{agent_name}'")
             shutil.rmtree(dest)
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copytree(src, dest)
 
-    # Copy agent role defaults
-    role_defaults = core_path / "agent-role-defaults.json"
-    if role_defaults.exists():
-        shutil.copy2(role_defaults, claude_dir / "agent-role-defaults.json")
+    # 5. Copy hook scripts to hooks/scripts/
+    hooks_scripts_dir = dist_path / "hooks" / "scripts"
+    hooks_scripts_dir.mkdir(parents=True, exist_ok=True)
+    for hook_name in manifest["core"].get("hooks", []):
+        shutil.copy2(core_path / "hooks" / hook_name, hooks_scripts_dir / hook_name)
+    for hook_name in manifest.get("preset_hooks", []):
+        shutil.copy2(preset_path / "hooks" / hook_name, hooks_scripts_dir / hook_name)
 
+    # 6. Generate hooks/hooks.json (merged hook config)
     merged_settings = _merge_settings(
         core_path / "settings-base.json",
         preset_path / "settings-preset.json",
     )
-    (claude_dir / "settings.json").write_text(
-        json.dumps(merged_settings, indent=2) + "\n"
+    hooks_config = {"hooks": merged_settings.get("hooks", {})}
+    (dist_path / "hooks" / "hooks.json").write_text(
+        json.dumps(hooks_config, indent=2) + "\n"
     )
 
-    base_md = (core_path / "CLAUDE-base.md").read_text()
-    preset_md = (preset_path / "CLAUDE-preset.md").read_text()
-    (dist_path / "CLAUDE.md").write_text(base_md + preset_md)
+    # 7. Generate settings.json at root (hooks removed)
+    settings_without_hooks = {k: v for k, v in merged_settings.items() if k != "hooks"}
+    (dist_path / "settings.json").write_text(
+        json.dumps(settings_without_hooks, indent=2) + "\n"
+    )
 
+    # 8. Generate .claude-plugin/plugin.json
+    plugin_dir = dist_path / ".claude-plugin"
+    plugin_dir.mkdir(parents=True)
+    plugin_json = {
+        "name": manifest["name"],
+        "version": manifest.get("version", "0.0.0"),
+        "description": manifest.get("description", ""),
+    }
+    (plugin_dir / "plugin.json").write_text(
+        json.dumps(plugin_json, indent=2) + "\n"
+    )
+
+    # 9. Generate README.md
+    skill_names = []
+    skills_dir = dist_path / "skills"
+    if skills_dir.exists():
+        skill_names = [d.name for d in skills_dir.iterdir() if d.is_dir()]
+    agent_names = []
+    agents_dir = dist_path / "agents"
+    if agents_dir.exists():
+        agent_names = [d.name for d in agents_dir.iterdir() if d.is_dir()]
+    (dist_path / "README.md").write_text(_generate_readme(manifest, skill_names, agent_names))
+
+    # 10. Apply exclusions (paths are now relative to dist_path, not .claude/)
     for exclusion in manifest.get("exclude", []):
-        excluded_path = (claude_dir / exclusion).resolve()
-        # Path containment check: ensure resolved path is within claude_dir
-        if not str(excluded_path).startswith(str(claude_dir.resolve())):
+        excluded_path = (dist_path / exclusion).resolve()
+        # Path containment check: ensure resolved path is within dist_path
+        if not str(excluded_path).startswith(str(dist_path.resolve())):
             print(f"WARNING: exclusion '{exclusion}' resolves outside build directory, skipping")
             continue
         if excluded_path.exists():
@@ -211,8 +276,6 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
                 shutil.rmtree(excluded_path)
             else:
                 excluded_path.unlink()
-
-    (claude_dir / ".template-version").write_text(_get_version() + "\n")
 
     return dist_path
 
@@ -224,9 +287,10 @@ if __name__ == "__main__":
 
     preset = sys.argv[1]
     output = build_preset(preset)
-    print(f"\nBuilt preset '{preset}' -> {output}/")
-    print(f"  {output}/.claude/")
-    print(f"  {output}/CLAUDE.md")
-    print(f"\nCopy to your project:")
-    print(f"  cp -r {output}/.claude /path/to/your/project/")
-    print(f"  cp {output}/CLAUDE.md /path/to/your/project/")
+    print(f"\nBuilt plugin '{preset}' -> {output}/")
+    print(f"  {output}/.claude-plugin/plugin.json")
+    print(f"  {output}/skills/")
+    print(f"  {output}/agents/")
+    print(f"  {output}/hooks/")
+    print(f"  {output}/settings.json")
+    print(f"  {output}/README.md")

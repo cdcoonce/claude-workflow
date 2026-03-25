@@ -25,12 +25,11 @@ class TestValidation:
         (preset / "manifest.json").write_text(json.dumps({
             "name": "bad-hook",
             "description": "Bad hook reference",
-            "core": {"skills": "all", "docs": "all", "hooks": ["protect-files.py"]},
+            "core": {"skills": "all", "hooks": ["protect-files.py"]},
             "exclude": [],
             "preset_skills": [],
             "preset_hooks": ["missing-hook.py"],
         }))
-        (preset / "CLAUDE-preset.md").write_text("\n## Bad\n")
         (preset / "settings-preset.json").write_text(json.dumps({"hooks": {}}))
         preset_hooks = preset / "hooks"
         preset_hooks.mkdir()
@@ -54,12 +53,11 @@ class TestValidation:
         (preset / "manifest.json").write_text(json.dumps({
             "name": "conflict",
             "description": "Conflict test",
-            "core": {"skills": "all", "docs": "all", "hooks": ["protect-files.py"]},
+            "core": {"skills": "all", "hooks": ["protect-files.py"]},
             "exclude": ["skills/deploy"],
             "preset_skills": ["deploy"],
             "preset_hooks": [],
         }))
-        (preset / "CLAUDE-preset.md").write_text("\n## Conflict\n")
         (preset / "settings-preset.json").write_text(json.dumps({"hooks": {}}))
         preset_skills = preset / "skills" / "deploy"
         preset_skills.mkdir(parents=True)
