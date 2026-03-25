@@ -64,15 +64,15 @@ Present summary: "Resuming **{feature}** at **{phase}**. Here's where we left of
 
 ### Phase 1: Brainstorm
 
-Invoke `write-a-prd`. Trust the skill's internal flow (interview → PRD → GitLab issue). Record the issue URL in the state file.
+Invoke `write-a-prd`. Trust the skill's internal flow (interview → PRD → GitLab issue). Record the issue URL in the state file. **Do not commit** the state file — it stays as a working change on main.
 
 ### Phase 2: Plan
 
-Pass the PRD issue URL to `prd-to-plan`. Record the plan file path (at `docs/plans/{feature}.md`).
+Pass the PRD issue URL to `prd-to-plan`. Record the plan file path (at `docs/plans/{feature}.md`). **Do not commit** the plan file or state file — both stay as working changes.
 
 ### Phase 3: CEO Review
 
-Pass plan file path to `plan-ceo-review`. Recommend HOLD SCOPE mode but let the skill's own mode selection (Step 0F) run. Record when review is complete and user approves.
+Pass plan file path to `plan-ceo-review`. Recommend HOLD SCOPE mode but let the skill's own mode selection (Step 0F) run. Record when review is complete and user approves. **Do not commit** — plan revisions remain working changes.
 
 ### Phase 4: Issues
 
@@ -86,7 +86,15 @@ Record each issue URL in the Issues table immediately after creation. See [refer
 
 ### Phase 5: Implement
 
-**Owned by the orchestrator.** Create feature branch `feat/{feature-slug}` (see branch handling in [references/phase-transitions.md](references/phase-transitions.md)).
+**Owned by the orchestrator.** Before dispatching any implementation work, commit and push all planning artifacts so they land on main — not the feature branch:
+
+1. **Stage planning artifacts only:**
+   ```
+   git add docs/dev-cycle/{slug}.state.md docs/plans/{feature}.md
+   ```
+2. **Single commit:** `docs(dev-cycle): plan and state for {feature-slug}`
+3. **Push to origin:** `git push origin main` (or current default branch) so the planning commits are on remote before branching
+4. **Create feature branch:** `feat/{feature-slug}` from the updated HEAD (see branch handling in [references/phase-transitions.md](references/phase-transitions.md))
 
 Before dispatching, resolve agent identities:
 
@@ -131,8 +139,9 @@ See [references/phase-transitions.md](references/phase-transitions.md) for:
 
 ## Branch Management
 
-- **Phases 1–4:** Run on current branch (documentation only)
-- **Phase 5:** Creates `feat/{feature-slug}` branch
+- **Phases 1–4:** Run on current branch (documentation only). **Do NOT commit** state files or plan docs during these phases — keep them as unstaged working changes. This prevents planning commits from polluting the feature branch history.
+- **Phase 4 → 5 gate:** Before creating the feature branch, commit all planning artifacts in a single commit and push to origin (see Phase 5 for exact steps).
+- **Phase 5:** Creates `feat/{feature-slug}` branch from the updated, pushed main
 - **Phase 7:** MRs to the default branch (detected via `glab repo view --output json`)
 - **Resume at Phase 5+:** Check out feature branch if not already on it
 
