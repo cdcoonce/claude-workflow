@@ -4,21 +4,21 @@ This file is auto-loaded every conversation. It defines how Claude should work i
 
 ## What This Repo Is
 
-A template system for Claude Code configurations. It produces ready-to-copy `.claude/` directories + `CLAUDE.md` files for new projects.
+A template system for Claude Code plugin configurations. It builds self-contained plugin directories (with `.claude-plugin/plugin.json`, skills, agents, hooks, and settings) for new projects.
 
 See [.claude/docs/project.md](.claude/docs/project.md) for detailed project context (tech stack, data flow, architecture patterns).
 
 ## Architecture
 
-- `core/` — Universal skills (17), methodology docs (4), file protection hook, agents (2), role defaults
+- `core/` — Universal skills (17), methodology docs (4), file protection hook, agents (2)
 - `presets/` — Named project type configurations (python-api, data-pipeline, full-stack, claude-tooling, analysis)
-- `scripts/` — Python build/diff/smoke-test tooling
+- `scripts/` — Python build/smoke-test/marketplace tooling
 - `dist/` — Build output (gitignored)
 
 ## Commands
 
 - Build a preset: `uv run python -m scripts.build_preset <preset_name>`
-- Diff a project: `uv run python -m scripts.diff_preset <preset_name> <project_path>`
+- Build marketplace index: `uv run python -m scripts.build_marketplace`
 - Smoke test: `uv run python -m scripts.smoke_test <preset_name>`
 - Run tests: `uv run pytest`
 - Run with coverage: `uv run pytest --cov=scripts --cov-report=term-missing`
@@ -63,11 +63,10 @@ See core CLAUDE.md for skill trigger conditions.
 
 ## Agents
 
-Agents are specialized role definitions (`AGENT.md` with YAML frontmatter) that give subagents domain expertise.
+Agents are specialized role definitions (`AGENT.md` with YAML frontmatter) that give subagents domain expertise. Each agent is self-contained -- skills are declared directly in the agent's frontmatter via `skills.add`/`skills.remove`.
 
 - `core/agents/` — Universal agents: `tdd-implementer` (implementer), `code-reviewer` (reviewer)
 - `presets/*/agents/` — Preset-specific agents (e.g., `api-builder`, `security-reviewer`)
-- `core/agent-role-defaults.json` — Default skill sets per role (`implementer` → `[tdd, commit]`, `reviewer` → `[daa-code-review]`)
 
 ### Agent file format
 

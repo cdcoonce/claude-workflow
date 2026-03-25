@@ -1,9 +1,9 @@
 {
   "name": "claude-tooling",
   "description": "Developing Claude skills, hooks, agents, and template configurations",
+  "version": "1.0.0",
   "core": {
     "skills": "all",
-    "docs": "all",
     "hooks": ["protect-files.py"]
   },
   "exclude": [],

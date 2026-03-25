@@ -5,15 +5,20 @@ Update when a breaking change is discovered.
 
 ## Required Features
 
+### Plugin System
+- `.claude-plugin/plugin.json` plugin manifest
+- Plugin-level `skills/`, `agents/`, `hooks/` directories
+- `$CLAUDE_PLUGIN_ROOT` environment variable in hook commands
+
 ### Hooks
 - `PreToolUse` hook type — used for file protection
 - `PostToolUse` hook type — used for auto-linting
 - `Edit|Write` matcher syntax
-- `$CLAUDE_PROJECT_DIR` environment variable in hook commands
+- `hooks/hooks.json` for plugin hook configuration
 - Hook scripts receive tool input as JSON on stdin
 
 ### Skills
-- `.claude/skills/*/SKILL.md` auto-discovery
+- `skills/*/SKILL.md` auto-discovery within plugin
 - Skill `name` and `description` frontmatter for triggering
 - `references/` subdirectory loading
 
@@ -23,8 +28,8 @@ Update when a breaking change is discovered.
 - `EnterPlanMode` / `ExitPlanMode` tools
 
 ### Settings
-- `.claude/settings.json` project-level settings
-- Hook arrays in settings with `matcher` and `hooks` fields
+- `settings.json` at plugin root (non-hook settings)
+- Hook arrays in hooks.json with `matcher` and `hooks` fields
 
 ## Last Verified
 

@@ -2,13 +2,13 @@
 
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white) ![Claude Code](https://img.shields.io/badge/Claude_Code-Opus_4.6-6B4FBB?logo=anthropic&logoColor=white) ![pytest](https://img.shields.io/badge/Tests-pytest-0A9EDC?logo=pytest&logoColor=white) ![uv](https://img.shields.io/badge/Package_Manager-uv-DE5FE9) ![Hatchling](https://img.shields.io/badge/Build-Hatchling-F5A623) ![GitLab](https://img.shields.io/badge/GitLab-glab_CLI-FC6D26?logo=gitlab&logoColor=white)
 
-A **template system for Claude Code configurations** shared across the team. Build a preset for your project type, copy the output into your repo, and get a fully configured Claude Code environment with 19 skills, methodology docs, agents, and hooks — ready to go in seconds.
+A **template system for Claude Code plugins** shared across the team. Build a preset for your project type, install it as a Claude Code plugin, and get a fully configured environment with 19 skills, methodology docs, agents, and hooks -- ready to go in seconds.
 
 ---
 
 ## Table of Contents
 
-- [Quick Start: Copy a Preset to Your Project](#quick-start-copy-a-preset-to-your-project)
+- [Quick Start: Install a Plugin](#quick-start-install-a-plugin)
 - [Overview](#overview)
 - [Architecture](#architecture)
   - [High-Level Architecture](#high-level-architecture)
@@ -20,7 +20,7 @@ A **template system for Claude Code configurations** shared across the team. Bui
   - [Running Tests](#running-tests)
 - [Usage](#usage)
   - [Build a Preset](#build-a-preset)
-  - [Diff a Project Against a Preset](#diff-a-project-against-a-preset)
+  - [Build Marketplace Index](#build-marketplace-index)
   - [Smoke Test a Built Preset](#smoke-test-a-built-preset)
   - [Validate Dev-Cycle State Files](#validate-dev-cycle-state-files)
 - [Presets](#presets)
@@ -30,7 +30,6 @@ A **template system for Claude Code configurations** shared across the team. Bui
 - [Agents](#agents)
   - [Core Agents](#core-agents)
   - [Preset Agents](#preset-agents)
-  - [Role Defaults](#role-defaults)
 - [Methodology](#methodology)
 - [Dev-Cycle Orchestrator](#dev-cycle-orchestrator)
   - [7-Phase Pipeline](#7-phase-pipeline)
@@ -41,7 +40,7 @@ A **template system for Claude Code configurations** shared across the team. Bui
 
 ---
 
-## Quick Start: Copy a Preset to Your Project
+## Quick Start: Install a Plugin
 
 Already have the repo cloned? Pick a preset and go:
 
@@ -49,17 +48,17 @@ Already have the repo cloned? Pick a preset and go:
 # 1. Build the preset that matches your project type
 uv run python -m scripts.build_preset python-api
 
-# 2. Copy the output into your project
-cp -r dist/python-api/.claude/ /path/to/your-project/.claude/
-cp dist/python-api/CLAUDE.md /path/to/your-project/CLAUDE.md
+# 2. Install the plugin into your project
+#    (copy the built plugin directory or symlink it)
+cp -r dist/python-api/ /path/to/your-project/.claude/plugins/python-api/
 
-# 3. Done — Claude Code now has 19 skills, agents, hooks, and methodology docs
+# 3. Done -- Claude Code now has 19 skills, agents, hooks, and methodology docs
 ```
 
 ```mermaid
 flowchart LR
     A["Pick a preset"] --> B["Build it"]
-    B --> C["Copy .claude/ + CLAUDE.md"]
+    B --> C["Install plugin"]
     C --> D["Start using Claude Code"]
 
     style A fill:#f5f5f5,stroke:#333
@@ -74,15 +73,15 @@ See [Presets](#presets) for details on what each one includes.
 
 ## Overview
 
-Every new project that uses **Claude Code** needs a `.claude/` directory with skills, hooks, settings, and a `CLAUDE.md` file defining development standards. Setting these up manually is repetitive and error-prone.
+Every new project that uses **Claude Code** needs skills, hooks, settings, and development standards. Setting these up manually is repetitive and error-prone.
 
-**Claude Workflow** solves this with a layered template system:
+**Claude Workflow** solves this with a layered plugin system:
 
-1. **Core** — 19 universal skills, 2 agents, 4 methodology docs, and a file-protection hook that apply to every project
-2. **Presets** — Named configurations (e.g., `python-api`, `full-stack`) that add project-type-specific skills, hooks, and agents
-3. **Build tooling** — Python scripts that assemble core + preset into a ready-to-copy `dist/` output
+1. **Core** -- 19 universal skills, 2 agents, 4 methodology docs, and a file-protection hook that apply to every project
+2. **Presets** -- Named configurations (e.g., `python-api`, `full-stack`) that add project-type-specific skills, hooks, and agents
+3. **Build tooling** -- Python scripts that assemble core + preset into a self-contained Claude Code plugin in `dist/`
 
-The result is a consistent, tested Claude Code configuration that can be dropped into any new repo in seconds.
+The result is a consistent, tested Claude Code plugin that can be installed into any new repo in seconds.
 
 ---
 
@@ -97,27 +96,28 @@ graph TD
     BUILD --> DIST[dist/preset-name/]
 
     subgraph "core/"
-        SKILLS_CORE[skills/ — 19 universal]
-        DOCS[docs/ — 4 methodology]
-        HOOKS_CORE[hooks/ — protect-files.py]
-        AGENTS_CORE[agents/ — 2 universal]
-        BASE_MD[CLAUDE-base.md]
+        SKILLS_CORE[skills/ -- 19 universal]
+        DOCS[docs/ -- 4 methodology]
+        HOOKS_CORE[hooks/ -- protect-files.py]
+        AGENTS_CORE[agents/ -- 2 universal]
         BASE_JSON[settings-base.json]
-        ROLE_DEFAULTS[agent-role-defaults.json]
     end
 
     subgraph "presets/preset-name/"
         MANIFEST[manifest.json]
-        PRESET_MD[CLAUDE-preset.md]
         PRESET_JSON[settings-preset.json]
-        SKILLS_PRESET[skills/ — overrides]
-        HOOKS_PRESET[hooks/ — additions]
-        AGENTS_PRESET[agents/ — overrides]
+        SKILLS_PRESET[skills/ -- overrides]
+        HOOKS_PRESET[hooks/ -- additions]
+        AGENTS_PRESET[agents/ -- overrides]
     end
 
-    subgraph "dist/preset-name/"
-        OUT_CLAUDE[.claude/]
-        OUT_MD[CLAUDE.md]
+    subgraph "dist/preset-name/ (plugin)"
+        OUT_PLUGIN[.claude-plugin/plugin.json]
+        OUT_SKILLS[skills/]
+        OUT_AGENTS[agents/]
+        OUT_HOOKS[hooks/]
+        OUT_SETTINGS[settings.json]
+        OUT_README[README.md]
     end
 ```
 
@@ -126,12 +126,10 @@ graph TD
 ```
 claude-workflow/
 ├── core/                    # Universal components shared by all presets
-│   ├── CLAUDE-base.md       # Base development standards
 │   ├── settings-base.json   # Base hook configuration
 │   ├── agents/              # 2 universal agents (tdd-implementer, code-reviewer)
 │   ├── docs/                # TDD, root-cause tracing, subagent, parallel agents
 │   ├── hooks/               # File protection hook
-│   ├── agent-role-defaults.json  # Role → skill mapping
 │   └── skills/              # 19 universal skills
 ├── presets/                  # Project-type configurations
 │   ├── python-api/          # Python backend services (+ api-builder, security-reviewer)
@@ -139,8 +137,8 @@ claude-workflow/
 │   ├── full-stack/          # React/Next.js + Python (+ frontend/backend-builder, ux-reviewer)
 │   ├── claude-tooling/      # Claude skill/hook development (+ skill-builder, skill-reviewer)
 │   └── analysis/            # Notebooks, statistical analysis (+ analysis-builder)
-├── scripts/                 # Build, diff, smoke-test, validation tooling
-├── tests/                   # 81 pytest tests
+├── scripts/                 # Build, marketplace, smoke-test, validation tooling
+├── tests/                   # 93 pytest tests
 ├── dist/                    # Build output (gitignored)
 ├── docs/                    # Plans, archives, dev-cycle state
 └── .claude/                 # Self-applicable template (dogfooding)
@@ -148,25 +146,28 @@ claude-workflow/
 
 ### Build Pipeline
 
-The build script assembles a complete `.claude/` directory in 11 steps:
+The build script assembles a self-contained plugin directory in 10 steps:
 
 ```mermaid
 flowchart LR
     A[Read manifest.json] --> B[Validate references]
-    B --> C[Copy core skills/docs/hooks/agents]
-    C --> D[Copy preset skills/agents — overrides core]
-    D --> E[Merge settings JSON — hook arrays append]
-    E --> F[Concatenate CLAUDE-base.md + CLAUDE-preset.md]
-    F --> G[Apply exclusions]
-    G --> H[Write .template-version]
-    H --> I["dist/{preset}/.claude/ + CLAUDE.md"]
+    B --> C[Copy core skills/agents]
+    C --> D[Copy preset skills/agents -- overrides core]
+    D --> E[Copy hook scripts]
+    E --> F[Generate hooks/hooks.json]
+    F --> G[Generate settings.json]
+    G --> H[Generate .claude-plugin/plugin.json]
+    H --> I[Generate README.md]
+    I --> J[Apply exclusions]
+    J --> K["dist/{preset}/ (plugin)"]
 ```
 
 Key design decisions:
-- **Override semantics** — A preset skill or agent with the same name as a core one **replaces** it entirely
-- **Settings merge** — Base and preset JSON are shallow-merged; hook arrays are appended, not replaced
-- **Fail-fast validation** — All manifest references are checked upfront before any files are copied
-- **Path containment safety** — Exclusion paths are resolved and verified to prevent directory traversal
+- **Plugin format** -- Output is a self-contained Claude Code plugin with `.claude-plugin/plugin.json`
+- **Override semantics** -- A preset skill or agent with the same name as a core one **replaces** it entirely
+- **Settings merge** -- Base and preset JSON are shallow-merged; hook arrays are appended, not replaced
+- **Fail-fast validation** -- All manifest references are checked upfront before any files are copied
+- **Path containment safety** -- Exclusion paths are resolved and verified to prevent directory traversal
 
 ---
 
@@ -189,7 +190,7 @@ uv sync
 ### Running Tests
 
 ```bash
-# Run all 81 tests
+# Run all tests
 uv run pytest
 
 # Run with coverage
@@ -202,28 +203,27 @@ uv run pytest --cov=scripts --cov-report=term-missing
 
 ### Build a Preset
 
-Assemble core + preset into a ready-to-copy output directory:
+Assemble core + preset into a self-contained plugin directory:
 
 ```bash
 uv run python -m scripts.build_preset python-api
 ```
 
-Output lands in `dist/python-api/`. Copy the `.claude/` directory and `CLAUDE.md` to your target project:
+Output lands in `dist/python-api/` as a complete Claude Code plugin. Install it by copying the directory to your target project's plugin location:
 
 ```bash
-cp -r dist/python-api/.claude/ /path/to/your-project/.claude/
-cp dist/python-api/CLAUDE.md /path/to/your-project/CLAUDE.md
+cp -r dist/python-api/ /path/to/your-project/.claude/plugins/python-api/
 ```
 
-### Diff a Project Against a Preset
+### Build Marketplace Index
 
-Check how a project's `.claude/` directory has drifted from the template:
+Generate a `marketplace.json` listing all available plugins:
 
 ```bash
-uv run python -m scripts.diff_preset python-api /path/to/your-project
+uv run python -m scripts.build_marketplace
 ```
 
-Reports modified, added, and removed files relative to the preset. Useful for catching accidental changes or deciding whether to pull in template updates.
+Output lands at `.claude-plugin/marketplace.json` in the repo root.
 
 ### Smoke Test a Built Preset
 
@@ -233,7 +233,7 @@ Validate internal consistency after building:
 uv run python -m scripts.smoke_test python-api
 ```
 
-Checks that every skill referenced in `CLAUDE.md` has a directory, every hook in `settings.json` exists, every doc path resolves, and all agent frontmatter is valid.
+Checks that `.claude-plugin/plugin.json` has required fields, every skill has a `SKILL.md`, every agent has valid `AGENT.md` frontmatter, hook scripts referenced in `hooks.json` exist, and `settings.json` is valid JSON.
 
 ### Validate Dev-Cycle State Files
 
@@ -296,7 +296,7 @@ These ship with every preset:
 
 ## Agents
 
-Agents are specialized role definitions (`AGENT.md` with YAML frontmatter) that give subagents domain expertise. Each agent declares a **role** (`implementer` or `reviewer`) and can customize which skills it carries.
+Agents are specialized role definitions (`AGENT.md` with YAML frontmatter) that give subagents domain expertise. Each agent is self-contained -- it declares a **role** (`implementer` or `reviewer`) and its own skill set directly via `skills.add`/`skills.remove` in the frontmatter.
 
 ### Core Agents
 
@@ -323,17 +323,6 @@ Each preset adds domain-specific agents that override or extend the core set:
 | `claude-tooling` | **`skill-builder`**         | `implementer` | Claude skill/hook/MCP development    |
 | `claude-tooling` | **`skill-reviewer`**        | `reviewer`    | Skill correctness and best practices |
 | `analysis`       | **`analysis-builder`**      | `implementer` | Data analysis and notebook workflows |
-
-### Role Defaults
-
-`core/agent-role-defaults.json` defines the base skill set per role. Individual agents can override via `skills.add` and `skills.remove` in their YAML frontmatter.
-
-```json
-{
-  "implementer": { "skills": ["tdd", "commit"] },
-  "reviewer": { "skills": ["daa-code-review"] }
-}
-```
 
 A preset agent with the same name as a core agent **replaces** it (override semantics, not merge).
 
@@ -391,8 +380,7 @@ Every phase is mandatory. Each phase gates on a specific artifact (issue URL, pl
 | Symptom                                        | Likely Cause                                                                            | Fix                                                                    |
 | ---------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `build_preset.py` fails with "skill not found" | Manifest references a skill that doesn't exist in `core/skills/` or `presets/*/skills/` | Check `manifest.json` `preset_skills` array against actual directories |
-| Smoke test reports missing hook                | Hook listed in `settings.json` but file not in `.claude/hooks/`                         | Add the hook file or remove from settings                              |
-| `diff_preset.py` shows unexpected changes      | Project has drifted from template                                                       | Review diff output; re-build and re-copy if desired                    |
+| Smoke test reports missing hook                | Hook listed in `hooks.json` but script not in `hooks/scripts/`                          | Add the hook script or remove from settings                            |
 | Dev-cycle state file validation fails          | Frontmatter schema mismatch or phase transition error                                   | Check `schema_version: 1` and that phases follow strict order          |
 | macOS "` 2`" duplicate files appear            | Prettier hook reformats files, then `git checkout` conflicts                            | Already mitigated via `.prettierrc` + `.gitignore` patterns            |
 

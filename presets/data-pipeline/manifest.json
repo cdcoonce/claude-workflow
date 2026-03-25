@@ -1,9 +1,9 @@
 {
   "name": "data-pipeline",
   "description": "ETL/ELT pipelines, SQL transformations, scheduled data jobs",
+  "version": "1.0.0",
   "core": {
     "skills": "all",
-    "docs": "all",
     "hooks": ["protect-files.py"]
   },
   "exclude": [],

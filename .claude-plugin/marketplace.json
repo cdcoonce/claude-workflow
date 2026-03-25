@@ -1,0 +1,34 @@
+{
+  "plugins": [
+    {
+      "name": "analysis",
+      "version": "1.0.0",
+      "description": "Notebooks, R/Python scripts, statistical analysis, exploratory work",
+      "path": "dist/analysis"
+    },
+    {
+      "name": "claude-tooling",
+      "version": "1.0.0",
+      "description": "Developing Claude skills, hooks, agents, and template configurations",
+      "path": "dist/claude-tooling"
+    },
+    {
+      "name": "data-pipeline",
+      "version": "1.0.0",
+      "description": "ETL/ELT pipelines, SQL transformations, scheduled data jobs",
+      "path": "dist/data-pipeline"
+    },
+    {
+      "name": "full-stack",
+      "version": "1.0.0",
+      "description": "React/Next.js frontend + Python backend",
+      "path": "dist/full-stack"
+    },
+    {
+      "name": "python-api",
+      "version": "1.0.0",
+      "description": "Python backend services — Lambda, FastAPI, Flask",
+      "path": "dist/python-api"
+    }
+  ]
+}

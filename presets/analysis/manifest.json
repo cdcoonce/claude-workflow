@@ -1,9 +1,9 @@
 {
   "name": "analysis",
   "description": "Notebooks, R/Python scripts, statistical analysis, exploratory work",
+  "version": "1.0.0",
   "core": {
     "skills": "all",
-    "docs": "all",
     "hooks": ["protect-files.py"]
   },
   "exclude": [],
