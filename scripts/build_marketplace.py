@@ -39,7 +39,7 @@ def build_marketplace(repo_root: Path | None = None) -> Path:
             "name": manifest["name"],
             "version": manifest.get("version", "0.0.0"),
             "description": manifest.get("description", ""),
-            "path": f"dist/{manifest['name']}",
+            "source": f"./dist/{manifest['name']}",
         })
 
     plugins.sort(key=lambda p: p["name"])
@@ -47,9 +47,15 @@ def build_marketplace(repo_root: Path | None = None) -> Path:
     marketplace_dir = root / ".claude-plugin"
     marketplace_dir.mkdir(parents=True, exist_ok=True)
 
+    marketplace = {
+        "name": "claude-workflow",
+        "owner": {"name": "Charles Coonce"},
+        "plugins": plugins,
+    }
+
     marketplace_path = marketplace_dir / "marketplace.json"
     marketplace_path.write_text(
-        json.dumps({"plugins": plugins}, indent=2, ensure_ascii=False) + "\n",
+        json.dumps(marketplace, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
 

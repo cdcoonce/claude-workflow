@@ -20,6 +20,19 @@ class TestBuildMarketplace:
         data = json.loads(marketplace_path.read_text())
         assert "plugins" in data
 
+    def test_marketplace_has_name(self, tmp_repo: Path) -> None:
+        build_marketplace(tmp_repo)
+        marketplace_path = tmp_repo / ".claude-plugin" / "marketplace.json"
+        data = json.loads(marketplace_path.read_text())
+        assert data["name"] == "claude-workflow"
+
+    def test_marketplace_has_owner(self, tmp_repo: Path) -> None:
+        build_marketplace(tmp_repo)
+        marketplace_path = tmp_repo / ".claude-plugin" / "marketplace.json"
+        data = json.loads(marketplace_path.read_text())
+        assert "owner" in data
+        assert "name" in data["owner"]
+
     def test_marketplace_lists_all_presets(self, tmp_repo: Path) -> None:
         """All presets under presets/ appear in the plugins list."""
         build_marketplace(tmp_repo)
@@ -36,14 +49,14 @@ class TestBuildMarketplace:
             assert "name" in plugin
             assert "version" in plugin
             assert "description" in plugin
-            assert "path" in plugin
+            assert "source" in plugin
 
-    def test_marketplace_plugin_path_points_to_dist(self, tmp_repo: Path) -> None:
+    def test_marketplace_plugin_source_points_to_dist(self, tmp_repo: Path) -> None:
         build_marketplace(tmp_repo)
         marketplace_path = tmp_repo / ".claude-plugin" / "marketplace.json"
         data = json.loads(marketplace_path.read_text())
         for plugin in data["plugins"]:
-            assert plugin["path"].startswith("dist/")
+            assert plugin["source"].startswith("./dist/")
 
     def test_marketplace_description_from_manifest(self, tmp_repo: Path) -> None:
         build_marketplace(tmp_repo)
