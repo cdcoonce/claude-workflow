@@ -31,7 +31,7 @@ branch:
 
 ## Issues
 
-| Plan Slice | GitLab Issue | Status |
+| Plan Slice | GitHub Issue | Status |
 | ---------- | ------------ | ------ |
 
 ## Log
@@ -54,7 +54,7 @@ Completed phases MUST have a non-empty artifact (not `—`).
 
 ## Issues Table
 
-Populated incrementally during Phase 4. Each row maps a plan slice to a GitLab issue URL. On retry, the orchestrator skips slices that already have a recorded issue URL.
+Populated incrementally during Phase 4. Each row maps a plan slice to a GitHub issue URL. On retry, the orchestrator skips slices that already have a recorded issue URL.
 
 ## Phase Transition Rules
 

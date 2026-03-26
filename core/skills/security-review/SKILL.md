@@ -19,11 +19,11 @@ Identify **exploitable** security vulnerabilities. Report only findings where yo
 
 ## Confidence Levels
 
-| Level      | Criteria                                         | Action                       |
-|------------|--------------------------------------------------|------------------------------|
-| **HIGH**   | Vulnerable pattern + attacker-controlled input   | **Report** with severity     |
-| **MEDIUM** | Vulnerable pattern, input source unclear          | **Report** as "Needs verification" |
-| **LOW**    | Theoretical, best practice, defense-in-depth      | **Do not report**            |
+| Level      | Criteria                                       | Action                             |
+| ---------- | ---------------------------------------------- | ---------------------------------- |
+| **HIGH**   | Vulnerable pattern + attacker-controlled input | **Report** with severity           |
+| **MEDIUM** | Vulnerable pattern, input source unclear       | **Report** as "Needs verification" |
+| **LOW**    | Theoretical, best practice, defense-in-depth   | **Do not report**                  |
 
 ## Do Not Flag
 
@@ -34,36 +34,36 @@ Identify **exploitable** security vulnerabilities. Report only findings where yo
 ## Review Process
 
 1. **Detect context** — identify code type, load relevant references from the table below
-2. **Load language/infra guide** — if Python, Docker, or GitLab CI code is present
+2. **Load language/infra guide** — if Python, Docker, or GitHub Actions code is present
 3. **Research before flagging** — trace data flow, check for upstream validation, verify input source
 4. **Verify exploitability** — confirm input is attacker-controlled, not server-controlled
 
 ## Context Detection
 
-| Code Type                        | Load These References                                    |
-|----------------------------------|----------------------------------------------------------|
-| API endpoints, routes            | `authorization.md`, `authentication.md`, `injection.md`  |
-| Frontend, templates              | `xss.md`, `csrf.md`                                     |
-| File handling, uploads           | `file-security.md`                                       |
-| Crypto, secrets, tokens          | `cryptography.md`, `data-protection.md`                  |
-| Data serialization               | `deserialization.md`                                     |
-| External requests                | `ssrf.md`                                                |
-| Business workflows               | `business-logic.md`                                      |
-| GraphQL, REST design             | `api-security.md`                                        |
-| Config, headers, CORS            | `misconfiguration.md`                                    |
-| CI/CD, dependencies              | `supply-chain.md`                                        |
-| Error handling                   | `error-handling.md`                                      |
-| Audit, logging                   | `logging.md`                                             |
-| Modern patterns (SSE, WebSocket) | `modern-threats.md`                                      |
-| `.py`, Django, Flask, FastAPI    | `python.md`                                              |
-| Dockerfile, docker-compose       | `docker.md`                                              |
-| `.gitlab-ci.yml`, CI config      | `gitlab-ci.md`                                           |
+| Code Type                            | Load These References                                   |
+| ------------------------------------ | ------------------------------------------------------- |
+| API endpoints, routes                | `authorization.md`, `authentication.md`, `injection.md` |
+| Frontend, templates                  | `xss.md`, `csrf.md`                                     |
+| File handling, uploads               | `file-security.md`                                      |
+| Crypto, secrets, tokens              | `cryptography.md`, `data-protection.md`                 |
+| Data serialization                   | `deserialization.md`                                    |
+| External requests                    | `ssrf.md`                                               |
+| Business workflows                   | `business-logic.md`                                     |
+| GraphQL, REST design                 | `api-security.md`                                       |
+| Config, headers, CORS                | `misconfiguration.md`                                   |
+| CI/CD, dependencies                  | `supply-chain.md`                                       |
+| Error handling                       | `error-handling.md`                                     |
+| Audit, logging                       | `logging.md`                                            |
+| Modern patterns (SSE, WebSocket)     | `modern-threats.md`                                     |
+| `.py`, Django, Flask, FastAPI        | `python.md`                                             |
+| Dockerfile, docker-compose           | `docker.md`                                             |
+| `.github/workflows/*.yml`, CI config | `github-actions.md`                                     |
 
 ## Severity Classification
 
-| Severity     | Examples                                                              |
-|--------------|-----------------------------------------------------------------------|
-| **Critical** | RCE, SQL injection to data exfil, auth bypass, hardcoded secrets      |
+| Severity     | Examples                                                             |
+| ------------ | -------------------------------------------------------------------- |
+| **Critical** | RCE, SQL injection to data exfil, auth bypass, hardcoded secrets     |
 | **High**     | Stored XSS, SSRF to metadata, IDOR to sensitive data                 |
 | **Medium**   | Reflected XSS, CSRF on state-changing actions, path traversal        |
 | **Low**      | Missing headers, verbose errors, weak algorithms in non-critical use |

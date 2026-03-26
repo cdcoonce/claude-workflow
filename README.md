@@ -1,6 +1,6 @@
 # Claude Workflow
 
-![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white) ![Claude Code](https://img.shields.io/badge/Claude_Code-Opus_4.6-6B4FBB?logo=anthropic&logoColor=white) ![pytest](https://img.shields.io/badge/Tests-pytest-0A9EDC?logo=pytest&logoColor=white) ![uv](https://img.shields.io/badge/Package_Manager-uv-DE5FE9) ![Hatchling](https://img.shields.io/badge/Build-Hatchling-F5A623) ![GitLab](https://img.shields.io/badge/GitLab-glab_CLI-FC6D26?logo=gitlab&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white) ![Claude Code](https://img.shields.io/badge/Claude_Code-Opus_4.6-6B4FBB?logo=anthropic&logoColor=white) ![pytest](https://img.shields.io/badge/Tests-pytest-0A9EDC?logo=pytest&logoColor=white) ![uv](https://img.shields.io/badge/Package_Manager-uv-DE5FE9) ![Hatchling](https://img.shields.io/badge/Build-Hatchling-F5A623) ![GitHub](https://img.shields.io/badge/GitHub-gh_CLI-181717?logo=github&logoColor=white)
 
 A **template system for Claude Code plugins** shared across the team. Build a preset for your project type, install it as a Claude Code plugin, and get a fully configured environment with 19 skills, methodology docs, agents, and hooks -- ready to go in seconds.
 
@@ -163,6 +163,7 @@ flowchart LR
 ```
 
 Key design decisions:
+
 - **Plugin format** -- Output is a self-contained Claude Code plugin with `.claude-plugin/plugin.json`
 - **Override semantics** -- A preset skill or agent with the same name as a core one **replaces** it entirely
 - **Settings merge** -- Base and preset JSON are shallow-merged; hook arrays are appended, not replaced
@@ -182,7 +183,7 @@ Key design decisions:
 ### Installation
 
 ```bash
-git clone https://gitlab.com/Charles.Coonce/claude-workflow.git
+git clone https://github.com/cdcoonce/claude-workflow.git
 cd claude-workflow
 uv sync
 ```
@@ -270,27 +271,27 @@ These ship with every preset:
 | `/commit`                        | "commit", "save work"               | Conventional commit style enforcement         |
 | `/daa-code-review`               | "code review", "quality check"      | Python, Markdown, and Mermaid analysis        |
 | `/design-an-interface`           | "design it twice", API design       | Parallel sub-agents for interface comparison  |
-| `/dev-cycle`                     | "dev cycle", "development workflow" | Full 7-phase GitLab-issues-driven pipeline    |
-| `/gitlab-cli`                    | GitLab operations                   | Issues, MRs, branches, reviews via `glab`     |
+| `/dev-cycle`                     | "dev cycle", "development workflow" | Full 7-phase GitHub-issues-driven pipeline    |
+| `/github-cli`                    | GitHub operations                   | Issues, PRs, branches, reviews via `gh`       |
 | `/grill-me`                      | "grill me", stress-test a plan      | Systematic interrogation via AskUserQuestion  |
 | `/improve-codebase-architecture` | architecture improvement            | Deep-module refactoring opportunities         |
 | `/plan-ceo-review`               | "CEO review", "mega review"         | 3-mode plan review (expand/hold/reduce scope) |
-| `/prd-to-issues`                 | "convert PRD to issues"             | Vertical-slice GitLab issue creation          |
+| `/prd-to-issues`                 | "convert PRD to issues"             | Vertical-slice GitHub issue creation          |
 | `/prd-to-plan`                   | "break down PRD", "tracer bullets"  | Multi-phase implementation planning           |
 | `/project-context`               | "update project.md"                 | Generate `.claude/docs/project.md`            |
 | `/readme-generator`              | "README", "document this project"   | Codebase analysis + README generation         |
-| `/request-refactor-plan`         | "plan a refactor"                   | Tiny-commit refactor RFC as GitLab issue      |
+| `/request-refactor-plan`         | "plan a refactor"                   | Tiny-commit refactor RFC as GitHub issue      |
 | `/setup-pre-commit`              | "set up pre-commit"                 | Pre-commit hooks for linting and formatting   |
 | `/tdd`                           | "red-green-refactor", TDD           | Test-driven development loop                  |
 | `/triage-issue`                  | "triage", bug report                | Root-cause investigation + issue creation     |
-| `/write-a-prd`                   | "write a PRD"                       | Interview-driven PRD as GitLab issue          |
+| `/write-a-prd`                   | "write a PRD"                       | Interview-driven PRD as GitHub issue          |
 | `/write-a-skill`                 | "create a skill"                    | Skill authoring with proper structure         |
 
 ### Preset-Specific Skills
 
-| Preset       | Skill               | Description                       |
-| ------------ | ------------------- | --------------------------------- |
-| `python-api` | `/deploy`           | Lambda/service deployment         |
+| Preset       | Skill     | Description               |
+| ------------ | --------- | ------------------------- |
+| `python-api` | `/deploy` | Lambda/service deployment |
 
 ---
 
@@ -343,7 +344,7 @@ Four methodology documents in `core/docs/` define how Claude Code agents should 
 
 ## Dev-Cycle Orchestrator
 
-The `/dev-cycle` skill orchestrates end-to-end feature development through GitLab issues.
+The `/dev-cycle` skill orchestrates end-to-end feature development through GitHub issues.
 
 ### 7-Phase Pipeline
 
@@ -354,14 +355,14 @@ flowchart LR
     R --> I[Issues]
     I --> IM[Implement]
     IM --> CR[Code Review]
-    CR --> MR[MR]
+    CR --> MR[PR]
 
     B -.- PRD["write-a-prd"]
     P -.- PTP["prd-to-plan"]
     R -.- CEO["plan-ceo-review"]
     IM -.- TDD["tdd + subagents"]
     CR -.- REV["daa-code-review"]
-    MR -.- GL["commit + gitlab-cli"]
+    MR -.- GL["commit + github-cli"]
 ```
 
 Every phase is mandatory. Each phase gates on a specific artifact (issue URL, plan file, approval, etc.) before advancing.

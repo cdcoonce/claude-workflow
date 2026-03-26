@@ -1,11 +1,11 @@
 ---
 name: triage-issue
-description: Triage a bug or issue by exploring the codebase to find root cause, then create a GitLab issue with a TDD-based fix plan. Use when user reports a bug, wants to file an issue, mentions "triage", or wants to investigate and plan a fix for a problem.
+description: Triage a bug or issue by exploring the codebase to find root cause, then create a GitHub issue with a TDD-based fix plan. Use when user reports a bug, wants to file an issue, mentions "triage", or wants to investigate and plan a fix for a problem.
 ---
 
 # Triage Issue
 
-Investigate a reported problem, find its root cause, and create a GitLab issue with a TDD fix plan. This is a mostly hands-off workflow - minimize questions to the user.
+Investigate a reported problem, find its root cause, and create a GitHub issue with a TDD fix plan. This is a mostly hands-off workflow - minimize questions to the user.
 
 ## Process
 
@@ -25,6 +25,7 @@ Use the Agent tool with subagent_type=Explore to deeply investigate the codebase
 - **What** related code exists (similar patterns, tests, adjacent modules)
 
 Look at:
+
 - Related source files and their dependencies
 - Existing tests (what's tested, what's missing)
 - Recent changes to affected files (`git log` on relevant files)
@@ -48,21 +49,23 @@ Create a concrete, ordered list of RED-GREEN cycles. Each cycle is one vertical 
 - **GREEN**: Describe the minimal code change to make that test pass
 
 Rules:
+
 - Tests verify behavior through public interfaces, not implementation details
 - One test at a time, vertical slices (NOT all tests first, then all code)
 - Each test should survive internal refactors
 - Include a final refactor step if needed
 - **Durability**: Only suggest fixes that would survive radical codebase changes. Describe behaviors and contracts, not internal structure. Tests assert on observable outcomes (API responses, UI state, user-visible effects), not internal state. A good suggestion reads like a spec; a bad one reads like a diff.
 
-### 5. Create the GitLab issue
+### 5. Create the GitHub issue
 
-Create a GitLab issue using `glab issue create` with the template below. Do NOT ask the user to review before creating - just create it and share the URL.
+Create a GitHub issue using `gh issue create` with the template below. Do NOT ask the user to review before creating - just create it and share the URL.
 
 <issue-template>
 
 ## Problem
 
 A clear description of the bug or issue, including:
+
 - What happens (actual behavior)
 - What should happen (expected behavior)
 - How to reproduce (if applicable)
@@ -70,6 +73,7 @@ A clear description of the bug or issue, including:
 ## Root Cause Analysis
 
 Describe what you found during investigation:
+
 - The code path involved
 - Why the current code fails
 - Any contributing factors
