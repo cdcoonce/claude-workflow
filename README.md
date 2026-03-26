@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white) ![Claude Code](https://img.shields.io/badge/Claude_Code-Opus_4.6-6B4FBB?logo=anthropic&logoColor=white) ![pytest](https://img.shields.io/badge/Tests-pytest-0A9EDC?logo=pytest&logoColor=white) ![uv](https://img.shields.io/badge/Package_Manager-uv-DE5FE9) ![Hatchling](https://img.shields.io/badge/Build-Hatchling-F5A623) ![GitHub](https://img.shields.io/badge/GitHub-gh_CLI-181717?logo=github&logoColor=white)
 
-A **template system for Claude Code plugins** shared across the team. Build a preset for your project type, install it as a Claude Code plugin, and get a fully configured environment with 19 skills, methodology docs, agents, and hooks -- ready to go in seconds.
+A **template system for Claude Code plugins** shared across the team. Build a preset for your project type, install it as a Claude Code plugin, and get a fully configured environment with 20 skills, methodology docs, agents, and hooks -- ready to go in seconds.
 
 ---
 
@@ -25,7 +25,7 @@ A **template system for Claude Code plugins** shared across the team. Build a pr
   - [Validate Dev-Cycle State Files](#validate-dev-cycle-state-files)
 - [Presets](#presets)
 - [Skills](#skills)
-  - [Universal Skills (19)](#universal-skills-19)
+  - [Universal Skills (20)](#universal-skills-20)
   - [Preset-Specific Skills](#preset-specific-skills)
 - [Agents](#agents)
   - [Core Agents](#core-agents)
@@ -52,7 +52,7 @@ uv run python -m scripts.build_preset python-api
 #    (copy the built plugin directory or symlink it)
 cp -r dist/python-api/ /path/to/your-project/.claude/plugins/python-api/
 
-# 3. Done -- Claude Code now has 19 skills, agents, hooks, and methodology docs
+# 3. Done -- Claude Code now has 20 skills, agents, hooks, and methodology docs
 ```
 
 ```mermaid
@@ -77,7 +77,7 @@ Every new project that uses **Claude Code** needs skills, hooks, settings, and d
 
 **Claude Workflow** solves this with a layered plugin system:
 
-1. **Core** -- 19 universal skills, 2 agents, 4 methodology docs, and a file-protection hook that apply to every project
+1. **Core** -- 20 universal skills, 2 agents, 4 methodology docs, and a file-protection hook that apply to every project
 2. **Presets** -- Named configurations (e.g., `python-api`, `full-stack`) that add project-type-specific skills, hooks, and agents
 3. **Build tooling** -- Python scripts that assemble core + preset into a self-contained Claude Code plugin in `dist/`
 
@@ -96,7 +96,7 @@ graph TD
     BUILD --> DIST[dist/preset-name/]
 
     subgraph "core/"
-        SKILLS_CORE[skills/ -- 19 universal]
+        SKILLS_CORE[skills/ -- 20 universal]
         DOCS[docs/ -- 4 methodology]
         HOOKS_CORE[hooks/ -- protect-files.py]
         AGENTS_CORE[agents/ -- 2 universal]
@@ -130,7 +130,7 @@ claude-workflow/
 │   ├── agents/              # 2 universal agents (tdd-implementer, code-reviewer)
 │   ├── docs/                # TDD, root-cause tracing, subagent, parallel agents
 │   ├── hooks/               # File protection hook
-│   └── skills/              # 19 universal skills
+│   └── skills/              # 20 universal skills
 ├── presets/                  # Project-type configurations
 │   ├── python-api/          # Python backend services (+ api-builder, security-reviewer)
 │   ├── data-pipeline/       # ETL/ELT pipelines (+ pipeline-builder, data-quality-reviewer)
@@ -248,50 +248,54 @@ Validates YAML frontmatter, phase transitions, artifact completeness, and slug u
 
 ## Presets
 
-| Preset               | Target                                  | Preset Skills                | Preset Agents                                        | Key Conventions                            |
-| -------------------- | --------------------------------------- | ---------------------------- | ---------------------------------------------------- | ------------------------------------------ |
-| **`python-api`**     | Lambda, FastAPI, Flask backends         | `deploy`, `setup-pre-commit` | `api-builder`, `security-reviewer`                   | Ruff linting, structured logging           |
-| **`data-pipeline`**  | ETL/ELT, SQL transforms, scheduled jobs | —                            | `pipeline-builder`, `data-quality-reviewer`          | SQL lowercase, idempotent stages           |
-| **`full-stack`**     | React/Next.js + Python backend          | `setup-pre-commit`           | `frontend-builder`, `backend-builder`, `ux-reviewer` | Dual test runners, fixture patterns        |
-| **`claude-tooling`** | Claude skills, hooks, agents            | —                            | `skill-builder`, `skill-reviewer`                    | Skill structure requirements               |
-| **`analysis`**       | Notebooks, R/Python scripts             | —                            | `analysis-builder`                                   | Reproducible seeds, documented assumptions |
+| Preset               | Target                                  | Preset Skills                  | Preset Agents                                        | Key Conventions                            |
+| -------------------- | --------------------------------------- | ------------------------------ | ---------------------------------------------------- | ------------------------------------------ |
+| **`python-api`**     | Lambda, FastAPI, Flask backends         | `deploy`                       | `api-builder`, `security-reviewer`                   | Ruff linting, structured logging           |
+| **`data-pipeline`**  | ETL/ELT, SQL transforms, scheduled jobs | `dagster-expert`, `dbt-expert` | `pipeline-builder`, `data-quality-reviewer`          | SQL lowercase, idempotent stages           |
+| **`full-stack`**     | React/Next.js + Python backend          | —                              | `frontend-builder`, `backend-builder`, `ux-reviewer` | Dual test runners, fixture patterns        |
+| **`claude-tooling`** | Claude skills, hooks, agents            | —                              | `skill-builder`, `skill-reviewer`                    | Skill structure requirements               |
+| **`analysis`**       | Notebooks, R/Python scripts             | —                              | `analysis-builder`                                   | Reproducible seeds, documented assumptions |
 
-Each preset's `manifest.json` controls which core components to include, which to exclude, and what preset-specific overrides to layer on top. All presets inherit the full set of 19 core skills, 2 core agents, 4 methodology docs, and the file-protection hook.
+Each preset's `manifest.json` controls which core components to include, which to exclude, and what preset-specific overrides to layer on top. All presets inherit the full set of 20 core skills, 2 core agents, 4 methodology docs, and the file-protection hook.
 
 ---
 
 ## Skills
 
-### Universal Skills (19)
+### Universal Skills (20)
 
 These ship with every preset:
 
-| Skill                            | Trigger                             | Description                                   |
-| -------------------------------- | ----------------------------------- | --------------------------------------------- |
-| `/commit`                        | "commit", "save work"               | Conventional commit style enforcement         |
-| `/daa-code-review`               | "code review", "quality check"      | Python, Markdown, and Mermaid analysis        |
-| `/design-an-interface`           | "design it twice", API design       | Parallel sub-agents for interface comparison  |
-| `/dev-cycle`                     | "dev cycle", "development workflow" | Full 7-phase GitHub-issues-driven pipeline    |
-| `/github-cli`                    | GitHub operations                   | Issues, PRs, branches, reviews via `gh`       |
-| `/grill-me`                      | "grill me", stress-test a plan      | Systematic interrogation via AskUserQuestion  |
-| `/improve-codebase-architecture` | architecture improvement            | Deep-module refactoring opportunities         |
-| `/plan-ceo-review`               | "CEO review", "mega review"         | 3-mode plan review (expand/hold/reduce scope) |
-| `/prd-to-issues`                 | "convert PRD to issues"             | Vertical-slice GitHub issue creation          |
-| `/prd-to-plan`                   | "break down PRD", "tracer bullets"  | Multi-phase implementation planning           |
-| `/project-context`               | "update project.md"                 | Generate `.claude/docs/project.md`            |
-| `/readme-generator`              | "README", "document this project"   | Codebase analysis + README generation         |
-| `/request-refactor-plan`         | "plan a refactor"                   | Tiny-commit refactor RFC as GitHub issue      |
-| `/setup-pre-commit`              | "set up pre-commit"                 | Pre-commit hooks for linting and formatting   |
-| `/tdd`                           | "red-green-refactor", TDD           | Test-driven development loop                  |
-| `/triage-issue`                  | "triage", bug report                | Root-cause investigation + issue creation     |
-| `/write-a-prd`                   | "write a PRD"                       | Interview-driven PRD as GitHub issue          |
-| `/write-a-skill`                 | "create a skill"                    | Skill authoring with proper structure         |
+| Skill                            | Trigger                             | Description                                                  |
+| -------------------------------- | ----------------------------------- | ------------------------------------------------------------ |
+| `/commit`                        | "commit", "save work"               | Conventional commit style enforcement                        |
+| `/daa-code-review`               | "code review", "quality check"      | Python, Markdown, and Mermaid analysis                       |
+| `/design-an-interface`           | "design it twice", API design       | Parallel sub-agents for interface comparison                 |
+| `/dev-cycle`                     | "dev cycle", "development workflow" | Full 7-phase GitHub-issues-driven pipeline                   |
+| `/dignified-python`              | "pythonic", type hints, code review | Production Python standards for 3.10-3.13                    |
+| `/github-cli`                    | GitHub operations                   | Issues, PRs, branches, reviews via `gh`                      |
+| `/grill-me`                      | "grill me", stress-test a plan      | Systematic interrogation via AskUserQuestion                 |
+| `/improve-codebase-architecture` | architecture improvement            | Deep-module refactoring opportunities                        |
+| `/plan-ceo-review`               | "CEO review", "mega review"         | 3-mode plan review (expand/hold/reduce scope)                |
+| `/prd-to-issues`                 | "convert PRD to issues"             | Vertical-slice GitHub issue creation                         |
+| `/prd-to-plan`                   | "break down PRD", "tracer bullets"  | Multi-phase implementation planning                          |
+| `/project-context`               | "update project.md"                 | Generate `.claude/docs/project.md`                           |
+| `/readme-generator`              | "README", "document this project"   | Codebase analysis + README generation                        |
+| `/request-refactor-plan`         | "plan a refactor"                   | Tiny-commit refactor RFC as GitHub issue                     |
+| `/security-review`               | "security review", "find vulns"     | OWASP-based vulnerability analysis with confidence reporting |
+| `/setup-pre-commit`              | "set up pre-commit"                 | Pre-commit hooks for linting and formatting                  |
+| `/tdd`                           | "red-green-refactor", TDD           | Test-driven development loop                                 |
+| `/triage-issue`                  | "triage", bug report                | Root-cause investigation + issue creation                    |
+| `/write-a-prd`                   | "write a PRD"                       | Interview-driven PRD as GitHub issue                         |
+| `/write-a-skill`                 | "create a skill"                    | Skill authoring with proper structure                        |
 
 ### Preset-Specific Skills
 
-| Preset       | Skill     | Description               |
-| ------------ | --------- | ------------------------- |
-| `python-api` | `/deploy` | Lambda/service deployment |
+| Preset          | Skill             | Description                                     |
+| --------------- | ----------------- | ----------------------------------------------- |
+| `python-api`    | `/deploy`         | Lambda/service deployment                       |
+| `data-pipeline` | `/dagster-expert` | Expert guidance for Dagster and `dg` CLI        |
+| `data-pipeline` | `/dbt-expert`     | Expert guidance for dbt Core and SQL transforms |
 
 ---
 
