@@ -40,24 +40,24 @@ Identify **exploitable** security vulnerabilities. Report only findings where yo
 
 ## Context Detection
 
-| Code Type                            | Load These References                                   |
-| ------------------------------------ | ------------------------------------------------------- |
-| API endpoints, routes                | `authorization.md`, `authentication.md`, `injection.md` |
-| Frontend, templates                  | `xss.md`, `csrf.md`                                     |
-| File handling, uploads               | `file-security.md`                                      |
-| Crypto, secrets, tokens              | `cryptography.md`, `data-protection.md`                 |
-| Data serialization                   | `deserialization.md`                                    |
-| External requests                    | `ssrf.md`                                               |
-| Business workflows                   | `business-logic.md`                                     |
-| GraphQL, REST design                 | `api-security.md`                                       |
-| Config, headers, CORS                | `misconfiguration.md`                                   |
-| CI/CD, dependencies                  | `supply-chain.md`                                       |
-| Error handling                       | `error-handling.md`                                     |
-| Audit, logging                       | `logging.md`                                            |
-| Modern patterns (SSE, WebSocket)     | `modern-threats.md`                                     |
-| `.py`, Django, Flask, FastAPI        | `python.md`                                             |
-| Dockerfile, docker-compose           | `docker.md`                                             |
-| `.github/workflows/*.yml`, CI config | `github-actions.md`                                     |
+| Code Type                        | Load These References                                   |
+| -------------------------------- | ------------------------------------------------------- |
+| API endpoints, routes            | `authorization.md`, `authentication.md`, `injection.md` |
+| Frontend, templates              | `xss.md`, `csrf.md`                                     |
+| File handling, uploads           | `file-security.md`                                      |
+| Crypto, secrets, tokens          | `cryptography.md`, `data-protection.md`                 |
+| Data serialization               | `deserialization.md`                                    |
+| External requests                | `ssrf.md`                                               |
+| Business workflows               | `business-logic.md`                                     |
+| GraphQL, REST design             | `api-security.md`                                       |
+| Config, headers, CORS            | `misconfiguration.md`                                   |
+| CI/CD, dependencies              | `supply-chain.md`                                       |
+| Error handling                   | `error-handling.md`                                     |
+| Audit, logging                   | `logging.md`                                            |
+| Modern patterns (SSE, WebSocket) | `modern-threats.md`                                     |
+| `.py`, Django, Flask, FastAPI    | `python.md`                                             |
+| Dockerfile, docker-compose       | `docker.md`                                             |
+| `.github/workflows`, CI config   | `github-actions.md`                                     |
 
 ## Severity Classification
 

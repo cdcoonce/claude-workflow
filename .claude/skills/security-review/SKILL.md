@@ -57,7 +57,7 @@ Identify **exploitable** security vulnerabilities. Report only findings where yo
 | Modern patterns (SSE, WebSocket) | `modern-threats.md`                                     |
 | `.py`, Django, Flask, FastAPI    | `python.md`                                             |
 | Dockerfile, docker-compose       | `docker.md`                                             |
-| `.gitlab-ci.yml`, CI config      | `gitlab-ci.md`                                          |
+| `.github/workflows`, CI config   | `github-actions.md`                                     |
 
 ## Severity Classification
 

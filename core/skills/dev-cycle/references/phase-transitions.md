@@ -34,14 +34,8 @@ See the 7-Phase Pipeline table in SKILL.md for delegation targets. This document
 ## Issues → Implement
 
 - **Validate:** All GitHub issues created and URLs recorded in Issues table
-- **Commit planning artifacts (before branching):**
-  1. Stage only the state file and plan file:
-     `git add docs/dev-cycle/{slug}.state.md docs/plans/{feature}.md`
-  2. Commit: `docs(dev-cycle): plan and state for {feature-slug}`
-  3. Push to origin: `git push origin main` (or current default branch)
-  4. This ensures planning commits live on remote main and do NOT appear in the feature branch PR diff
 - **Branch creation:**
-  - Create `feat/{feature-slug}` from current HEAD (which now includes the pushed planning commit)
+  - Create `feat/{feature-slug}` from current HEAD
   - If branch already exists and belongs to this feature (per state file): check it out
   - If branch exists but is unrecognized: error, ask user to resolve
 - **Handoff:** Load plan file. Dispatch one subagent per issue following `subagent-development` methodology, each invoking `tdd`. Code review between each dispatch.
