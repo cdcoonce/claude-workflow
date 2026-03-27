@@ -33,10 +33,10 @@ Each domain is independent—fixing validation doesn't affect connection pooling
 
 ### 2. Agent Discovery
 
-Scan `.claude/agents/` once before dispatching to resolve agent identities:
+Scan `.claude/agents/` once, then apply the algorithm from `.claude/docs/agent-matching.md` independently for each parallel task:
 
-- **One scan, multiple matches:** Each parallel task can map to a different agent based on its domain (e.g., a validation task may match a data-focused agent, while an API task matches a backend agent)
-- **Independent matching:** Match each task to its best-fit agent independently — filter by `role`, then rank by `description` specificity
+- **One scan, multiple matches:** Each parallel task can map to a different agent based on domain and technology — a validation task may match a data-focused agent while an API task matches a backend agent
+- **Independent matching:** Apply the full scoring rubric to each task separately; the same agent can match multiple tasks, or different tasks can route to different agents
 - **No agents required:** When no `.claude/agents/` directory exists, skip discovery and dispatch all tasks as generic agents
 
 ### 3. Create Focused Agent Tasks

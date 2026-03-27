@@ -49,13 +49,6 @@ class TestBuildPluginStructure:
         assert not (dist / "agent-role-defaults.json").exists()
         assert not (dist / ".claude" / "agent-role-defaults.json").exists()
 
-    def test_build_no_docs_dir(self, tmp_repo: Path) -> None:
-        """Plugin format must not contain a docs/ directory."""
-        build_preset("python-api", repo_root=tmp_repo)
-        dist = tmp_repo / "dist" / "python-api"
-        assert not (dist / "docs").exists()
-        assert not (dist / ".claude" / "docs").exists()
-
 
 class TestBuildPluginSkills:
     """Skills are placed at root level in plugin format."""
@@ -153,6 +146,33 @@ class TestBuildPluginAgents:
         assert (agents / "tdd-implementer").exists()
         assert (agents / "code-reviewer").exists()
         assert not (agents / "api-builder").exists()
+
+
+class TestBuildPluginDocs:
+    """agent-matching.md is copied into docs/ for every preset."""
+
+    def test_build_copies_agent_matching_doc(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        doc = tmp_repo / "dist" / "python-api" / "docs" / "agent-matching.md"
+        assert doc.exists()
+
+    def test_build_agent_matching_doc_has_content(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        doc = tmp_repo / "dist" / "python-api" / "docs" / "agent-matching.md"
+        assert doc.read_text().strip() != ""
+
+    def test_build_skips_docs_when_agent_matching_missing(self, tmp_repo: Path) -> None:
+        """No docs/ dir when source agent-matching.md is absent."""
+        (tmp_repo / "core" / "docs" / "agent-matching.md").unlink()
+        build_preset("python-api", repo_root=tmp_repo)
+        docs_dir = tmp_repo / "dist" / "python-api" / "docs"
+        assert not docs_dir.exists()
+
+    def test_build_no_claude_subdir_in_docs(self, tmp_repo: Path) -> None:
+        """docs/ must not be nested under .claude/ in plugin format."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        assert not (dist / ".claude").exists()
 
 
 class TestBuildPluginHooks:

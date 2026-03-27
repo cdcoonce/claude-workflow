@@ -24,14 +24,14 @@ Read plan file, create TodoWrite with all tasks.
 
 ### 2. Agent Discovery
 
-Before dispatching each subagent, resolve the best-fit agent identity:
+Before dispatching each subagent, select the best-fit agent using the algorithm in `.claude/docs/agent-matching.md`. Summary:
 
-1. **Scan** `.claude/agents/` for agent definition files
-2. **Filter by role:** Use `implementer` agents for implementation tasks, `reviewer` agents for review tasks
-3. **Match by domain:** Compare each agent's `description` to the task domain. Prefer the most specific match
-4. **Select:** If multiple agents match, pick the one whose description most closely fits the task. If none match, fall back to a generic subagent with no agent identity
+1. **Scan** `.claude/agents/` — read all `AGENT.md` files
+2. **Filter by role** — `implementer` for implementation tasks, `reviewer` for review tasks
+3. **Score and select** — pick the agent whose description best matches the task domain and technology; prefer specialized over generic on ties
+4. **Fallback** — if no `.claude/agents/` directory exists or no agent scores above "no match", dispatch a generic subagent with no agent identity
 
-> **Backward compatibility:** When no `.claude/agents/` directory exists, skip agent discovery and dispatch a generic subagent.
+See `.claude/docs/agent-matching.md` for the full scoring rubric, tiebreaking rules, and good/bad description examples.
 
 ### 3. Execute Task with Subagent
 

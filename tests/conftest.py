@@ -32,6 +32,12 @@ def tmp_repo(tmp_path: Path) -> Path:
             f"---\nname: {agent_name}\ndescription: {agent_name} agent\nrole: {role}\n---\n\n# {agent_name}\n"
         )
 
+    docs = core / "docs"
+    docs.mkdir()
+    (docs / "agent-matching.md").write_text(
+        "# Agent-Matching Algorithm\n\nCanonical matching spec for tests.\n"
+    )
+
     (core / "settings-base.json").write_text(json.dumps({
         "hooks": {
             "PreToolUse": [{"matcher": "Edit|Write", "hooks": [
