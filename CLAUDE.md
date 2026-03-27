@@ -23,28 +23,6 @@ See [.claude/docs/project.md](.claude/docs/project.md) for detailed project cont
 - Run tests: `uv run pytest`
 - Run with coverage: `uv run pytest --cov=scripts --cov-report=term-missing`
 
-## Methodology
-
-### TDD — Test-Driven Development
-
-Write the test first. Watch it fail. Write minimal code to pass.
-Full process: [core/docs/tdd.md](core/docs/tdd.md)
-
-### Root Cause Tracing
-
-Never fix at the symptom. Trace backward to the original trigger.
-Full process: [core/docs/root-cause-tracing.md](core/docs/root-cause-tracing.md)
-
-### Subagent-Driven Development
-
-Dispatch a fresh subagent per task with code review between each.
-Full process: [core/docs/subagent-development.md](core/docs/subagent-development.md)
-
-### Parallel Agent Dispatch
-
-When 3+ unrelated failures need investigation, dispatch one agent per problem domain.
-Full process: [core/docs/parallel-agents.md](core/docs/parallel-agents.md)
-
 ## Code Style
 
 - Descriptive variable names (`private_key_bytes` not `pkb`)
