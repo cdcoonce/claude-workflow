@@ -9,7 +9,7 @@ Developing Claude skills, hooks, agents, and template configurations
 - design-an-interface
 - dev-cycle
 - dignified-python
-- gitlab-cli
+- github-cli
 - grill-me
 - improve-codebase-architecture
 - plan-ceo-review

@@ -4,6 +4,7 @@
 import json
 import sys
 
+print("PLUGIN HOOK FIRED: protect-files.py", file=sys.stderr)
 data = json.load(sys.stdin)
 file_path = data.get("tool_input", {}).get("file_path", "")
 
