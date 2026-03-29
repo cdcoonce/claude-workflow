@@ -1,5 +1,29 @@
 {
   "enabledPlugins": {
     "claude-tooling@claude-workflow": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 core/hooks/protect-files.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 presets/claude-tooling/hooks/post-edit-lint.py"
+          }
+        ]
+      }
+    ]
   }
 }
