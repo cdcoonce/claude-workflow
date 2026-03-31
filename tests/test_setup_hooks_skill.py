@@ -69,15 +69,87 @@ class TestSetupHooksSkillMdContent:
         content = SKILL_MD.read_text(encoding="utf-8")
         assert "AskUserQuestion" in content
 
-    def test_ends_with_phase_2_placeholder(self) -> None:
+    def test_phase_2_placeholder_is_removed(self) -> None:
         content = SKILL_MD.read_text(encoding="utf-8")
-        assert "<!-- Phase 2:" in content
+        assert "<!-- Phase 2:" not in content
 
-    def test_does_not_contain_script_generation(self) -> None:
-        """Phase 1 only — no script generation or config wiring yet."""
+
+class TestSetupHooksScriptGeneration:
+    """SKILL.md contains script generation instructions (Step 4)."""
+
+    def test_contains_script_generation_section(self) -> None:
+        content = SKILL_MD.read_text(encoding="utf-8")
+        assert "## Step 4" in content
+        assert "Generate Hook Script" in content
+
+    def test_mentions_canonical_template_elements(self) -> None:
+        content = SKILL_MD.read_text(encoding="utf-8")
+        assert "json.load(sys.stdin)" in content
+        assert "sys.exit" in content
+
+    def test_mentions_stderr_for_messages(self) -> None:
+        content = SKILL_MD.read_text(encoding="utf-8")
+        assert "stderr" in content
+
+    def test_mentions_hooks_target_directory(self) -> None:
+        content = SKILL_MD.read_text(encoding="utf-8")
+        assert ".claude/hooks/" in content
+
+    def test_handles_filename_collision(self) -> None:
         content = SKILL_MD.read_text(encoding="utf-8").lower()
-        assert "generate script" not in content
-        assert "write the hook script" not in content
+        assert "overwrite" in content
+        assert "cancel" in content
+
+    def test_mentions_stdlib_only(self) -> None:
+        content = SKILL_MD.read_text(encoding="utf-8").lower()
+        assert "stdlib" in content or "standard library" in content
+
+    def test_mentions_shutil_which_for_external_tools(self) -> None:
+        content = SKILL_MD.read_text(encoding="utf-8")
+        assert "shutil.which" in content
+
+
+class TestSetupHooksConfigWiring:
+    """SKILL.md contains config wiring instructions (Step 5)."""
+
+    def test_contains_config_wiring_section(self) -> None:
+        content = SKILL_MD.read_text(encoding="utf-8")
+        assert "## Step 5" in content
+        assert "Wire Hook into Settings" in content
+
+    def test_mentions_settings_json(self) -> None:
+        content = SKILL_MD.read_text(encoding="utf-8")
+        assert "settings.json" in content
+
+    def test_mentions_append_semantics(self) -> None:
+        """Config wiring must use append/extend, not replace."""
+        content = SKILL_MD.read_text(encoding="utf-8").lower()
+        assert "append" in content or "extend" in content
+
+    def test_contains_json_skeleton_for_missing_settings(self) -> None:
+        content = SKILL_MD.read_text(encoding="utf-8")
+        assert '"hooks"' in content
+        assert '"PreToolUse"' in content
+        assert '"PostToolUse"' in content
+
+    def test_contains_hook_entry_shape(self) -> None:
+        content = SKILL_MD.read_text(encoding="utf-8")
+        assert '"matcher"' in content
+        assert '"type": "command"' in content
+
+
+class TestSetupHooksConfirmation:
+    """SKILL.md contains a confirmation/summary section (Step 6)."""
+
+    def test_contains_confirmation_section(self) -> None:
+        content = SKILL_MD.read_text(encoding="utf-8")
+        assert "## Step 6" in content
+        assert "Confirm" in content
+
+    def test_mentions_testing_instructions(self) -> None:
+        content = SKILL_MD.read_text(encoding="utf-8").lower()
+        assert "test" in content
+        assert "matching tool call" in content or "matched tool" in content
 
 
 class TestHookProtocolReference:

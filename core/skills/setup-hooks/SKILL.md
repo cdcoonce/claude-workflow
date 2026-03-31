@@ -61,6 +61,93 @@ After collecting all three answers, present a summary to the user:
 - **Matcher**: the selected tool pattern
 - **Behavior**: the user's description
 
-Confirm the user is satisfied before proceeding to the next phase.
+Confirm the user is satisfied before proceeding to script generation.
 
-<!-- Phase 2: Script generation and config wiring -->
+## Step 4: Generate Hook Script
+
+Create the `.claude/hooks/` directory if it does not exist. Run `mkdir -p .claude/hooks/` via Bash.
+
+Choose a descriptive script name based on the user's behavior description (e.g., `block-migration-edits.py`, `auto-format-python.py`).
+
+**Name collision check**: Before writing the script, check if a file with the chosen name already exists in `.claude/hooks/`. If it does, use `AskUserQuestion` to ask the user to:
+
+- **Overwrite** the existing file
+- **Rename** — provide a different name
+- **Cancel** — stop without creating anything
+
+If the user cancels, stop and inform them that no files were created.
+
+Generate a Python script using this canonical template:
+
+```python
+#!/usr/bin/env python3
+"""{DOCSTRING} — describes what the hook does"""
+
+import json
+import sys
+
+data = json.load(sys.stdin)
+file_path = data.get("tool_input", {}).get("file_path", "")
+
+if not file_path:
+    sys.exit(0)
+
+# {BEHAVIOR_LOGIC} — the user's described behavior translated to Python
+```
+
+Follow these rules when generating the script:
+
+- **PreToolUse hooks**: Call `sys.exit(2)` (or another non-zero code) to block the tool. Call `sys.exit(0)` to allow it.
+- **PostToolUse hooks**: Run side effects after the tool completes. The exit code is ignored. If the hook calls external tools, use `shutil.which()` to check availability first and `subprocess.run()` for execution.
+- **All status messages go to stderr**: Use `print("...", file=sys.stderr)` for any output.
+- **stdlib only**: The script MUST use only Python standard library modules — no pip dependencies.
+
+Write the generated script to `.claude/hooks/{SCRIPT_NAME}` using the Write tool.
+
+## Step 5: Wire Hook into Settings
+
+Read `.claude/settings.json`. Handle these cases:
+
+1. **File does not exist** — create it with this skeleton:
+
+   ```json
+   {
+     "hooks": {
+       "PreToolUse": [],
+       "PostToolUse": []
+     }
+   }
+   ```
+
+2. **File exists but has no `hooks` key** — add the `hooks` key with both event arrays.
+
+3. **File exists with `hooks` key but is missing the relevant event array** (PreToolUse or PostToolUse) — add the missing array.
+
+Append a new entry to the appropriate event array. Do NOT replace existing entries — use append/extend semantics to preserve all existing hook configurations.
+
+The new entry shape:
+
+```json
+{
+  "matcher": "{MATCHER_PATTERN}",
+  "hooks": [
+    {
+      "type": "command",
+      "command": "python3 .claude/hooks/{SCRIPT_NAME}"
+    }
+  ]
+}
+```
+
+Write the updated JSON back to `.claude/settings.json` with 2-space indent formatting.
+
+## Step 6: Confirm
+
+Display a summary of what was created:
+
+- **Hook script path**: `.claude/hooks/{SCRIPT_NAME}`
+- **Event type**: PreToolUse or PostToolUse
+- **Matcher pattern**: the tool matcher wired in settings.json
+- **Config entry**: the entry appended to `.claude/settings.json`
+
+Tell the user how to test: "The hook will run automatically on your next matching tool call. To test, try using the matched tool and verify the hook behavior."
