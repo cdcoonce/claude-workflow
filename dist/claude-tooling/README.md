@@ -5,6 +5,7 @@ Developing Claude skills, hooks, agents, and template configurations
 ## Skills
 
 - commit
+- create-hook
 - daa-code-review
 - design-an-interface
 - dev-cycle
