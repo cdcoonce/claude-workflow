@@ -21,6 +21,7 @@ ETL/ELT pipelines, SQL transformations, scheduled data jobs
 - readme-generator
 - request-refactor-plan
 - security-review
+- setup-hooks
 - setup-pre-commit
 - tdd
 - triage-issue

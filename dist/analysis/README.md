@@ -19,6 +19,7 @@ Notebooks, R/Python scripts, statistical analysis, exploratory work
 - readme-generator
 - request-refactor-plan
 - security-review
+- setup-hooks
 - setup-pre-commit
 - tdd
 - triage-issue

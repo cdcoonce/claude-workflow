@@ -19,6 +19,7 @@ Developing Claude skills, hooks, agents, and template configurations
 - readme-generator
 - request-refactor-plan
 - security-review
+- setup-hooks
 - setup-pre-commit
 - tdd
 - triage-issue
