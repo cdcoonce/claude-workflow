@@ -2,7 +2,7 @@
 schema_version: 1
 slug: create-hook
 skill_path: core/skills/create-hook/SKILL.md
-status: in_progress
+status: completed
 current_phase: finalize
 target_pass_rate: 90
 max_iterations: 5
@@ -30,3 +30,4 @@ updated: 2026-04-01
 2026-04-01 — Baseline score: 47%. 7/15 tests passed.
 2026-04-01 — Iteration 1: 93%. Previous best: 47%. New best.
 2026-04-01 — Loop exited: target reached. Final score: 93%.
+2026-04-01 — Run complete. Final: 93%. PR opened.
