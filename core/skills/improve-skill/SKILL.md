@@ -84,7 +84,7 @@ Ask: "Target pass rate? (default: 90%)" and "Max iterations? (default: 5)". Reco
 
 ## Phase 3: Baseline
 
-(See Phase 3 details — added in subsequent task)
+See `references/phase-3-baseline.md` for detailed instructions.
 
 ## Phase 4: Iterate
 
