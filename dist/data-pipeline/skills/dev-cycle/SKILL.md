@@ -96,17 +96,19 @@ Record each issue URL in the Issues table immediately after creation. See [refer
 3. **Push to origin:** `git push origin main` (or current default branch) so the planning commits are on remote before branching
 4. **Create feature branch:** `feat/{feature-slug}` from the updated HEAD (see branch handling in [references/phase-transitions.md](references/phase-transitions.md))
 
-Before dispatching, resolve agent identities:
+Before dispatching, resolve agent identities using the Agent tool's `subagent_type` parameter:
 
-1. **Scan** `.claude/agents/` for available agent definitions
-2. **Match implementers:** For each implementation issue, find the `implementer` agent whose `description` best matches the issue's domain
-3. **Match reviewer:** Identify the best-fit `reviewer` agent for code review between dispatches
-4. **Fall back:** When no `.claude/agents/` directory exists or no agents match, dispatch generic subagents with no agent identity
+1. **Check system prompt:** The available `subagent_type` values are listed in the Agent tool description (e.g., `data-pipeline:tdd-implementer:tdd-implementer`, `data-pipeline:code-reviewer:code-reviewer`)
+2. **Match implementers:** For each implementation issue, select the `subagent_type` whose name contains `tdd-implementer` or similar implementer role
+3. **Match reviewer:** Select the `subagent_type` whose name contains `code-reviewer` for code review between dispatches
+4. **Fall back:** When no matching `subagent_type` exists, use `general-purpose` as the subagent type
+
+> **Do NOT scan `.claude/agents/` directory.** Agents are registered as `subagent_type` values on the Agent tool, not as files on disk.
 
 Dispatch one subagent per GitLab issue following `subagent-development` methodology:
 
-- Each subagent invokes the `tdd` skill, using its matched implementer agent identity (if resolved)
-- Code review runs between each subagent dispatch, using the matched reviewer agent (if resolved)
+- Each subagent is dispatched with its matched `subagent_type` (not a generic agent with an injected prompt)
+- Code review runs between each subagent dispatch, using the matched reviewer `subagent_type`
 - State file is updated after each subagent completes (not batched)
 
 Log per-subagent events:

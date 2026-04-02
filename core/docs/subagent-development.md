@@ -24,27 +24,24 @@ Read plan file, create TodoWrite with all tasks.
 
 ### 2. Agent Discovery
 
-Before dispatching each subagent, resolve the best-fit agent identity:
+Before dispatching each subagent, resolve the best-fit agent type from the Agent tool's available `subagent_type` values:
 
-1. **Scan** `.claude/agents/` for agent definition files
-2. **Filter by role:** Use `implementer` agents for implementation tasks, `reviewer` agents for review tasks
-3. **Match by domain:** Compare each agent's `description` to the task domain. Prefer the most specific match
-4. **Select:** If multiple agents match, pick the one whose description most closely fits the task. If none match, fall back to a generic subagent with no agent identity
+1. **Check system prompt:** The Agent tool description lists all available `subagent_type` values (e.g., `data-pipeline:tdd-implementer:tdd-implementer`, `data-pipeline:code-reviewer:code-reviewer`)
+2. **Filter by role:** Use types containing `tdd-implementer` or similar for implementation tasks, `code-reviewer` for review tasks
+3. **Match by domain:** If multiple implementer types exist, prefer the one whose description most closely fits the task domain
+4. **Fall back:** When no matching `subagent_type` exists, use `general-purpose`
 
-> **Backward compatibility:** When no `.claude/agents/` directory exists, skip agent discovery and dispatch a generic subagent.
+> **Do NOT scan `.claude/agents/` directory.** Agents are registered as `subagent_type` values on the Agent tool, not as files on disk.
 
 ### 3. Execute Task with Subagent
 
-For each task, dispatch fresh subagent with resolved agent identity:
+For each task, dispatch a fresh subagent using the resolved `subagent_type`:
 
 ```
-Task tool (general-purpose):
+Agent tool:
+  subagent_type: "data-pipeline:tdd-implementer:tdd-implementer"  # or matched type
   description: "Implement Task N: [task name]"
   prompt: |
-    # Agent Identity (injected from agent discovery, omit if generic)
-    You are [{agent.name}]: {agent.description}
-    Your skills: {agent.resolved_skills}
-
     # Task
     You are implementing Task N from [plan-file].
 

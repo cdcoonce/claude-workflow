@@ -33,11 +33,13 @@ Each domain is independent—fixing validation doesn't affect connection pooling
 
 ### 2. Agent Discovery
 
-Scan `.claude/agents/` once before dispatching to resolve agent identities:
+Resolve agent types from the Agent tool's available `subagent_type` values before dispatching:
 
-- **One scan, multiple matches:** Each parallel task can map to a different agent based on its domain (e.g., a validation task may match a data-focused agent, while an API task matches a backend agent)
-- **Independent matching:** Match each task to its best-fit agent independently — filter by `role`, then rank by `description` specificity
-- **No agents required:** When no `.claude/agents/` directory exists, skip discovery and dispatch all tasks as generic agents
+- **Check system prompt:** The Agent tool description lists all available `subagent_type` values (e.g., `data-pipeline:tdd-implementer:tdd-implementer`)
+- **Independent matching:** Match each parallel task to its best-fit `subagent_type` independently — filter by role (implementer/reviewer), then rank by description specificity
+- **Fall back:** When no matching `subagent_type` exists, use `general-purpose`
+
+> **Do NOT scan `.claude/agents/` directory.** Agents are registered as `subagent_type` values on the Agent tool, not as files on disk.
 
 ### 3. Create Focused Agent Tasks
 

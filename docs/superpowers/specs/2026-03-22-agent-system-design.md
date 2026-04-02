@@ -179,32 +179,34 @@ Fail fast if:
 
 When an orchestrator dispatches a subagent:
 
-1. **Scan** `.claude/agents/` — read all `AGENT.md` files, extract `name`, `description`, `role`
-2. **Filter by role** — `implementer` for implementation tasks, `reviewer` for review tasks
-3. **Match by description** — the orchestrator reads all filtered agent descriptions and uses its judgment to select the best fit based on relevance to the task/issue content. This is Claude's reasoning, not keyword matching. If two agents seem equally relevant, prefer the more specialized one over the generic core agent
-4. **Fallback** — if no agent matches well (or no agents exist in `.claude/agents/`), dispatch a generic subagent with no agent identity (today's behavior). The system never forces a bad match
+1. **Check available `subagent_type` values** — the Agent tool's system prompt lists all registered agent types (e.g., `data-pipeline:tdd-implementer:tdd-implementer`, `data-pipeline:code-reviewer:code-reviewer`). These are built from `AGENT.md` files during `build_preset` and registered as plugin agent types
+2. **Filter by role** — `tdd-implementer` types for implementation tasks, `code-reviewer` types for review tasks
+3. **Match by description** — the orchestrator reads all filtered agent type descriptions and uses its judgment to select the best fit based on relevance to the task/issue content. If two types seem equally relevant, prefer the more specialized one
+4. **Fallback** — if no agent type matches well (or no specialized types are available), use `general-purpose` as the subagent type. The system never forces a bad match
+
+> **Important:** Do NOT scan `.claude/agents/` directory. Agent definitions are compiled into `subagent_type` values on the Agent tool at build time, not read from disk at runtime.
 
 ### Dispatch prompt construction
 
-```text
-You are the {agent-name} agent.
+When using a registered `subagent_type`, the agent's system prompt and skills are injected automatically by the Agent tool — the orchestrator only needs to provide the task description in the `prompt` parameter:
 
-{contents of AGENT.md body}
-
-Your available skills: {resolved skill list}
-
-Task: {task description from plan/issue}
+```
+Agent tool:
+  subagent_type: "data-pipeline:tdd-implementer:tdd-implementer"
+  description: "Implement Issue #N: title"
+  prompt: |
+    Task: {task description from plan/issue}
 ```
 
-The orchestrator injects the agent's system prompt and resolved skill list into the dispatch prompt.
+The agent's identity, system prompt, and skill list are resolved by the framework from the `subagent_type` — do not manually inject them.
 
 ### Changes per orchestrator
 
-| Orchestrator             | Change                                                                                                               |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| **dev-cycle** (Phase 5)  | Scan agents before dispatching per-issue subagents. Use matched implementer. Use matched reviewer between dispatches |
-| **subagent-development** | Add agent discovery step between "Load Plan" and "Execute Task"                                                      |
-| **parallel-agents**      | Add agent discovery step. Each parallel dispatch can use a different agent based on domain                           |
+| Orchestrator             | Change                                                                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| **dev-cycle** (Phase 5)  | Match `subagent_type` before dispatching per-issue subagents. Use matched implementer type. Use matched reviewer type between dispatches |
+| **subagent-development** | Add `subagent_type` resolution step between "Load Plan" and "Execute Task"                                                      |
+| **parallel-agents**      | Resolve `subagent_type` for each parallel task. Each dispatch can use a different agent type based on domain                    |
 
 ### What does NOT change
 
