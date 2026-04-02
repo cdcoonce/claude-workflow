@@ -58,7 +58,29 @@ Write `docs/skill-improve/{slug}.state.md` (see `state-schema.md` for template).
 
 ## Phase 2: Grill
 
-(See Phase 2 details — added in subsequent task)
+### Step 1 — Check for existing tests.md
+
+Check `core/skills/{slug}/tests.md`.
+
+**If found:** Count data rows (excluding header). Show: "Found {N} existing tests for {slug}: [one-line summary per scenario]." Ask: "What harder or missing cases should I add? (press Enter to keep existing suite.)" If user provides cases, append them as new rows (never remove existing rows). If user skips, keep suite as-is. Jump to Step 3.
+
+**If not found:** Proceed to Step 2.
+
+### Step 2 — Interview (AskUserQuestion if available, else numbered text Q&A)
+
+Ask in sequence:
+
+1. What is this skill's primary purpose and when should it trigger?
+2. What are the 3 most critical behaviors it must always do correctly?
+3. What would misuse or incorrect triggering look like?
+4. What edge cases or unusual inputs must it handle?
+5. How many test cases do you want? (suggest 10–15)
+
+Write `core/skills/{slug}/tests.md` with columns: `| ID | Scenario | Expected Behavior | Result | Reason |`. T00 is always first: Scenario = "Skill SKILL.md must be ≤100 lines", Expected = "Claude counts lines and stops if exceeded." Number remaining cases T01, T02, etc.
+
+### Step 3 — Set config
+
+Ask: "Target pass rate? (default: 90%)" and "Max iterations? (default: 5)". Record both in state file. Advance `current_phase` to `baseline`. Append log entry: `{YYYY-MM-DD} — Grill complete. {N} tests written. Target: {rate}%. Max iterations: {max}.`
 
 ## Phase 3: Baseline
 
