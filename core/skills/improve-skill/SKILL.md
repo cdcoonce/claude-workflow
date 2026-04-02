@@ -92,7 +92,7 @@ See `references/phase-4-iterate.md` for detailed instructions.
 
 ## Phase 5: Finalize
 
-(See Phase 5 details — added in subsequent task)
+See `references/phase-5-finalize.md` for detailed instructions.
 
 ## Phase 6: Agent Definitions
 
