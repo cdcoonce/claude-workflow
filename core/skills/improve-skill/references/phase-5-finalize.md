@@ -6,6 +6,7 @@ Write best skill, clear tests, generate report, update score ledger, commit, ope
 
 Read `core/skills/{slug}/.best_skill.md` (the sidecar written by Phase 4 Step G).
 Overwrite `{skill_path}` with its full content. This is the final best version.
+Then run `git rm core/skills/{slug}/.best_skill.md` to remove the sidecar — it is a temporary artifact and should not remain in the repository after finalization.
 
 ## Step 2 — Clear tests.md Result/Reason columns
 
@@ -76,14 +77,15 @@ Append one row:
    - Body must include:
      - One-paragraph summary of what was improved and the score gain
      - Scores-per-iteration table (copy from state)
-     - `Closes #{prd_issue}` if a tracked issue exists; omit if not tracked
+     - `Closes #{prd_issue}` if a tracked issue exists; omit if not tracked. Write `Closes #{prd_issue}` on its own line (one `Closes` keyword per issue referenced).
 
 ## Step 6 — Archive state
 
-1. Set `status: completed` in the state file (`docs/skill-improve/{slug}.state.md`).
-2. Append log entry: `{YYYY-MM-DD} — Run complete. Final: {final}%. PR opened.`
-3. Create `docs/archive/skill-improve/` if it does not exist.
-4. Move state file: `mv docs/skill-improve/{slug}.state.md docs/archive/skill-improve/{slug}.state.md`
+1. Set `current_phase: finalized` in the state file (`docs/skill-improve/{slug}.state.md`).
+2. Set `status: completed` in the state file.
+3. Append log entry: `{YYYY-MM-DD} — Run complete. Final: {final}%. PR opened.`
+4. Create `docs/archive/skill-improve/` if it does not exist.
+5. Move state file: `git mv docs/skill-improve/{slug}.state.md docs/archive/skill-improve/{slug}.state.md`
 
 ## Completion message
 
