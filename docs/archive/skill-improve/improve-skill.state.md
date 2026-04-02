@@ -2,7 +2,7 @@
 schema_version: 1
 slug: improve-skill
 skill_path: core/skills/improve-skill/SKILL.md
-status: in_progress
+status: completed
 current_phase: finalize
 target_pass_rate: 90
 max_iterations: 5
@@ -31,3 +31,4 @@ updated: 2026-04-01
 2026-04-01 — Iteration 1: 100%. Previous best: 44%. New best.
 2026-04-01 — Loop exited: target reached. Final score: 100%.
 2026-04-01 — Phase 5 started.
+2026-04-01 — Run complete. Final: 100%. PR opened.
