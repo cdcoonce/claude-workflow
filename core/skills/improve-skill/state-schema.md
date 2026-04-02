@@ -19,6 +19,7 @@ current_iteration: 0
 best_score: 0
 best_iteration: 0
 baseline_score:
+stall_count: 0
 created: { YYYY-MM-DD }
 updated: { YYYY-MM-DD }
 ---
@@ -44,6 +45,7 @@ updated: { YYYY-MM-DD }
 - **best_score:** Highest pass percentage achieved so far (integer).
 - **best_iteration:** Iteration number that produced `best_score`.
 - **baseline_score:** Score from Phase 3 before any iteration. Set once; never updated.
+- **stall_count:** Number of consecutive iterations without improvement. Incremented on no-change, reset to `0` on improvement or after strategy dispatch. Read at loop start for resume support.
 - **created / updated:** ISO date (YYYY-MM-DD). `updated` refreshed on every state write.
 
 ## Scores Table

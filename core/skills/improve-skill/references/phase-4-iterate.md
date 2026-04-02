@@ -13,6 +13,10 @@ git branch --list improve/{slug}
 - **Branch exists:** Check it out. Note: "Resuming improvement branch `improve/{slug}`."
 - **Branch not found:** Create from current HEAD: `git checkout -b improve/{slug}`. Note: "Created improvement branch `improve/{slug}`."
 
+## Initialization (before the loop)
+
+Before starting the loop: read `baseline_score` from state. If `best_score` is not already set (i.e., this is the first run of Phase 4, not a resume), set `best_score` to `baseline_score` and `best_iteration` to `0`. Also read `stall_count` from the state file (for resume support); if absent, treat as `0`.
+
 ## Exit Conditions (check at the START of each iteration)
 
 Before running any step, check:
@@ -28,7 +32,7 @@ Repeat the following steps A–H until an exit condition is met.
 
 ### Step A — Read current skill
 
-Read `{skill_path}`. This file always reflects the best version (regression handling in Step G ensures this).
+Read `{skill_path}`. On the first iteration (iteration 1), if `core/skills/{slug}/.best_skill.md` does not exist yet, read from `{skill_path}` directly. On subsequent iterations, `{skill_path}` always reflects the best version (regression handling in Step G ensures this).
 
 ### Step B — Read annotated failures
 
@@ -52,7 +56,7 @@ Receive: complete rewritten SKILL.md content (valid Markdown with YAML frontmatt
 
 Overwrite `{skill_path}` with the Skill Writer output. Commit to the improve branch:
 
-```
+```text
 feat({slug}): skill improvement iteration {n}
 ```
 
@@ -77,17 +81,13 @@ Receive: annotated test table (with Result and Reason columns filled) and a scor
 
 Compare `new_score` to `best_score`:
 
-- **Improvement** (`new_score > best_score`): Update `best_score` and `best_iteration` in state file. Note: "New best: {pct}%."
-- **Regression** (`new_score < best_score`): Warn the user. Revert `{skill_path}` to the previous best version:
-  ```
-  git checkout HEAD~1 -- {skill_path}
-  ```
-  Note: "Regression ({new_pct}% < {best_pct}%). Reverted to best version."
-- **No change** (`new_score == best_score`): Increment internal stall count. Note: "No improvement. Stall count: {stall_count}."
+- **Improvement** (`new_score > best_score`): Update `best_score` and `best_iteration` in the state file. Copy `{skill_path}` content to `core/skills/{slug}/.best_skill.md` and commit: `chore({slug}): update best-version sidecar (iteration {n})`. Reset `stall_count` to `0` in the state file. Note: "New best: {pct}%."
+- **Regression** (`new_score < best_score`): Warn the user. Read `core/skills/{slug}/.best_skill.md` and overwrite `{skill_path}` with its contents. Commit: `revert({slug}): revert to best version (iteration {best_iteration})`. Note: "Regression ({new_pct}% < {best_pct}%). Reverted to best version."
+- **No change** (`new_score == best_score`): Increment `stall_count` in the state file. Note: "No improvement. Stall count: {stall_count}."
 
 ### Step H — Strategy agent check
 
-If the score has been unchanged for 2 consecutive iterations (stall count ≥ 2):
+If `stall_count` (from the state file) is ≥ 2:
 
 1. Adopt the `strategy` agent identity. Provide:
    - Full current skill content
@@ -95,7 +95,7 @@ If the score has been unchanged for 2 consecutive iterations (stall count ≥ 2)
    - All annotated failure tables from this run
 2. Receive: a concrete rewrite strategy (plain text).
 3. Store strategy text to pass as additional context in the next Step C call.
-4. Reset the stall count to 0.
+4. Reset `stall_count` to `0` in the state file.
 5. Note: "Strategy agent dispatched. Stall count reset."
 
-Return to top of loop and check exit conditions before the next iteration.
+Whether or not Step H ran, return to the exit-condition check to begin the next iteration.
