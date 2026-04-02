@@ -96,4 +96,4 @@ See `references/phase-5-finalize.md` for detailed instructions.
 
 ## Phase 6: Agent Definitions
 
-(See Phase 6 details — added in subsequent task)
+Agents live in `core/agents/`: `qa-tester`, `skill-writer`, `strategy`.
