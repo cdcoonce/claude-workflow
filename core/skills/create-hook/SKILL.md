@@ -8,7 +8,17 @@ description: >
 
 # Create Hook
 
-Create a Claude Code hook through an interview, generate the Python script, and register it in `.claude/settings.json`.
+**Self-check**: Count the lines in this file. If the count exceeds 100, report the violation and halt execution.
+
+**Scope**: This skill applies only to creating new Python-script hooks. Do NOT trigger for:
+
+- Requests to edit or modify an existing hook — respond that create-hook is for new hooks only and stop.
+- Requests to set a model, change a setting, or add an inline shell command — route those to `update-config` instead.
+- Requests using vague configuration language (e.g., "I want hooks configured") without clear intent to create a new Python hook — ask a single clarifying question to confirm before proceeding.
+
+**Trigger examples**: "create a hook that blocks edits to migration files", "add a pre-edit check", "add a post-edit formatter for Python files".
+
+**Non-trigger examples**: "set my model to opus" → update-config. "add an inline shell command to run prettier" → update-config. "edit my existing protect-files hook" → not this skill.
 
 ## Interview
 
@@ -19,7 +29,7 @@ Use `AskUserQuestion` to gather requirements. Batch into 2-3 calls.
 Ask these together:
 
 1. **Hook type**: PreToolUse (block/validate before tool runs) or PostToolUse (act after tool runs)?
-2. **Matcher pattern**: Which tools should trigger this hook? Common patterns: `Edit|Write`, `Bash`, `*` (all tools). See [hook-conventions.md](references/hook-conventions.md) for full syntax.
+2. **Matcher pattern**: Which tools should trigger this hook? Common patterns: `Edit|Write`, `Bash`, `*` (all tools).
 
 ### Call 2 — Behavior
 
@@ -33,12 +43,9 @@ Ask these together:
 
 ## Implementation
 
-After the interview, generate the hook script and register it.
-
 ### Step 1 — Write the hook script
 
 - Create `.claude/hooks/<hook-name>.py`
-- Follow the Python template from [hook-conventions.md](references/hook-conventions.md)
 - Read JSON from stdin, extract `tool_input` fields relevant to the matcher
 - PreToolUse: use `sys.exit(2)` to block, print reason to stderr
 - PostToolUse: run actions, print summary to stderr
@@ -46,30 +53,20 @@ After the interview, generate the hook script and register it.
 
 ### Step 2 — Register in settings.json
 
-Read `.claude/settings.json` and update the hooks configuration:
-
-1. Parse the existing JSON
-2. Navigate to `hooks.<HookType>` (e.g., `hooks.PreToolUse`)
-3. Look for an existing entry with the same `matcher` value
-   - **If found**: append the new hook command to that entry's `hooks` array
-   - **If not found**: add a new entry to the hook type array:
-     ```json
-     {
-       "matcher": "<pattern>",
-       "hooks": [
-         {
-           "type": "command",
-           "command": "python3 .claude/hooks/<hook-name>.py"
-         }
-       ]
-     }
-     ```
-4. Write the updated JSON back with 2-space indent
+- If `.claude/settings.json` does not exist, create it with the structure `{"hooks": {}}` before proceeding.
+- Read and parse the existing JSON.
+- If `hooks.<HookType>` key is absent (e.g., `hooks.PreToolUse`), initialize it as an empty array `[]`.
+- Look for an existing entry with the same `matcher` value:
+  - **If found**: append the new hook command to that entry's `hooks` array.
+  - **If not found**: add a new entry:
+    ```json
+    {
+      "matcher": "<pattern>",
+      "hooks": [{ "type": "command", "command": "python3 .claude/hooks/<hook-name>.py" }]
+    }
+    ```
+- Write the updated JSON back with 2-space indent.
 
 ### Step 3 — Inform the user
 
-Tell the user:
-
-- The hook script location
-- What it does and when it triggers
-- They need to **restart Claude Code** for the hook to take effect
+Tell the user the hook script location, what it does and when it triggers, and that they must **restart Claude Code** for the hook to take effect.
