@@ -15,7 +15,7 @@ git branch --list improve/{slug}
 
 ## Initialization (before the loop)
 
-Before starting the loop: read `baseline_score` from state. If `best_score` is not already set (i.e., this is the first run of Phase 4, not a resume), set `best_score` to `baseline_score` and `best_iteration` to `0`. Also read `stall_count` from the state file (for resume support); if absent, treat as `0`.
+Before starting the loop: read `baseline_score` from state. If `best_score` is blank (i.e., first run of Phase 4, not a resume), set `best_score` to `baseline_score` and `best_iteration` to `0`. Note: `best_iteration: 0` stays as is (0 is valid). Also read `stall_count` from the state file (for resume support); if absent, treat as `0`.
 
 ## Exit Conditions (check at the START of each iteration)
 
@@ -36,7 +36,7 @@ Read `{skill_path}`. On the first iteration (iteration 1), if `core/skills/{slug
 
 ### Step B — Read annotated failures
 
-Read `core/skills/{slug}/tests.md`. Extract all rows where Result = `fail`. These are the failure cases to address.
+Read `{tests_path}`. Extract all rows where Result = `fail`. These are the failure cases to address.
 
 ### Step C — Dispatch Skill Writer
 
@@ -62,7 +62,7 @@ feat({slug}): skill improvement iteration {n}
 
 ### Step E — Dispatch QA Tester
 
-Adopt the `qa-tester` agent identity. Provide the full skill content and the full test suite from `core/skills/{slug}/tests.md`.
+Adopt the `qa-tester` agent identity. Provide the full skill content and the full test suite from `{tests_path}`.
 
 Receive: annotated test table (with Result and Reason columns filled) and a score summary line.
 
@@ -72,7 +72,7 @@ Receive: annotated test table (with Result and Reason columns filled) and a scor
 
 ### Step F — Record score
 
-1. Write the annotated table back to `core/skills/{slug}/tests.md` (overwrite).
+1. Write the annotated table back to `{tests_path}` (overwrite).
 2. Add a row to the Scores table in the state file: `| {n} | {pct}% | |`
 3. Increment `current_iteration` in the state file.
 4. Append log entry: `{YYYY-MM-DD} — Iteration {n}: {pct}%. Previous best: {best_score}%.`

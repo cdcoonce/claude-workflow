@@ -40,7 +40,7 @@ If not found, abort:
 
 > Error: no skill found for slug "{slug}". Searched `core/skills/{slug}/SKILL.md` and `presets/*/skills/{slug}/SKILL.md`.
 
-Record the resolved path as `skill_path`.
+Record the resolved path as `skill_path`. Also derive `tests_path` as the directory of `skill_path` plus `/tests.md`. Example: if `skill_path` is `presets/python-api/skills/tdd/SKILL.md`, then `tests_path` is `presets/python-api/skills/tdd/tests.md`.
 
 ### Step 3 — Check for in-progress state file
 
@@ -60,9 +60,9 @@ Write `docs/skill-improve/{slug}.state.md` (see `state-schema.md` for template).
 
 ### Step 1 — Check for existing tests.md
 
-Check `core/skills/{slug}/tests.md`.
+Check `{tests_path}`.
 
-**If found:** Count data rows (excluding header). Show: "Found {N} existing tests for {slug}: [one-line summary per scenario]." Ask: "What harder or missing cases should I add? (press Enter to keep existing suite.)" If user provides cases, append them as new rows (never remove existing rows; never add a T00 row if one already exists in the file). Write the updated table back to `core/skills/{slug}/tests.md`. If user skips, enters nothing, or enters 0, keep suite as-is. Jump to Step 3.
+**If found:** Count data rows (excluding header). Show: "Found {N} existing tests for {slug}: [one-line summary per scenario]." Ask: "What harder or missing cases should I add? (press Enter to keep existing suite.)" If user provides cases, append them as new rows (never remove existing rows; never add a T00 row if one already exists in the file). Write the updated table back to `{tests_path}`. If user skips, enters nothing, or enters 0, keep suite as-is. Jump to Step 3.
 
 **If not found:** Proceed to Step 2.
 
@@ -76,7 +76,7 @@ Ask in sequence:
 4. What edge cases or unusual inputs must it handle?
 5. How many test cases do you want? (suggest 10–15)
 
-Write `core/skills/{slug}/tests.md` with columns: `| ID | Scenario | Expected Behavior | Result | Reason |` (followed by a separator row). T00 is always first: Scenario = "Skill SKILL.md must be ≤100 lines", Expected = "Claude counts lines; if >100, reports the violation and halts execution." If user answered 0 for test count, re-prompt once: "Suggest 10–15 tests." Number remaining cases T01, T02, etc.
+Write `{tests_path}` with columns: `| ID | Scenario | Expected Behavior | Result | Reason |` (followed by a separator row). T00 is always first: Scenario = "Skill SKILL.md must be ≤100 lines", Expected = "Claude counts lines; if >100, reports the violation and halts execution." If user answered 0 for test count, re-prompt once: "Suggest 10–15 tests." Number remaining cases T01, T02, etc.
 
 ### Step 3 — Set config
 

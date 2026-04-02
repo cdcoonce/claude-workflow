@@ -8,7 +8,7 @@ Read the full content of `{skill_path}` (resolved in Phase 1).
 
 ## Step 2 — Read test suite
 
-Read `core/skills/{slug}/tests.md`. This is the test table with columns:
+Read `{tests_path}`. This is the test table with columns:
 `| ID | Scenario | Expected Behavior | Result | Reason |`
 
 The Result and Reason columns are blank — either cleared after a previous run or freshly created. Do not modify them before dispatching the QA Tester.
@@ -38,7 +38,7 @@ If the returned output does not contain a line matching `Score: {N}/{total} = {p
 
 After the QA Tester returns:
 
-1. **Write the annotated table** back to `core/skills/{slug}/tests.md` (overwrite the file with the annotated version).
+1. **Write the annotated table** back to `{tests_path}` (overwrite the file with the annotated version).
 
 2. **Update the state file** (`docs/skill-improve/{slug}.state.md`):
    - Set `baseline_score: {pct}` (integer percentage, e.g. `73`). Record `baseline_score` as an integer (strip the `%` sign). Example: if score is 60%, record `baseline_score: 60`.

@@ -2,6 +2,8 @@
 
 Write best skill, clear tests, generate report, update score ledger, commit, open PR, archive state.
 
+**Initialization:** Write `current_phase: finalize` to the state file. Append log: `{date} — Phase 5 started.`
+
 ## Step 1 — Write best skill
 
 Read `core/skills/{slug}/.best_skill.md` (the sidecar written by Phase 4 Step G).
@@ -10,7 +12,7 @@ Then run `git rm core/skills/{slug}/.best_skill.md` to remove the sidecar — it
 
 ## Step 2 — Clear tests.md Result/Reason columns
 
-Read `core/skills/{slug}/tests.md`. For every data row (all rows except the header and separator),
+Read `{tests_path}`. For every data row (all rows except the header and separator),
 clear the `Result` and `Reason` cells — leave them blank. Write the file back. The ID, Scenario,
 and Expected Behavior columns are untouched. T00 is never removed. The file is now ready for
 the next run.
@@ -77,11 +79,11 @@ Append one row:
    - Body must include:
      - One-paragraph summary of what was improved and the score gain
      - Scores-per-iteration table (copy from state)
-     - `Closes #{prd_issue}` if a tracked issue exists; omit if not tracked. Write `Closes #{prd_issue}` on its own line (one `Closes` keyword per issue referenced).
+     - Read `prd_issue` from state file. If present, add `Closes #{prd_issue}` on its own line in the PR body. If blank or absent, omit.
 
 ## Step 6 — Archive state
 
-1. Set `current_phase: finalized` in the state file (`docs/skill-improve/{slug}.state.md`).
+1. Set `current_phase: finalize` in the state file (`docs/skill-improve/{slug}.state.md`).
 2. Set `status: completed` in the state file.
 3. Append log entry: `{YYYY-MM-DD} — Run complete. Final: {final}%. PR opened.`
 4. Create `docs/archive/skill-improve/` if it does not exist.

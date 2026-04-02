@@ -16,8 +16,9 @@ current_phase: grill
 target_pass_rate:
 max_iterations:
 current_iteration: 0
-best_score: 0
+best_score:
 best_iteration: 0
+prd_issue:
 baseline_score:
 stall_count: 0
 created: { YYYY-MM-DD }
@@ -42,8 +43,9 @@ updated: { YYYY-MM-DD }
 - **target_pass_rate:** Integer percentage (e.g., `90`). Set during Phase 2 (Grill).
 - **max_iterations:** Integer. Set during Phase 2 (Grill).
 - **current_iteration:** Incremented after each full Skill Writer + QA Tester cycle.
-- **best_score:** Highest pass percentage achieved so far (integer).
+- **best_score:** Highest pass percentage achieved so far (integer). Blank until Phase 4 initializes it to `baseline_score`.
 - **best_iteration:** Iteration number that produced `best_score`.
+- **prd_issue:** Optional issue number that this improvement run is associated with. Omit if no issue is tracked. Populated during Phase 1 if the user provides an issue number.
 - **baseline_score:** Score from Phase 3 before any iteration. Set once; never updated.
 - **stall_count:** Number of consecutive iterations without improvement. Incremented on no-change, reset to `0` on improvement or after strategy dispatch. Read at loop start for resume support.
 - **created / updated:** ISO date (YYYY-MM-DD). `updated` refreshed on every state write.
