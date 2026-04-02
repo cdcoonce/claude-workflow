@@ -46,13 +46,13 @@ Record the resolved path as `skill_path`.
 
 Look for `docs/skill-improve/{slug}.state.md`.
 
-- **Found, `status: in_progress`:** Read `current_phase` and `best_score`. Report: "Resuming **{slug}** at phase **{current_phase}** (best score: {best_score}%)." Jump to that phase.
-- **Found, other status:** Notify user, start a new run (suffix slug with `-2`, `-3` etc. to avoid collision).
+- **Found, `status: in_progress`:** Read `skill_path`, `current_phase`, and `best_score` from state. Verify `skill_path` still exists on disk; if not, abort with an error. Report: "Resuming **{slug}** at phase **{current_phase}** (best score: {best_score}%)." Jump to that phase.
+- **Found, `status: completed` or `status: abandoned`:** Notify user, start a new run (suffix slug with `-2`, `-3` etc. to avoid collision).
 - **Not found:** Proceed to Step 4.
 
 ### Step 4 — Create state file
 
-Write `docs/skill-improve/{slug}.state.md` (see `state-schema.md` for template). Set `status: in_progress`, `current_phase: grill`. Confirm: "State file created at `docs/skill-improve/{slug}.state.md`." Then proceed to Phase 2.
+Write `docs/skill-improve/{slug}.state.md` (see `state-schema.md` for template). Set `status: in_progress`, `current_phase: grill`. Append a log entry: `{YYYY-MM-DD} — State file created. Skill path: {skill_path}`. Confirm: "State file created at `docs/skill-improve/{slug}.state.md`." Then proceed to Phase 2.
 
 ---
 

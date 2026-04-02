@@ -16,8 +16,8 @@ current_phase: grill
 target_pass_rate:
 max_iterations:
 current_iteration: 0
-best_score:
-best_iteration:
+best_score: 0
+best_iteration: 0
 baseline_score:
 created: { YYYY-MM-DD }
 updated: { YYYY-MM-DD }
