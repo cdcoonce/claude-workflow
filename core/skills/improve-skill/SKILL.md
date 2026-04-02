@@ -88,7 +88,7 @@ See `references/phase-3-baseline.md` for detailed instructions.
 
 ## Phase 4: Iterate
 
-(See Phase 4 details — added in subsequent task)
+See `references/phase-4-iterate.md` for detailed instructions.
 
 ## Phase 5: Finalize
 
