@@ -12,87 +12,70 @@ description: >
 
 Run a benchmark-driven improvement loop on any skill: interview → baseline → iterate → PR.
 
-## Pipeline Overview
-
-| #   | Phase            | Summary                                                      |
-| --- | ---------------- | ------------------------------------------------------------ |
-| 1   | **Orchestrator** | Resolve slug, load or create state file (this phase)         |
-| 2   | **Grill**        | Interview user to build/extend `tests.md`                    |
-| 3   | **Baseline**     | QA Tester agent scores the original skill                    |
-| 4   | **Iterate**      | Skill Writer + QA Tester loop on `improve/{slug}` branch     |
-| 5   | **Finalize**     | Report + PR + score ledger + state archive                   |
-| 6   | **Agents**       | `qa-tester`, `skill-writer`, `strategy` AGENT.md definitions |
-
 ## Phase 1: Orchestrator
 
-### Step 1 — Parse slug
+**Step 1 — Parse slug:** Usage: `/improve-skill <slug>`. If no slug given, reply with usage and stop.
 
-Usage: `/improve-skill <slug>`. If no slug given, reply with usage and stop.
+**Step 2 — Resolve skill path:** Check `core/skills/{slug}/SKILL.md`, then `presets/*/skills/{slug}/SKILL.md`. If not found, abort: `Error: no skill found for slug "{slug}". Searched core/skills/{slug}/SKILL.md and presets/*/skills/{slug}/SKILL.md.` Record resolved path as `skill_path`. Derive `tests_path` as the directory of `skill_path` plus `/tests.md`.
 
-### Step 2 — Resolve skill path
+**Step 3 — Check state file:** Look for `docs/skill-improve/{slug}.state.md`.
 
-Check in order (first match wins):
-
-1. `core/skills/{slug}/SKILL.md`
-2. `presets/*/skills/{slug}/SKILL.md`
-
-If not found, abort:
-
-> Error: no skill found for slug "{slug}". Searched `core/skills/{slug}/SKILL.md` and `presets/*/skills/{slug}/SKILL.md`.
-
-Record the resolved path as `skill_path`. Also derive `tests_path` as the directory of `skill_path` plus `/tests.md`. Example: if `skill_path` is `presets/python-api/skills/tdd/SKILL.md`, then `tests_path` is `presets/python-api/skills/tdd/tests.md`.
-
-### Step 3 — Check for in-progress state file
-
-Look for `docs/skill-improve/{slug}.state.md`.
-
-- **Found, `status: in_progress`:** Read `skill_path`, `current_phase`, and `best_score` from state. Verify `skill_path` still exists on disk; if not, abort with an error. Report: "Resuming **{slug}** at phase **{current_phase}** (best score: {best_score}%)." Jump to that phase.
-- **Found, `status: completed` or `status: abandoned`:** Notify user, start a new run (suffix slug with `-2`, `-3` etc. to avoid collision).
+- **`status: in_progress`:** Read `skill_path`, `current_phase`, `best_score`. Verify `skill_path` exists on disk. Report: "Resuming **{slug}** at phase **{current_phase}** (best score: {best_score}%)." Jump to that phase.
+- **`status: completed` or `status: abandoned`:** Notify user, start new run (suffix slug with `-2`, `-3` etc.).
 - **Not found:** Proceed to Step 4.
 
-### Step 4 — Create state file
-
-Write `docs/skill-improve/{slug}.state.md` (see `state-schema.md` for template). Set `status: in_progress`, `current_phase: grill`. Append a log entry: `{YYYY-MM-DD} — State file created. Skill path: {skill_path}`. Confirm: "State file created at `docs/skill-improve/{slug}.state.md`." Then proceed to Phase 2.
+**Step 4 — Create state file:** Write `docs/skill-improve/{slug}.state.md`. Set `status: in_progress`, `current_phase: grill`. Log: `{YYYY-MM-DD} — State file created. Skill path: {skill_path}`. Proceed to Phase 2.
 
 ---
 
 ## Phase 2: Grill
 
-### Step 1 — Check for existing tests.md
+**Step 1 — Check for existing tests.md:** If `{tests_path}` exists: count data rows, show one-line summaries. Ask user what harder or missing cases to add. Append new rows only (never remove; never duplicate T00). Jump to Step 3. If not found: proceed to Step 2.
 
-Check `{tests_path}`.
+**Step 2 — Interview:** First, read `{skill_path}` and infer 5–10 suggested test cases from its content. Then conduct the interview using AskUserQuestion if available, otherwise numbered text Q&A.
 
-**If found:** Count data rows (excluding header). Show: "Found {N} existing tests for {slug}: [one-line summary per scenario]." Ask: "What harder or missing cases should I add? (press Enter to keep existing suite.)" If user provides cases, append them as new rows (never remove existing rows; never add a T00 row if one already exists in the file). Write the updated table back to `{tests_path}`. If user skips, enters nothing, or enters 0, keep suite as-is. Jump to Step 3.
+**If AskUserQuestion is available:** Use it for every question with selectable options (use multiSelect where multiple choices apply):
 
-**If not found:** Proceed to Step 2.
+- Q1: Primary purpose — offer selectable trigger phrases inferred from the skill's description.
+- Q2: Critical behaviors — offer selectable options inferred from the skill's steps (multiSelect).
+- Q3: Misuse scenarios — offer selectable options inferred from skill edge cases (multiSelect).
+- Q4: Edge cases — offer selectable options inferred from the skill (multiSelect).
+- Q5: Suggested test cases — present inferred test cases as selectable options (multiSelect); user picks which to include and may add more.
+- Q6: How many total tests? (suggest 10–15)
 
-### Step 2 — Interview (AskUserQuestion if available, else numbered text Q&A)
+**If AskUserQuestion is NOT available:** Ask questions 1–6 in sequence as numbered plain text. For Q5, list the inferred test cases as numbered suggestions before asking for user additions.
 
-Ask in sequence:
+Write `{tests_path}`: columns `| ID | Scenario | Expected Behavior | Result | Reason |`. T00 is always first: Scenario = "Skill SKILL.md must be ≤100 lines", Expected = "Claude counts lines; if >100, reports the violation and halts execution." Number remaining cases T01, T02, etc. If user answered 0 for test count, re-prompt once.
 
-1. What is this skill's primary purpose and when should it trigger?
-2. What are the 3 most critical behaviors it must always do correctly?
-3. What would misuse or incorrect triggering look like?
-4. What edge cases or unusual inputs must it handle?
-5. How many test cases do you want? (suggest 10–15)
+**Step 3 — Set config:** Ask target pass rate (default 90%) and max iterations (default 5). Record in state file. Advance `current_phase` to `baseline`. Log: `{YYYY-MM-DD} — Grill complete. Suite: {total} tests. Target: {rate}%. Max: {max} iterations.`
 
-Write `{tests_path}` with columns: `| ID | Scenario | Expected Behavior | Result | Reason |` (followed by a separator row). T00 is always first: Scenario = "Skill SKILL.md must be ≤100 lines", Expected = "Claude counts lines; if >100, reports the violation and halts execution." If user answered 0 for test count, re-prompt once: "Suggest 10–15 tests." Number remaining cases T01, T02, etc.
+**Step 4 — Commit:** `git add {tests_path} docs/skill-improve/{slug}.state.md && git commit -m "test({slug}): add benchmark test suite"`
 
-### Step 3 — Set config
-
-Ask: "Target pass rate? (default: 90%)" and "Max iterations? (default: 5)". Record both in state file. Advance `current_phase` to `baseline`. Append log entry: `{YYYY-MM-DD} — Grill complete. Suite total: {total} tests. Target: {rate}%. Max: {max} iterations.`
+---
 
 ## Phase 3: Baseline
 
-See `references/phase-3-baseline.md` for detailed instructions.
+Read `references/phase-3-baseline.md` using the Read tool, then follow its instructions exactly.
+
+After completion: `baseline_score` is recorded in state under `baseline_score`; iteration 0 is added to the Scores table; `best_score` is initialized to `baseline_score`.
+
+---
 
 ## Phase 4: Iterate
 
-See `references/phase-4-iterate.md` for detailed instructions.
+Read `references/phase-4-iterate.md` using the Read tool, then follow its instructions exactly.
+
+The Skill Writer and QA Tester execute as a team across multiple iterations. After each iteration: if score > `best_score`, update `best_score` and `best_iteration` in state; if score < `best_score`, log the regression but preserve `best_score` and `best_iteration`. If two consecutive iterations show no score improvement, invoke the strategy agent to propose a rewrite strategy before the next Skill Writer iteration. Loop continues until target pass rate is met or max iterations is reached.
+
+---
 
 ## Phase 5: Finalize
 
-See `references/phase-5-finalize.md` for detailed instructions.
+Read `references/phase-5-finalize.md` using the Read tool, then follow its instructions exactly.
+
+After completion: a PR is filed; state file `status` is set to `completed`; state file is archived to `docs/archive/skill-improve/`; a score report is produced showing baseline → best score.
+
+---
 
 ## Phase 6: Agent Definitions
 
