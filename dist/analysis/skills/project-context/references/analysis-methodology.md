@@ -48,7 +48,6 @@ Example:
 **2. Glob for CI/CD and toolchain configs — run in parallel:**
 
 ```
-**/.gitlab-ci.yml
 **/.github/workflows/*.yml
 **/.github/workflows/*.yaml
 ```
@@ -89,29 +88,34 @@ Example:
 | License         |       |            |
 
 ### Dependencies
-| Dependency | Category | Purpose |
-|---|---|---|
-| | core / dev / optional | |
+
+| Dependency | Category              | Purpose |
+| ---------- | --------------------- | ------- |
+|            | core / dev / optional |         |
 
 ### Scripts & Commands
+
 | Command | What it does |
-|---|---|
-| | |
+| ------- | ------------ |
+|         |              |
 
 ### Environment Variables
+
 | Variable | Required/Optional | Purpose |
-|---|---|---|
-| | | |
+| -------- | ----------------- | ------- |
+|          |                   |         |
 
 ### CI/CD Pipeline
+
 | Stage | What it does |
-|---|---|
-| | |
+| ----- | ------------ |
+|       |              |
 
 ### Test Configuration
+
 | Marker/Flag | Purpose |
-|---|---|
-| | |
+| ----------- | ------- |
+|             |         |
 ```
 
 ---
@@ -148,14 +152,14 @@ Record the directory structure with brief annotations.
 
 Grep for entry point patterns appropriate to the language/framework:
 
-| Language/Framework | Grep pattern                                                  |
-| ------------------ | ------------------------------------------------------------- |
-| Python             | `if __name__`                                                 |
-| Python (Streamlit) | Look for file passed to `streamlit run` (often `app.py`)      |
-| Python (CLI)       | `[project.scripts]` in pyproject.toml, `@click.command`       |
-| Node.js            | `"main"` in package.json, `"bin"` field                       |
-| Rust               | `fn main()` in `src/main.rs`                                  |
-| Go                 | `func main()` in `main.go`                                    |
+| Language/Framework | Grep pattern                                             |
+| ------------------ | -------------------------------------------------------- |
+| Python             | `if __name__`                                            |
+| Python (Streamlit) | Look for file passed to `streamlit run` (often `app.py`) |
+| Python (CLI)       | `[project.scripts]` in pyproject.toml, `@click.command`  |
+| Node.js            | `"main"` in package.json, `"bin"` field                  |
+| Rust               | `fn main()` in `src/main.rs`                             |
+| Go                 | `func main()` in `main.go`                               |
 
 Read each entry point file. Record what it imports and orchestrates.
 
@@ -163,12 +167,12 @@ Read each entry point file. Record what it imports and orchestrates.
 
 Grep for import patterns across all source files:
 
-| Language   | Grep pattern                                        |
-| ---------- | --------------------------------------------------- |
-| Python     | `^from\s+\S+\s+import\|^import\s+\S+`              |
-| TypeScript | `^import\s+.*from`                                  |
-| Rust       | `^use\s+crate::`                                    |
-| Go         | `"[module-path]/`                                   |
+| Language   | Grep pattern                          |
+| ---------- | ------------------------------------- |
+| Python     | `^from\s+\S+\s+import\|^import\s+\S+` |
+| TypeScript | `^import\s+.*from`                    |
+| Rust       | `^use\s+crate::`                      |
+| Go         | `"[module-path]/`                     |
 
 For each source file, record **internal** imports only (other project modules). Classify modules:
 
@@ -178,16 +182,16 @@ For each source file, record **internal** imports only (other project modules). 
 
 **4. Identify the architecture pattern.**
 
-| Pattern              | Indicators                                                                        |
-| -------------------- | --------------------------------------------------------------------------------- |
-| Data pipeline / ETL  | `*_transformer`, `*_loader`, `*_writer`, `*_client`; sequential DataFrame flow    |
-| Web application      | Route handlers, middleware, templates, static assets                               |
-| CLI tool             | `click`/`typer`/`argparse`/`clap` usage; command/subcommand pattern               |
-| Library / SDK        | Public API re-exports in `__init__.py` or `index.ts`; no entry point              |
-| Report generator     | Template files, mapping configs, data → template population workflow              |
-| Dashboard            | `st.`/React/Vue calls; layout components; data visualization                      |
-| Microservices        | Multiple independent services; shared proto/schema definitions; message queues     |
-| Monolith             | Single large application; MVC or layered architecture; ORM models                 |
+| Pattern             | Indicators                                                                     |
+| ------------------- | ------------------------------------------------------------------------------ |
+| Data pipeline / ETL | `*_transformer`, `*_loader`, `*_writer`, `*_client`; sequential DataFrame flow |
+| Web application     | Route handlers, middleware, templates, static assets                           |
+| CLI tool            | `click`/`typer`/`argparse`/`clap` usage; command/subcommand pattern            |
+| Library / SDK       | Public API re-exports in `__init__.py` or `index.ts`; no entry point           |
+| Report generator    | Template files, mapping configs, data → template population workflow           |
+| Dashboard           | `st.`/React/Vue calls; layout components; data visualization                   |
+| Microservices       | Multiple independent services; shared proto/schema definitions; message queues |
+| Monolith            | Single large application; MVC or layered architecture; ORM models              |
 
 **5. Read config files referenced by source code.**
 
@@ -209,9 +213,9 @@ Read any discovered config files — they often contain critical domain knowledg
 ```
 
 project-root/
-├── src/      # [purpose]
-├── config/   # [purpose]
-└── tests/    # [purpose]
+├── src/ # [purpose]
+├── config/ # [purpose]
+└── tests/ # [purpose]
 
 ```
 
@@ -294,22 +298,26 @@ If a dedicated `exceptions.py` or `errors.ts` exists, read it fully.
 ## Phase 3 — Data Sources & Infrastructure
 
 ### External Systems
-| System | Direction | Data | Handled by |
-|---|---|---|---|
-| | input / output / both | | |
+
+| System | Direction             | Data | Handled by |
+| ------ | --------------------- | ---- | ---------- |
+|        | input / output / both |      |            |
 
 ### Test Structure
+
 | Test file | Module under test | Markers |
-|---|---|---|
-| | | |
+| --------- | ----------------- | ------- |
+|           |                   |         |
 
 ### Custom markers: [list]
+
 ### Fixture files: [list]
 
 ### Exception Hierarchy
+
 | Exception | Trigger |
-|---|---|
-| | |
+| --------- | ------- |
+|           |         |
 ```
 
 ---
@@ -335,10 +343,10 @@ If a dedicated `exceptions.py` or `errors.ts` exists, read it fully.
 
 ## Scaling Guidance
 
-| Codebase Size       | Strategy                                                                                      |
-| ------------------- | --------------------------------------------------------------------------------------------- |
-| **Small** (1-7 files)   | Execute all three phases sequentially. Read every source file.                           |
-| **Medium** (8-20 files) | Phases 1-2 sequentially. Dispatch 2-3 parallel agents for Phase 3 module analysis.       |
-| **Large** (20+ files)   | Phases 1-2 sequentially. Dispatch 4-6 parallel agents for Phase 3 grouped by directory.  |
+| Codebase Size           | Strategy                                                                                |
+| ----------------------- | --------------------------------------------------------------------------------------- |
+| **Small** (1-7 files)   | Execute all three phases sequentially. Read every source file.                          |
+| **Medium** (8-20 files) | Phases 1-2 sequentially. Dispatch 2-3 parallel agents for Phase 3 module analysis.      |
+| **Large** (20+ files)   | Phases 1-2 sequentially. Dispatch 4-6 parallel agents for Phase 3 grouped by directory. |
 
 When dispatching parallel agents, always include the import graph from Phase 2 in each agent's prompt.

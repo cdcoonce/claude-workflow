@@ -123,7 +123,6 @@ Apply tags inline next to each recorded fact:
 **4. Glob for configuration and toolchain files — run in parallel:**
 
 ```
-**/.gitlab-ci.yml
 **/.github/workflows/*.yml
 **/.github/workflows/*.yaml
 ```

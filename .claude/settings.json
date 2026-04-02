@@ -1,7 +1,4 @@
 {
-  "enabledPlugins": {
-    "claude-tooling@claude-workflow": true
-  },
   "hooks": {
     "PreToolUse": [
       {
@@ -25,5 +22,8 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "claude-tooling@claude-workflow": true
   }
 }

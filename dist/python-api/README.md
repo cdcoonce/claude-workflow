@@ -5,14 +5,16 @@ Python backend services — Lambda, FastAPI, Flask
 ## Skills
 
 - commit
+- create-hook
 - daa-code-review
 - deploy
 - design-an-interface
 - dev-cycle
 - dignified-python
-- gitlab-cli
+- github-cli
 - grill-me
 - improve-codebase-architecture
+- improve-skill
 - plan-ceo-review
 - prd-to-issues
 - prd-to-plan
@@ -30,7 +32,10 @@ Python backend services — Lambda, FastAPI, Flask
 
 - api-builder
 - code-reviewer
+- qa-tester
 - security-reviewer
+- skill-writer
+- strategy
 - tdd-implementer
 
 ## CLAUDE.md Template

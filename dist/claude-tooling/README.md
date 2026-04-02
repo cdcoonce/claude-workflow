@@ -13,6 +13,7 @@ Developing Claude skills, hooks, agents, and template configurations
 - github-cli
 - grill-me
 - improve-codebase-architecture
+- improve-skill
 - plan-ceo-review
 - prd-to-issues
 - prd-to-plan
@@ -29,8 +30,11 @@ Developing Claude skills, hooks, agents, and template configurations
 ## Agents
 
 - code-reviewer
+- qa-tester
 - skill-builder
 - skill-reviewer
+- skill-writer
+- strategy
 - tdd-implementer
 
 ## CLAUDE.md Template

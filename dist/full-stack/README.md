@@ -5,13 +5,15 @@ React/Next.js frontend + Python backend
 ## Skills
 
 - commit
+- create-hook
 - daa-code-review
 - design-an-interface
 - dev-cycle
 - dignified-python
-- gitlab-cli
+- github-cli
 - grill-me
 - improve-codebase-architecture
+- improve-skill
 - plan-ceo-review
 - prd-to-issues
 - prd-to-plan
@@ -30,6 +32,9 @@ React/Next.js frontend + Python backend
 - backend-builder
 - code-reviewer
 - frontend-builder
+- qa-tester
+- skill-writer
+- strategy
 - tdd-implementer
 - ux-reviewer
 

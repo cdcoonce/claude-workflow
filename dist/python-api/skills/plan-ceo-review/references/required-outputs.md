@@ -42,11 +42,11 @@ For each item, describe:
 - **Priority:** P1/P2/P3
 - **Depends on / blocked by:** Any prerequisites or ordering constraints.
 
-Then present options: **A)** Add to `docs/plans/` as a tracked plan **B)** Skip — not valuable enough **C)** Build it now in this MR instead of deferring.
+Then present options: **A)** Add to `docs/plans/` as a tracked plan **B)** Skip — not valuable enough **C)** Build it now in this PR instead of deferring.
 
 ## Delight Opportunities (EXPANSION mode only)
 
-Identify at least 5 "bonus chunk" opportunities (<30 min each) that would make users think "oh nice, they thought of that." Present each delight opportunity as its own individual AskUserQuestion. Never batch them. For each one, describe what it is, why it would delight users, and effort estimate. Then present options: **A)** Add to `docs/plans/` as a vision item **B)** Skip **C)** Build it now in this MR.
+Identify at least 5 "bonus chunk" opportunities (<30 min each) that would make users think "oh nice, they thought of that." Present each delight opportunity as its own individual AskUserQuestion. Never batch them. For each one, describe what it is, why it would delight users, and effort estimate. Then present options: **A)** Add to `docs/plans/` as a vision item **B)** Skip **C)** Build it now in this PR.
 
 ## Diagrams (mandatory, produce all that apply)
 

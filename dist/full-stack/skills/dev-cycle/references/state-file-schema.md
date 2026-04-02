@@ -27,11 +27,11 @@ branch:
 | issues      | pending | —        |
 | implement   | pending | —        |
 | code_review | pending | —        |
-| mr          | pending | —        |
+| pr          | pending | —        |
 
 ## Issues
 
-| Plan Slice | GitLab Issue | Status |
+| Plan Slice | GitHub Issue | Status |
 | ---------- | ------------ | ------ |
 
 ## Log
@@ -42,7 +42,7 @@ branch:
 - **schema_version:** `1` (integer). Increment on breaking format changes.
 - **feature:** Kebab-case slug. Must match filename. On collision with existing slug, suffix with `-2`, `-3`, etc.
 - **status:** `not_started` | `in_progress` | `completed` | `abandoned`
-- **current_phase:** `brainstorm` | `plan` | `ceo_review` | `issues` | `implement` | `code_review` | `mr`
+- **current_phase:** `brainstorm` | `plan` | `ceo_review` | `issues` | `implement` | `code_review` | `pr`
 - **created/updated:** ISO date (YYYY-MM-DD).
 - **branch:** Git branch name. Empty until Phase 5. Format: `feat/{feature-slug}`.
 
@@ -54,14 +54,14 @@ Completed phases MUST have a non-empty artifact (not `—`).
 
 ## Issues Table
 
-Populated incrementally during Phase 4. Each row maps a plan slice to a GitLab issue URL. On retry, the orchestrator skips slices that already have a recorded issue URL.
+Populated incrementally during Phase 4. Each row maps a plan slice to a GitHub issue URL. On retry, the orchestrator skips slices that already have a recorded issue URL.
 
 ## Phase Transition Rules
 
 Forward only, in strict order:
 
 ```text
-brainstorm → plan → ceo_review → issues → implement → code_review → mr
+brainstorm → plan → ceo_review → issues → implement → code_review → pr
 ```
 
 ### Backwards Transitions (exceptions)

@@ -159,7 +159,7 @@ fix: #142
 
 ### Closes/Fixes Keywords
 
-Use GitHub/GitLab keywords to auto-close issues:
+Use GitHub keywords to auto-close issues:
 
 ```
 fix(upload): validate file size before processing

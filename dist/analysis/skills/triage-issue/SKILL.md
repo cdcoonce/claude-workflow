@@ -1,11 +1,11 @@
 ---
 name: triage-issue
-description: Triage a bug or issue by exploring the codebase to find root cause, then create a GitLab issue with a TDD-based fix plan. Use when user reports a bug, wants to file an issue, mentions "triage", or wants to investigate and plan a fix for a problem.
+description: Triage a bug or issue by exploring the codebase to find root cause, then create a GitHub issue with a TDD-based fix plan. Use when user reports a bug, wants to file an issue, mentions "triage", or wants to investigate and plan a fix for a problem.
 ---
 
 # Triage Issue
 
-Investigate a reported problem, find its root cause, and create a GitLab issue with a TDD fix plan. This is a mostly hands-off workflow - minimize questions to the user.
+Investigate a reported problem, find its root cause, and create a GitHub issue with a TDD fix plan. This is a mostly hands-off workflow - minimize questions to the user.
 
 ## Process
 
@@ -54,9 +54,9 @@ Rules:
 - Include a final refactor step if needed
 - **Durability**: Only suggest fixes that would survive radical codebase changes. Describe behaviors and contracts, not internal structure. Tests assert on observable outcomes (API responses, UI state, user-visible effects), not internal state. A good suggestion reads like a spec; a bad one reads like a diff.
 
-### 5. Create the GitLab issue
+### 5. Create the GitHub issue
 
-Create a GitLab issue using `glab issue create` with the template below. Do NOT ask the user to review before creating - just create it and share the URL.
+Create a GitHub issue using `gh issue create` with the template below. Do NOT ask the user to review before creating - just create it and share the URL.
 
 <issue-template>
 

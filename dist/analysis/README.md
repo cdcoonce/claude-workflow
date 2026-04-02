@@ -5,13 +5,15 @@ Notebooks, R/Python scripts, statistical analysis, exploratory work
 ## Skills
 
 - commit
+- create-hook
 - daa-code-review
 - design-an-interface
 - dev-cycle
 - dignified-python
-- gitlab-cli
+- github-cli
 - grill-me
 - improve-codebase-architecture
+- improve-skill
 - plan-ceo-review
 - prd-to-issues
 - prd-to-plan
@@ -29,6 +31,9 @@ Notebooks, R/Python scripts, statistical analysis, exploratory work
 
 - analysis-builder
 - code-reviewer
+- qa-tester
+- skill-writer
+- strategy
 - tdd-implementer
 
 ## CLAUDE.md Template

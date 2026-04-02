@@ -125,7 +125,7 @@ Describe the ideal end state of this system 12 months from now. Does this plan m
 **For SCOPE REDUCTION** — run this:
 
 1. **Ruthless cut:** What is the absolute minimum that ships value to a user? Everything else is deferred. No exceptions.
-2. What can be a follow-up MR? Separate "must ship together" from "nice to ship together."
+2. What can be a follow-up PR? Separate "must ship together" from "nice to ship together."
 
 ### 0E. Temporal Interrogation (EXPANSION and HOLD modes)
 
