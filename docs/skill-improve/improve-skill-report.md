@@ -2,25 +2,27 @@
 
 ## Summary
 
-| Field           | Value                              |
-| --------------- | ---------------------------------- |
-| Skill           | improve-skill                      |
-| Date            | 2026-04-01                         |
-| Baseline score  | 44%                                |
-| Final score     | 100%                               |
-| Iterations used | 1                                  |
-| Target met      | Yes — reached 100%, target was 90% |
+| Field           | Value                               |
+| --------------- | ----------------------------------- |
+| Skill           | improve-skill                       |
+| Date            | 2026-04-01                          |
+| Baseline score  | 96%                                 |
+| Final score     | 100%                                |
+| Iterations used | 3                                   |
+| Target met      | Yes — reached 100%, target was 100% |
 
 ## Scores per iteration
 
-| Iteration | Score | Notes          |
-| --------- | ----- | -------------- |
-| 0         | 44%   | Baseline       |
-| 1         | 100%  | Target reached |
+| Iteration | Score | Notes                                |
+| --------- | ----- | ------------------------------------ |
+| 0         | 96%   | Baseline                             |
+| 1         | 83%   | Regression — reverted to iteration 0 |
+| 2         | 88%   | Regression — reverted to iteration 0 |
+| 3         | 100%  | New best — target reached            |
 
 ## Tests fixed this run
 
-T00, T06, T08, T11, T12, T13, T14, T15
+T13, T22, T23
 
 ## Tests still failing
 
