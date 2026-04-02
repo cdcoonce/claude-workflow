@@ -65,7 +65,7 @@ After completion: `baseline_score` is recorded in state under `baseline_score`; 
 
 Read `references/phase-4-iterate.md` using the Read tool, then follow its instructions exactly.
 
-The Skill Writer and QA Tester execute as a team across multiple iterations. After each iteration: if score > `best_score`, update `best_score` and `best_iteration` in state; if score < `best_score` (regression), log the regression but preserve `best_score` and `best_iteration` — regressions do NOT increment `stall_count`. If score == `best_score` (a tie), increment `stall_count` by 1. When `stall_count` >= 2, invoke the strategy agent to propose a rewrite strategy before the next Skill Writer iteration begins. Loop continues until target pass rate is met or max iterations is reached.
+The Skill Writer and QA Tester execute as a team across multiple iterations. After each iteration: if score > `best_score` (improvement), update `best_score` and `best_iteration` in state and reset `stall_count` to 0; if score ≤ `best_score` (tie or regression), increment `stall_count` by 1 — additionally, if score < `best_score` (regression), log the regression, preserve `best_score` and `best_iteration`, and revert to the best known SKILL.md. When `stall_count` >= 2, invoke the strategy agent to propose a rewrite strategy before the next Skill Writer iteration begins, then reset `stall_count` to 0. Loop continues until target pass rate is met or max iterations is reached.
 
 ---
 
