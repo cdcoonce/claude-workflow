@@ -62,7 +62,7 @@ Write `docs/skill-improve/{slug}.state.md` (see `state-schema.md` for template).
 
 Check `core/skills/{slug}/tests.md`.
 
-**If found:** Count data rows (excluding header). Show: "Found {N} existing tests for {slug}: [one-line summary per scenario]." Ask: "What harder or missing cases should I add? (press Enter to keep existing suite.)" If user provides cases, append them as new rows (never remove existing rows). If user skips, keep suite as-is. Jump to Step 3.
+**If found:** Count data rows (excluding header). Show: "Found {N} existing tests for {slug}: [one-line summary per scenario]." Ask: "What harder or missing cases should I add? (press Enter to keep existing suite.)" If user provides cases, append them as new rows (never remove existing rows; never add a T00 row if one already exists in the file). If user skips, keep suite as-is. Jump to Step 3.
 
 **If not found:** Proceed to Step 2.
 
