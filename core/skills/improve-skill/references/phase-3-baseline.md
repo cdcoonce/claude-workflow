@@ -32,6 +32,8 @@ Instruct the QA Tester to:
 
 Wait for the QA Tester subagent to return before proceeding.
 
+If the returned output does not contain a line matching `Score: {N}/{total} = {pct}%`, or if any Result/Reason cells are empty, report the malformed response to the user and halt. Do not write any state.
+
 ## Step 4 — Record baseline
 
 After the QA Tester returns:
@@ -39,9 +41,8 @@ After the QA Tester returns:
 1. **Write the annotated table** back to `core/skills/{slug}/tests.md` (overwrite the file with the annotated version).
 
 2. **Update the state file** (`docs/skill-improve/{slug}.state.md`):
-   - Set `baseline_score: {pct}` (integer percentage, e.g. `73`)
+   - Set `baseline_score: {pct}` (integer percentage, e.g. `73`). Record `baseline_score` as an integer (strip the `%` sign). Example: if score is 60%, record `baseline_score: 60`.
    - Add a row to the Scores table: `| 0 | {pct}% | Baseline |`
-   - Advance `current_phase` to `iterate`
 
 3. **Append a log entry**:
    ```
@@ -72,10 +73,12 @@ Update `target_pass_rate` in the state file with the new value. Append a log ent
 
 Do **not** start Phase 4 until the target is raised and validated.
 
+Advance `current_phase` to `iterate`. Proceed to Phase 4.
+
 **If `baseline_score < target_pass_rate`:**
 
 Report to the user:
 
 > Baseline: {pct}% ({N}/{total} tests passed). Target: {target}%. Gap: {gap} percentage points. Starting improvement loop.
 
-Proceed immediately to Phase 4.
+Advance `current_phase` to `iterate`. Proceed immediately to Phase 4.
