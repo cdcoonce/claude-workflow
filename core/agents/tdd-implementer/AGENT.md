@@ -3,7 +3,7 @@ name: tdd-implementer
 description: Implements features using test-driven development
 role: implementer
 skills:
-  add: [tdd, commit, dignified-python]
+  add: [tdd, commit, dignified-python, dagster-expert, dbt-expert]
   remove: []
 ---
 
