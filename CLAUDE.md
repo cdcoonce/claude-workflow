@@ -43,7 +43,7 @@ See core CLAUDE.md for skill trigger conditions.
 
 Agents are specialized role definitions (`AGENT.md` with YAML frontmatter) that give subagents domain expertise. Each agent is self-contained -- skills are declared directly in the agent's frontmatter via `skills.add`/`skills.remove`.
 
-- `core/agents/` — Universal agents: `tdd-implementer` (implementer), `code-reviewer` (reviewer), `qa-tester` (qa-tester), `skill-writer` (skill-writer), `strategy` (strategy)
+- `core/agents/` — Universal agents: `tdd-implementer` (implementer), `code-reviewer` (reviewer), `skill-analyst` (analyst), `qa-tester` (qa-tester), `skill-writer` (skill-writer), `strategy` (strategy)
 - `presets/*/agents/` — Preset-specific agents (e.g., `api-builder`, `security-reviewer`)
 
 ### Agent file format
@@ -52,7 +52,7 @@ Agents are specialized role definitions (`AGENT.md` with YAML frontmatter) that 
 ---
 name: agent-name # Must match directory name
 description: one-liner # Used for convention-based matching
-role: implementer # implementer | reviewer | qa-tester | skill-writer | strategy
+role: implementer # implementer | reviewer | analyst | qa-tester | skill-writer | strategy
 skills:
   add: [tdd, commit]
   remove: []
