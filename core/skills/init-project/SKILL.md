@@ -77,7 +77,7 @@ If the user chose "Skip" for CLAUDE.md in Phase 1, skip this phase.
 
 Delegate to `/generate-claude-md`. Pass the following as pre-supplied context so the skill enters orchestrated mode and does not re-interview the user:
 
-- **Tech stack**: Language, version, framework, package manager, test runner, CI/CD (from Domains 1)
+- **Tech stack**: Language, version, framework, package manager, test runner, CI/CD (from Domain 1)
 - **Code style**: Naming convention, formatter/linter, type hints, docstring style (from Domain 2)
 - **Methodology**: TDD preference, branching strategy, review workflow, commit convention (from Domain 3)
 - **Commands**: Build, run, test commands discovered during analysis or interview
@@ -90,9 +90,24 @@ If `/generate-claude-md` fails (e.g., cannot write to project root due to permis
 
 If the user chose "Skip" for hooks in Phase 1, or if the user selected no guardrails in Domain 4, skip this phase.
 
-Delegate to `/setup-hooks`. Pass the guardrail decisions from Domain 4 — the file patterns the user selected for protection. For each selected pattern, `/setup-hooks` should create a PreToolUse hook that blocks edits matching that pattern.
+Generate the protection hook directly rather than delegating to `/setup-hooks` (which requires its own interactive interview and has no orchestrated mode). Use the guardrail patterns from Domain 4 to create a single PreToolUse hook:
 
-If `/setup-hooks` fails (e.g., Python not installed, `.claude/` directory missing), log the reason and skip this phase. Do not halt the pipeline.
+1. Create `.claude/hooks/` directory if it does not exist (`mkdir -p .claude/hooks/`).
+2. Generate a Python script at `.claude/hooks/protect-files.py` using the canonical template from the [setup-hooks hook protocol](../setup-hooks/references/hook-protocol.md). The script should:
+   - Read `tool_input.file_path` from stdin JSON
+   - Check the file path against all selected protection patterns
+   - Exit with code 2 (blocked) if any pattern matches, code 0 (allowed) otherwise
+   - Print the blocked pattern to stderr
+3. Read `.claude/settings.json` (create it if missing with `{"hooks": {"PreToolUse": [], "PostToolUse": []}}`). Append a new PreToolUse entry:
+   ```json
+   {
+     "matcher": "Edit|Write",
+     "hooks": [{"type": "command", "command": "python3 .claude/hooks/protect-files.py"}]
+   }
+   ```
+4. Write the updated settings.json with 2-space indent formatting.
+
+If any step fails (e.g., Python not available, cannot create directories), log the reason and skip this phase. Do not halt the pipeline.
 
 ## Wrap-Up
 
@@ -124,7 +139,7 @@ Use this table to distinguish between expected state transitions (handle gracefu
 |---|---|---|
 | `/project-context` | Empty repo detected -> switch to interview-heavy mode | Codebase analysis crashes or produces malformed output |
 | `/generate-claude-md` | No project.md exists -> interview-only skeleton mode | Skill cannot write to project root (permissions) |
-| `/setup-hooks` | User selects no guardrails -> skip hooks gracefully | Python not installed; `.claude/` directory missing |
+| Hook generation | User selects no guardrails -> skip hooks gracefully | Cannot create `.claude/hooks/` directory; cannot write settings.json |
 
 **Key principle**: No single phase failure should halt the pipeline. Log the error, skip the phase, record the status, and continue. The wrap-up summary will show the user exactly what succeeded and what did not.
 

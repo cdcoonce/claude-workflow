@@ -11,8 +11,7 @@ These presets apply to every project regardless of stack.
 | Pattern | Description | Recommended |
 |---|---|---|
 | `.git/` | Git internals — never edit directly | Yes |
-| `*.key` | Cryptographic private keys | Yes |
-| `*.pem` | PEM-encoded certificates and keys | Yes |
+| `*.key` / `*.pem` | Cryptographic keys and certificates | Yes |
 | `.claude/settings.json` | Claude Code configuration — prevent accidental overwrites | Yes |
 
 ### MultiSelect Format

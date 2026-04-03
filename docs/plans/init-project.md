@@ -22,7 +22,7 @@ Durable decisions that apply across all phases:
 |---|---|---|
 | `/project-context` | Empty repo detected → switch to interview-heavy mode | Codebase analysis crashes or produces malformed output |
 | `/generate-claude-md` | No project.md exists → interview-only skeleton mode | Skill cannot write to project root (permissions) |
-| `/setup-hooks` | User selects no guardrails → skip hooks gracefully | Python not installed; `.claude/` directory missing |
+| Hook generation | User selects no guardrails → skip hooks gracefully | Cannot create `.claude/hooks/` directory; cannot write settings.json |
 
 ---
 
@@ -62,7 +62,7 @@ The main orchestrator skill that bootstraps the full `.claude` ecosystem in a si
 2. **Analyze** — Delegate to `/project-context` for codebase analysis AND project.md generation. If empty repo detected (no source files), skip analysis and flag for interview-heavy mode. For empty repos, generate a minimal project.md from interview answers in Phase 3 instead.
 3. **Interview** — Custom confirm-only interview across Core 4 domains (Stack, Style, Methodology, Guardrails). Present codebase findings from Phase 2 for user to confirm or correct. For empty repos, switch to open-ended questions about planned stack and conventions. Guardrails domain uses stack-specific hook presets from reference file.
 4. **CLAUDE.md** — Delegate to `/generate-claude-md` with interview context pre-supplied.
-5. **Hooks** — Delegate to `/setup-hooks` with guardrail decisions from interview (protected patterns). If `/setup-hooks` fails, skip and log.
+5. **Hooks** — Generate protection hooks directly using guardrail decisions from interview. Creates `.claude/hooks/protect-files.py` and wires it into `.claude/settings.json`. Does not delegate to `/setup-hooks` (which has no orchestrated mode). If hook generation fails, skip and log.
 
 Wrap-up: Present summary of all phases (succeeded/skipped/failed). Offer to commit generated files via `/commit`.
 
@@ -81,7 +81,7 @@ Two reference files support the interview:
 - [ ] Phase 3 switches to interview-heavy mode when empty repo is detected
 - [ ] Phase 3 Guardrails domain offers stack-specific hook presets via multiSelect
 - [ ] Phase 4 (CLAUDE.md) delegates to `/generate-claude-md` with interview context
-- [ ] Phase 5 (Hooks) delegates to `/setup-hooks` with protection patterns from interview
+- [ ] Phase 5 (Hooks) generates protection hooks directly with patterns from interview
 - [ ] Failed skill delegations are skipped with logged reasons (skip-and-report)
 - [ ] Wrap-up presents summary of all phases and offers to commit via `/commit`
 - [ ] Skill provides clear explanations at each step for team-facing usability
