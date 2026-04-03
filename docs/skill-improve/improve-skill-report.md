@@ -1,29 +1,27 @@
-# Improve-Skill Run Report
+# Improve-Skill Report: improve-skill
 
 ## Summary
 
-| Field           | Value                               |
-| --------------- | ----------------------------------- |
-| Skill           | improve-skill                       |
-| Date            | 2026-04-01                          |
-| Baseline score  | 96%                                 |
-| Final score     | 100%                                |
-| Iterations used | 3                                   |
-| Target met      | Yes — reached 100%, target was 100% |
+| Field           | Value         |
+| --------------- | ------------- |
+| Skill           | improve-skill |
+| Date            | 2026-04-02    |
+| Baseline score  | 76%           |
+| Final score     | 95%           |
+| Iterations used | 1             |
+| Target met      | Yes           |
 
 ## Scores per iteration
 
-| Iteration | Score | Notes                                |
-| --------- | ----- | ------------------------------------ |
-| 0         | 96%   | Baseline                             |
-| 1         | 83%   | Regression — reverted to iteration 0 |
-| 2         | 88%   | Regression — reverted to iteration 0 |
-| 3         | 100%  | New best — target reached            |
+| Iteration | Score | Notes    |
+| --------- | ----- | -------- |
+| 0         | 76%   | Baseline |
+| 1         | 95%   |          |
 
 ## Tests fixed this run
 
-T13, T22, T23
+T00, T26, T28, T31, T32, T33, T34, T36
 
 ## Tests still failing
 
-None.
+T02, T35
