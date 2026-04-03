@@ -10,9 +10,11 @@ Python backend services — Lambda, FastAPI, Flask
 - design-an-interface
 - dev-cycle
 - dignified-python
+- generate-claude-md
 - gitlab-cli
 - grill-me
 - improve-codebase-architecture
+- init-project
 - plan-ceo-review
 - prd-to-issues
 - prd-to-plan
