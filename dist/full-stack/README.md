@@ -9,9 +9,11 @@ React/Next.js frontend + Python backend
 - design-an-interface
 - dev-cycle
 - dignified-python
+- generate-claude-md
 - gitlab-cli
 - grill-me
 - improve-codebase-architecture
+- init-project
 - plan-ceo-review
 - prd-to-issues
 - prd-to-plan

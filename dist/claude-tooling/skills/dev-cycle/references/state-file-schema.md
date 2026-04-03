@@ -33,6 +33,7 @@ branch:
 
 | Plan Slice | GitLab Issue | Status |
 | ---------- | ------------ | ------ |
+| Phase 1: example issue  | [#1](https:gitlab.com/issue/1) | closed |
 
 ## Log
 ```
