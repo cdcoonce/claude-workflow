@@ -14,7 +14,7 @@ Create or update the root `CLAUDE.md` file — the concise project reference tha
 
 ## Step 1: Detect available context
 
-Check whether the current conversation already contains pre-supplied interview context (tech stack, code style, methodology, commands, guardrails). This happens when `/init-project` invokes this skill after collecting answers.
+Check whether the current conversation already contains pre-supplied interview context (tech stack, code style, methodology, commands). This happens when `/init-project` invokes this skill after collecting answers.
 
 - **Context found** — Record it and skip to Step 3. Do not re-ask questions the user already answered.
 - **No context found** — Continue to Step 2 (standalone mode).

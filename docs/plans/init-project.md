@@ -10,7 +10,7 @@ Durable decisions that apply across all phases:
 - **CLAUDE.md section structure**: Architecture, Commands, Code Style, Methodology — derived from project.md analysis + interview answers
 - **Interview pattern**: AskUserQuestion with codebase-first findings presented for confirm-or-correct. Four domains: Stack, Style, Methodology, Guardrails
 - **Hook presets structure**: Organized by detected stack (Python, JS/TS, General) in a reference markdown file. Offered via multiSelect during interview.
-- **Delegation pattern**: Orchestrator invokes downstream skills by name (`/project-context`, `/generate-claude-md`, `/setup-hooks`), passes relevant interview context as conversational briefing. Each skill runs its own flow.
+- **Delegation pattern**: Orchestrator invokes downstream skills by name (`/project-context`, `/generate-claude-md`) and generates hooks directly. Passes relevant interview context as conversational briefing. Each delegated skill runs its own flow.
 - **Error handling**: Skip-and-report with failure classification (see table below). Expected state transitions (e.g., empty repo) trigger mode switches, not skip reports. Actual failures (e.g., missing Python) are skipped and reported.
 - **Build inclusion**: Core skills are auto-included via `"skills": "all"` in preset manifests. No manifest edits needed for new core skills.
 - **Gap detection**: On partial existing setup, check for each component (`.claude/`, `project.md`, `CLAUDE.md`, hooks, `settings.json`) and ask user whether to update or skip before proceeding.

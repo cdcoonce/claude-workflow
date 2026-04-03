@@ -108,7 +108,7 @@ Select all that apply (recommended defaults are pre-checked):
 ...additional stack-specific options
 ```
 
-4. For any selection, record the file patterns. These patterns will be passed to `/setup-hooks` in Phase 5 to create PreToolUse protection hooks.
+4. For any selection, record the file patterns. These patterns will be used in Phase 5 to generate PreToolUse protection hooks directly.
 
 ### Confirm Mode vs. Open-Ended Mode
 
