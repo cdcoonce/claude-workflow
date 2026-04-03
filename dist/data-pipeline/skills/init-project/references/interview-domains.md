@@ -1,12 +1,41 @@
 # Interview Domains Reference
 
-Four domains drive the `/init-project` interview. Each domain has two question modes: **confirm** (normal mode, codebase exists) and **open-ended** (empty repo, interview-heavy mode).
+Five domains drive the `/init-project` interview. Each domain has two question modes: **confirm** (normal mode, codebase exists) and **open-ended** (empty repo, interview-heavy mode).
 
 All questions use `AskUserQuestion`. Present recommended defaults where applicable.
 
 ---
 
-## Domain 1: Stack
+## Domain 1: Project Overview
+
+Covers what the project is, its purpose, and intended audience. This domain always runs first so that all subsequent questions can be framed in the right context.
+
+### Questions
+
+| Topic | Confirm Mode | Open-Ended Mode |
+|---|---|---|
+| Project purpose | "Based on the codebase, this appears to be **{description}**. Is that accurate? How would you describe this project in a sentence or two?" (Confirm / Correct) | "What is this project? Describe its purpose in a sentence or two." |
+| Intended users | "Who is the intended audience or user of this project?" (Free-text) | Same as confirm mode — this is always asked |
+
+### Detection Sources
+
+- **Project purpose**: README.md, pyproject.toml `[project.description]`, package.json `description` field, repo name, top-level docstrings
+- **Intended users**: Not auto-detectable — always ask
+
+### AskUserQuestion Format
+
+For confirm mode, use single-select with two options:
+```
+(A) Yes, that's accurate
+(B) Let me describe it differently
+```
+If user selects (B), follow up with a free-text AskUserQuestion for the correction.
+
+For open-ended mode, use free-text AskUserQuestion.
+
+---
+
+## Domain 2: Stack
 
 Covers language, framework, package management, testing, and CI/CD.
 
@@ -41,7 +70,7 @@ For open-ended mode, use free-text AskUserQuestion. Do not offer multiple choice
 
 ---
 
-## Domain 2: Style
+## Domain 3: Style
 
 Covers naming conventions, formatting tools, type discipline, and documentation style.
 
@@ -63,7 +92,7 @@ Covers naming conventions, formatting tools, type discipline, and documentation 
 
 ---
 
-## Domain 3: Methodology
+## Domain 4: Methodology
 
 Covers development workflow, branching, review, and commit practices. These are mostly asked (rarely auto-detectable).
 
@@ -83,16 +112,16 @@ Covers development workflow, branching, review, and commit practices. These are 
 
 ---
 
-## Domain 4: Guardrails
+## Domain 5: Guardrails & Automation
 
-Covers file and directory protection. Uses stack-specific presets from `references/hook-presets.md`.
+Covers file protection (PreToolUse) and post-edit automation (PostToolUse). Uses stack-specific presets from `references/hook-presets.md`.
 
-### Workflow
+### Part A: File Protection (PreToolUse)
 
-1. Read `references/hook-presets.md` to load the available presets for the detected stack.
+1. Read `references/hook-presets.md` → **Protection Presets** to load the available presets for the detected stack.
 2. Assemble a multiSelect list combining:
    - **General presets** (always included)
-   - **Stack-specific presets** (based on detected or stated language from Domain 1)
+   - **Stack-specific presets** (based on detected or stated language from Domain 2)
 3. Present via `AskUserQuestion` with `multiSelect`:
 
 ```
@@ -110,9 +139,29 @@ Select all that apply (recommended defaults are pre-checked):
 
 4. For any selection, record the file patterns. These patterns will be used in Phase 5 to generate PreToolUse protection hooks directly.
 
+### Part B: Post-Edit Automation (PostToolUse)
+
+1. Read `references/hook-presets.md` → **Automation Presets** to load available lint/format hooks for the detected stack.
+2. Present via `AskUserQuestion` with `multiSelect`:
+
+```
+Which post-edit automation hooks should Claude run after modifying files?
+Select all that apply (recommended defaults are pre-checked):
+
+[ ] Auto-format & lint Python files with Ruff (ruff check --fix + ruff format)
+[ ] Auto-format JavaScript/TypeScript files with Prettier
+[ ] Auto-format JavaScript/TypeScript files with ESLint (eslint --fix)
+[ ] Auto-format Go files with gofmt
+[ ] Auto-format Rust files with rustfmt
+```
+
+Show only the options relevant to the detected or stated stack. If no formatter/linter was identified in Domain 3 (Style), still present the stack-appropriate options — the user may want to install one.
+
+3. For any selection, record the tool and file extension. These will be used in Phase 5 to generate PostToolUse automation hooks.
+
 ### Confirm Mode vs. Open-Ended Mode
 
-Both modes use the same multiSelect approach. The only difference:
+Both parts use the same multiSelect approach. The only difference:
 
-- **Confirm mode**: Pre-check recommended defaults based on what exists in the repo (e.g., if `uv.lock` exists, pre-check it).
-- **Open-ended mode**: Pre-check all "General" presets plus reasonable defaults for the stated stack.
+- **Confirm mode**: Pre-check recommended defaults based on what exists in the repo (e.g., if `uv.lock` exists, pre-check it in Part A; if `ruff` is detected, pre-check it in Part B).
+- **Open-ended mode**: Pre-check all "General" protection presets plus reasonable defaults for the stated stack. For automation, pre-check the standard formatter for the stated language.

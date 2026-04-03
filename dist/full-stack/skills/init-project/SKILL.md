@@ -4,8 +4,8 @@ description: >
   Bootstrap the full .claude ecosystem for a new or existing project. Use when
   the user says "init project", "set up Claude", "add Claude to this project",
   "bootstrap .claude", or invokes /init-project. Runs a 5-phase pipeline:
-  detect existing setup, analyze codebase, interview for conventions, generate
-  CLAUDE.md, and configure hooks.
+  detect existing setup, analyze codebase, interview for project purpose and
+  conventions, generate CLAUDE.md, and configure protection + automation hooks.
 ---
 
 # Init Project Orchestrator
@@ -51,19 +51,20 @@ If `/project-context` fails (crashes or produces malformed output), log the erro
 
 ## Phase 3: Interview
 
-> "Phase 3: Collecting your project conventions. I'll ask about stack, style, methodology, and guardrails."
+> "Phase 3: Collecting your project conventions. I'll ask about the project, stack, style, methodology, and guardrails."
 
-Run a structured interview across four domains defined in [references/interview-domains.md](references/interview-domains.md). The interview mode depends on Phase 2 results:
+Run a structured interview across five domains defined in [references/interview-domains.md](references/interview-domains.md). The interview mode depends on Phase 2 results:
 
 - **Normal mode** (codebase analyzed): Present analysis findings for confirmation. Use the "Confirm Mode" question templates from interview-domains.md.
 - **Interview-heavy mode** (empty repo or analysis failed): Ask open-ended questions. Use the "Open-Ended Mode" templates from interview-domains.md.
 
 ### Domain order
 
-1. **Stack** — Language, framework, package manager, test runner, CI/CD
-2. **Style** — Naming conventions, formatter/linter, type hints, docstring style
-3. **Methodology** — TDD, branching, review workflow, commit conventions
-4. **Guardrails** — File protection presets (read [references/hook-presets.md](references/hook-presets.md))
+1. **Project Overview** — What the project is, its purpose, intended users
+2. **Stack** — Language, framework, package manager, test runner, CI/CD
+3. **Style** — Naming conventions, formatter/linter, type hints, docstring style
+4. **Methodology** — TDD, branching, review workflow, commit conventions
+5. **Guardrails & Automation** — File protection presets + post-edit lint/format hooks (read [references/hook-presets.md](references/hook-presets.md))
 
 For each domain, ask every question in the domain using `AskUserQuestion`. Record all answers — they will be passed as pre-supplied context to downstream skills in Phases 4 and 5.
 
@@ -77,37 +78,80 @@ If the user chose "Skip" for CLAUDE.md in Phase 1, skip this phase.
 
 Delegate to `/generate-claude-md`. Pass the following as pre-supplied context so the skill enters orchestrated mode and does not re-interview the user:
 
-- **Tech stack**: Language, version, framework, package manager, test runner, CI/CD (from Domain 1)
-- **Code style**: Naming convention, formatter/linter, type hints, docstring style (from Domain 2)
-- **Methodology**: TDD preference, branching strategy, review workflow, commit convention (from Domain 3)
+- **Project overview**: Project purpose and intended users (from Domain 1)
+- **Tech stack**: Language, version, framework, package manager, test runner, CI/CD (from Domain 2)
+- **Code style**: Naming convention, formatter/linter, type hints, docstring style (from Domain 3)
+- **Methodology**: TDD preference, branching strategy, review workflow, commit convention (from Domain 4)
 - **Commands**: Build, run, test commands discovered during analysis or interview
 
 If `/generate-claude-md` fails (e.g., cannot write to project root due to permissions), log the error and continue to Phase 5. Do not halt the pipeline.
 
 ## Phase 5: Configure Hooks
 
-> "Phase 5: Setting up file protection hooks based on your guardrail selections."
+> "Phase 5: Setting up hooks based on your guardrail and automation selections."
 
-If the user chose "Skip" for hooks in Phase 1, or if the user selected no guardrails in Domain 4, skip this phase.
+If the user chose "Skip" for hooks in Phase 1, or if the user selected no guardrails and no automation in Domain 5, skip this phase.
 
-Generate the protection hook directly rather than delegating to `/setup-hooks` (which requires its own interactive interview and has no orchestrated mode). Use the guardrail patterns from Domain 4 to create a single PreToolUse hook:
+Generate hooks directly rather than delegating to `/setup-hooks` (which requires its own interactive interview and has no orchestrated mode). Use the selections from Domain 5 to create up to two hooks.
 
-1. Create `.claude/hooks/` directory if it does not exist (`mkdir -p .claude/hooks/`).
-2. Generate a Python script at `.claude/hooks/protect-files.py` using the canonical template from the [setup-hooks hook protocol](../setup-hooks/references/hook-protocol.md). The script should:
-   - Read `tool_input.file_path` from stdin JSON
-   - Check the file path against all selected protection patterns
-   - Exit with code 2 (blocked) if any pattern matches, code 0 (allowed) otherwise
-   - Print the blocked pattern to stderr
-3. Read `.claude/settings.json` (create it if missing with `{"hooks": {"PreToolUse": [], "PostToolUse": []}}`). Append a new PreToolUse entry:
-   ```json
-   {
-     "matcher": "Edit|Write",
-     "hooks": [{"type": "command", "command": "python3 .claude/hooks/protect-files.py"}]
-   }
-   ```
-4. Write the updated settings.json with 2-space indent formatting.
+### Step 1: Create hooks directory
 
-If any step fails (e.g., Python not available, cannot create directories), log the reason and skip this phase. Do not halt the pipeline.
+Create `.claude/hooks/` directory if it does not exist (`mkdir -p .claude/hooks/`).
+
+### Step 2: Generate protect-files hook (PreToolUse)
+
+Skip if the user selected no protection patterns in Domain 5 Part A.
+
+Generate a Python script at `.claude/hooks/protect-files.py` using the canonical template from the [setup-hooks hook protocol](../setup-hooks/references/hook-protocol.md). The script should:
+- Read `tool_input.file_path` from stdin JSON
+- Check the file path against all selected protection patterns
+- Exit with code 2 (blocked) if any pattern matches, code 0 (allowed) otherwise
+- Print the blocked pattern to stderr
+
+### Step 3: Generate post-edit-lint hook (PostToolUse)
+
+Skip if the user selected no automation presets in Domain 5 Part B.
+
+Generate a Python script at `.claude/hooks/post-edit-lint.py` using the canonical PostToolUse template from the [setup-hooks hook protocol](../setup-hooks/references/hook-protocol.md). The script should:
+- Read `tool_input.file_path` from stdin JSON
+- Check the file extension against the selected formatters/linters
+- For each matching tool, use `shutil.which()` to verify availability, then run via `subprocess.run()`
+- Report executed actions to stderr
+- Use stdlib only (no pip dependencies)
+
+Example structure for a Python + Ruff selection:
+
+```python
+if file_path.endswith(".py") and shutil.which("ruff"):
+    run(["ruff", "check", "--fix", file_path], "ruff-check")
+    run(["ruff", "format", file_path], "ruff-format")
+```
+
+For multi-language projects, chain all selected formatters with appropriate extension guards.
+
+### Step 4: Wire hooks into settings.json
+
+Read `.claude/settings.json` (create it if missing with `{"hooks": {"PreToolUse": [], "PostToolUse": []}}`).
+
+If protect-files was generated, append a PreToolUse entry:
+```json
+{
+  "matcher": "Edit|Write",
+  "hooks": [{"type": "command", "command": "python3 .claude/hooks/protect-files.py"}]
+}
+```
+
+If post-edit-lint was generated, append a PostToolUse entry:
+```json
+{
+  "matcher": "Edit|Write",
+  "hooks": [{"type": "command", "command": "python3 .claude/hooks/post-edit-lint.py"}]
+}
+```
+
+Write the updated settings.json with 2-space indent formatting.
+
+If any step fails (e.g., Python not available, cannot create directories), log the reason and skip that step. Do not halt the pipeline.
 
 ## Wrap-Up
 
@@ -120,7 +164,7 @@ Present a summary table showing the result of each phase:
 | 2. Analyze | .claude/docs/project.md | Completed / Skipped (user choice) / Skipped (empty repo) |
 | 3. Interview | Conventions | Completed — {N} domains |
 | 4. CLAUDE.md | CLAUDE.md | Completed / Skipped (user choice) / Failed ({reason}) |
-| 5. Hooks | .claude/hooks/ | Completed / Skipped (user choice) / Skipped (no guardrails) / Failed ({reason}) |
+| 5. Hooks | .claude/hooks/ | Completed ({N} hooks) / Skipped (user choice) / Skipped (no selections) / Failed ({reason}) |
 ```
 
 Then use `AskUserQuestion` to offer:
@@ -139,7 +183,7 @@ Use this table to distinguish between expected state transitions (handle gracefu
 |---|---|---|
 | `/project-context` | Empty repo detected -> switch to interview-heavy mode | Codebase analysis crashes or produces malformed output |
 | `/generate-claude-md` | No project.md exists -> interview-only skeleton mode | Skill cannot write to project root (permissions) |
-| Hook generation | User selects no guardrails -> skip hooks gracefully | Cannot create `.claude/hooks/` directory; cannot write settings.json |
+| Hook generation | User selects no guardrails and no automation -> skip hooks gracefully | Cannot create `.claude/hooks/` directory; cannot write settings.json |
 
 **Key principle**: No single phase failure should halt the pipeline. Log the error, skip the phase, record the status, and continue. The wrap-up summary will show the user exactly what succeeded and what did not.
 
@@ -156,4 +200,4 @@ If `AskUserQuestion` is not available in the runtime environment, present choice
 - (A) [Option] — [trade-off]
 - (B) [Option] — [trade-off]
 
-Apply this fallback pattern to every question in Phases 1, 3, and Wrap-Up. When presenting the Guardrails multiSelect in Domain 4, list all options with `[x]` for recommended defaults and `[ ]` for optional items, and ask the user to reply with the numbers or letters of their selections.
+Apply this fallback pattern to every question in Phases 1, 3, and Wrap-Up. When presenting the Guardrails & Automation multiSelects in Domain 5, list all options with `[x]` for recommended defaults and `[ ]` for optional items, and ask the user to reply with the numbers or letters of their selections.

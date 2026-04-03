@@ -1,8 +1,10 @@
-# Hook Protection Presets
+# Hook Presets
 
-Stack-specific file protection presets for the Guardrails interview domain. Each preset defines a file pattern that Claude should be prevented from editing, along with a human-readable description for the `AskUserQuestion` multiSelect.
+Stack-specific presets for the Guardrails & Automation interview domain. Organized into two sections: **Protection Presets** (PreToolUse, block edits to sensitive files) and **Automation Presets** (PostToolUse, run formatters/linters after edits).
 
 ---
+
+# Protection Presets (PreToolUse)
 
 ## General (always included)
 
@@ -140,10 +142,110 @@ Apply when the detected or stated language is Rust.
 
 ---
 
-## Combining Presets
+## Combining Protection Presets
 
 When presenting the multiSelect to the user, merge **General** presets with the relevant **stack-specific** presets into a single list. Order: General items first, then stack-specific items.
 
 If the project uses multiple languages (e.g., Python backend + TypeScript frontend), combine presets from both stacks and deduplicate (`.env` appears once, not twice).
 
 If the language is not covered by a specific preset section above, present only the General presets and add a free-text `AskUserQuestion`: "Are there any additional files or directories Claude should never edit?"
+
+---
+
+# Automation Presets (PostToolUse)
+
+Post-edit automation hooks run formatters and linters on files after Claude modifies them. Each preset defines a tool, the file extensions it applies to, and the commands to run.
+
+## Python
+
+Apply when the detected or stated language is Python.
+
+| Tool | File Extensions | Commands | Recommended |
+|---|---|---|---|
+| Ruff (format + lint) | `.py` | `ruff check --fix {file}`, `ruff format {file}` | Yes |
+| Black (format only) | `.py` | `black {file}` | No |
+
+### MultiSelect Format
+
+```
+[x] Ruff — Auto-format and lint Python files (ruff check --fix + ruff format)
+[ ] Black — Auto-format Python files (black)
+```
+
+### Detection Hints
+
+- Pre-check **Ruff** if `ruff` section exists in `pyproject.toml`, `.ruff.toml` exists, or `ruff` is in dev dependencies
+- Pre-check **Black** if `black` section exists in `pyproject.toml` or `.black.toml` exists (but not if Ruff is also detected — prefer Ruff)
+- Show only one formatter as recommended. If both are detected, recommend Ruff (it supersedes Black)
+
+---
+
+## JavaScript / TypeScript
+
+Apply when the detected or stated language is JavaScript or TypeScript.
+
+| Tool | File Extensions | Commands | Recommended |
+|---|---|---|---|
+| Prettier | `.js`, `.ts`, `.jsx`, `.tsx`, `.css`, `.json` | `prettier --write {file}` | Yes |
+| ESLint | `.js`, `.ts`, `.jsx`, `.tsx` | `eslint --fix {file}` | No |
+
+### MultiSelect Format
+
+```
+[x] Prettier — Auto-format JS/TS files (prettier --write)
+[ ] ESLint — Auto-fix JS/TS lint issues (eslint --fix)
+```
+
+### Detection Hints
+
+- Pre-check **Prettier** if `.prettierrc`, `.prettierrc.json`, or `prettier` key in `package.json` exists
+- Pre-check **ESLint** if `.eslintrc`, `eslint.config.*`, or `eslint` key in `package.json` exists
+- Both can run together (Prettier for formatting, ESLint for lint rules)
+
+---
+
+## Go
+
+Apply when the detected or stated language is Go.
+
+| Tool | File Extensions | Commands | Recommended |
+|---|---|---|---|
+| gofmt | `.go` | `gofmt -w {file}` | Yes |
+
+### MultiSelect Format
+
+```
+[x] gofmt — Auto-format Go files (gofmt -w)
+```
+
+### Detection Hints
+
+- Always pre-check — `gofmt` ships with the Go toolchain and is the universal standard
+
+---
+
+## Rust
+
+Apply when the detected or stated language is Rust.
+
+| Tool | File Extensions | Commands | Recommended |
+|---|---|---|---|
+| rustfmt | `.rs` | `rustfmt {file}` | Yes |
+
+### MultiSelect Format
+
+```
+[x] rustfmt — Auto-format Rust files (rustfmt)
+```
+
+### Detection Hints
+
+- Always pre-check — `rustfmt` ships with the Rust toolchain via `rustup`
+
+---
+
+## Combining Automation Presets
+
+Show only the presets relevant to the detected or stated stack. If the project uses multiple languages, combine presets from all relevant stacks.
+
+If the language is not covered by a specific preset section above, ask a free-text `AskUserQuestion`: "Do you use a formatter or linter that should run automatically after Claude edits a file? If so, provide the command (e.g., `black {file}`)."
