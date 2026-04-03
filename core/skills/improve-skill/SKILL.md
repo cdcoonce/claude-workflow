@@ -62,4 +62,4 @@ After completion: a PR is filed using the SKILL.md content from `best_iteration`
 
 ## Phase 6: Agent Definitions
 
-Agents live in `core/agents/`: `qa-tester`, `skill-writer`, `strategy`.
+Agents live in `core/agents/`: `skill-analyst`, `qa-tester`, `skill-writer`, `strategy`.

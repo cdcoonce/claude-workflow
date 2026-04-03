@@ -1,22 +1,57 @@
 # Phase 2: Grill
 
-**Step 1 — Check for existing tests.md:** If `{tests_path}` exists: count data rows, show one-line summaries. Ask user what harder or missing cases to add. Append new rows only (never remove; never duplicate T00). Jump to Step 3. If not found: proceed to Step 2.
+Build a test suite using the skill-analyst agent and a user challenge loop.
 
-**Step 2 — Interview:** First, read `{skill_path}` and infer 5–10 suggested test cases from its content. Then conduct the interview using AskUserQuestion if available, otherwise numbered text Q&A.
+## Step 1 — Dispatch Skill Analyst
 
-**If AskUserQuestion is available:** Use it for every question with selectable options (use multiSelect where multiple choices apply):
+Read `{skill_path}`. Adopt the `skill-analyst` agent identity. Provide the full SKILL.md content pasted inline.
 
-- Q1: Primary purpose — offer selectable trigger phrases inferred from the skill's description.
-- Q2: Critical behaviors — offer selectable options inferred from the skill's steps (multiSelect).
-- Q3: Misuse scenarios — offer selectable options inferred from skill edge cases (multiSelect).
-- Q4: Edge cases — offer selectable options inferred from the skill (multiSelect).
-- Q5: Suggested test cases — present inferred test cases as selectable options (multiSelect); user picks which to include and may add more.
-- Q6: How many total tests? (suggest 10–15)
+If `{tests_path}` exists: also read it, extract one-line summaries of each test (ID + Scenario), and include them as existing test summaries in the analyst input.
 
-**If AskUserQuestion is NOT available:** Ask questions 1–6 in sequence as numbered plain text. For Q5, list the inferred test cases as numbered suggestions before asking for user additions.
+Receive: a three-tier weakness report (Surface Gaps, Behavioral Edge Cases, Adversarial Probes) with proposed test cases.
 
-Write `{tests_path}`: columns `| ID | Scenario | Expected Behavior | Result | Reason |`. T00 is always first: Scenario = "Skill SKILL.md must be ≤100 lines", Expected = "Claude counts lines; if >100, reports the violation and halts execution." Number remaining cases T01, T02, etc. If user answered 0 for test count, re-prompt once.
+**Malformed output handling:** If the output is missing any tier or has fewer than 2 findings per tier, retry once. If the second attempt is also malformed, pause and prompt the user:
 
-**Step 3 — Set config:** Ask target pass rate (default 90%) and max iterations (default 5). Record in state file. Advance `current_phase` to `baseline`. Log: `{YYYY-MM-DD} — Grill complete. Suite: {total} tests. Target: {rate}%. Max: {max} iterations.`
+> "Skill analyst produced malformed output twice. Please inspect and advise before continuing."
 
-**Step 4 — Commit:** `git add {tests_path} docs/skill-improve/{slug}.state.md && git commit -m "test({slug}): add benchmark test suite"`
+Log: `{YYYY-MM-DD} — Skill analyst dispatched. Findings: {n} surface, {n} behavioral, {n} adversarial.`
+
+## Step 2 — User Challenge Loop
+
+Present the analyst's findings to the user tier-by-tier. For each tier (Surface Gaps → Behavioral Edge Cases → Adversarial Probes):
+
+**If AskUserQuestion is available:** Present the findings as a multiSelect list (all selected by default). Ask:
+
+> "Review these **{tier name}** findings. Deselect any that aren't real gaps, and note any domain-specific gaps the analysis missed."
+
+**If AskUserQuestion is NOT available:** List findings numbered, ask user to type which numbers to reject and any additions.
+
+After each tier, collect:
+
+- Which findings the user accepted (kept selected)
+- Any domain-specific gaps the user added (create proposed tests for these)
+
+**Full-rejection guard:** After all three tiers are processed, if zero findings were accepted across all tiers: warn the user and re-run the analyst. Ask what kind of gaps they are looking for to guide the re-analysis. Log: `{YYYY-MM-DD} — All findings rejected. Re-running analyst with user guidance.` Then return to Step 1 with the user's guidance as additional context.
+
+Log: `{YYYY-MM-DD} — Challenge complete. Accepted: {n}/{total} findings. User added: {n}.`
+
+## Step 3 — Assemble Test Suite
+
+**If `{tests_path}` exists (append mode):** Read existing tests. Determine the highest existing T-number. Number new rows starting from the next available ID. Append accepted findings as new rows grouped by tier. Do not remove, modify, or renumber existing rows. Do not duplicate T00.
+
+**If `{tests_path}` does not exist (new suite):** Create the file with columns `| ID | Scenario | Expected Behavior | Result | Reason |`. T00 is always first: Scenario = "Skill SKILL.md must be ≤100 lines", Expected = "Claude counts lines; if >100, reports the violation and halts execution." Number accepted findings T01, T02, etc., grouped by tier.
+
+For each accepted finding, convert its proposed test into a table row:
+
+- **Scenario** = the proposed test's scenario text
+- **Expected Behavior** = the proposed test's expected behavior text
+
+Ask user to confirm the total test count. If the count would be 0 (excluding T00), re-prompt once.
+
+## Step 4 — Set Config
+
+Ask target pass rate (default 90%) and max iterations (default 5). Record in state file. Advance `current_phase` to `baseline`. Log: `{YYYY-MM-DD} — Grill complete. Suite: {total} tests. Target: {rate}%. Max: {max} iterations.`
+
+## Step 5 — Commit
+
+`git add {tests_path} docs/skill-improve/{slug}.state.md && git commit -m "test({slug}): add benchmark test suite"`
