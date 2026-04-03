@@ -31,7 +31,7 @@ After each tier, collect:
 - Which findings the user accepted (kept selected)
 - Any domain-specific gaps the user added (create proposed tests for these)
 
-**Full-rejection guard:** After all three tiers are processed, if zero findings were accepted across all tiers: warn the user and re-run the analyst. Ask what kind of gaps they are looking for to guide the re-analysis. Log: `{YYYY-MM-DD} — All findings rejected. Re-running analyst with user guidance.` Then return to Step 1 with the user's guidance as additional context.
+**Full-rejection guard:** After all three tiers are processed, if zero findings were accepted across all tiers: warn the user and re-run the analyst (maximum 2 re-analyses). Ask what kind of gaps they are looking for. Log: `{YYYY-MM-DD} — All findings rejected. Re-running analyst with user guidance.` Then return to Step 1 with the user's guidance passed as additional context to the analyst. If the user rejects all findings a second time, proceed with user-authored tests only (prompt user to describe tests manually).
 
 Log: `{YYYY-MM-DD} — Challenge complete. Accepted: {n}/{total} findings. User added: {n}.`
 
