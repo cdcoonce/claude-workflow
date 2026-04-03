@@ -31,6 +31,7 @@ Developing Claude skills, hooks, agents, and template configurations
 
 - code-reviewer
 - qa-tester
+- skill-analyst
 - skill-builder
 - skill-reviewer
 - skill-writer
