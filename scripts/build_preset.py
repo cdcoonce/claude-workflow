@@ -268,7 +268,7 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     for exclusion in manifest.get("exclude", []):
         excluded_path = (dist_path / exclusion).resolve()
         # Path containment check: ensure resolved path is within dist_path
-        if not str(excluded_path).startswith(str(dist_path.resolve())):
+        if not excluded_path.is_relative_to(dist_path.resolve()):
             print(f"WARNING: exclusion '{exclusion}' resolves outside build directory, skipping")
             continue
         if excluded_path.exists():
