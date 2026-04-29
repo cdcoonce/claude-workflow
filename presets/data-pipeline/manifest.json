@@ -1,0 +1,13 @@
+{
+  "name": "data-pipeline",
+  "description": "ETL/ELT pipelines, SQL transformations, scheduled data jobs",
+  "version": "1.0.0",
+  "core": {
+    "skills": "all",
+    "hooks": ["protect-files.py"]
+  },
+  "exclude": [],
+  "preset_skills": ["dagster-expert", "dbt-expert"],
+  "preset_hooks": ["post-edit-lint.py"],
+  "preset_agents": ["pipeline-builder", "data-quality-reviewer"]
+}

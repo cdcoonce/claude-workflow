@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.DS_Store
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# User-local Claude settings
+.claude/settings.local.json
+
+# macOS conflict copies (created when checkout hits dirty files)
+* 2.*
+* 3.*

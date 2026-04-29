@@ -1,0 +1,5 @@
+{
+  "enabledPlugins": {
+    "claude-tooling@claude-workflow": true
+  }
+}

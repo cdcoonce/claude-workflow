@@ -1,0 +1,13 @@
+{
+  "name": "python-api",
+  "description": "Python backend services — Lambda, FastAPI, Flask",
+  "version": "1.0.0",
+  "core": {
+    "skills": "all",
+    "hooks": ["protect-files.py"]
+  },
+  "exclude": [],
+  "preset_skills": ["deploy"],
+  "preset_hooks": ["post-edit-lint.py"],
+  "preset_agents": ["api-builder", "security-reviewer"]
+}

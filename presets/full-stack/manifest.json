@@ -1,0 +1,13 @@
+{
+  "name": "full-stack",
+  "description": "React/Next.js frontend + Python backend",
+  "version": "1.0.0",
+  "core": {
+    "skills": "all",
+    "hooks": ["protect-files.py"]
+  },
+  "exclude": [],
+  "preset_skills": [],
+  "preset_hooks": ["post-edit-lint.py"],
+  "preset_agents": ["frontend-builder", "backend-builder", "ux-reviewer"]
+}
