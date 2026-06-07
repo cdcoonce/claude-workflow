@@ -144,6 +144,16 @@ class TestSmokeAgents:
         assert not result.passed
         assert any("role" in e for e in result.errors)
 
+    def test_non_implementer_role_accepted(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        agent_md = dist / "agents" / "tdd-implementer" / "AGENT.md"
+        agent_md.write_text(
+            "---\nname: tdd-implementer\ndescription: test\nrole: analyst\n---\n"
+        )
+        result = smoke_test(dist)
+        assert not any("role" in e for e in result.errors)
+
     def test_name_mismatch_fails(self, tmp_repo: Path) -> None:
         build_preset("python-api", repo_root=tmp_repo)
         dist = tmp_repo / "dist" / "python-api"

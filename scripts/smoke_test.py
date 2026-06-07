@@ -5,7 +5,7 @@ Checks:
 - Every directory in skills/ has a SKILL.md
 - Every directory in agents/ has a valid AGENT.md (frontmatter with name, description, role)
 - Agent names match their directory names
-- Agent roles are one of the documented roles (see VALID_AGENT_ROLES)
+- Agent roles are one of the documented roles (see VALID_ROLES)
 - Agent skills.add references resolve to existing skills in skills/
 - hooks/hooks.json references scripts that exist in hooks/scripts/
 - Every relative link in SKILL.md files resolves within the skill directory
@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 # Valid agent roles, matching the documented vocabulary in CLAUDE.md.
-VALID_AGENT_ROLES = (
+VALID_ROLES = (
     "implementer",
     "reviewer",
     "analyst",
@@ -168,10 +168,11 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
 
             # Validate role
             role = frontmatter.get("role", "")
-            if role and role not in VALID_AGENT_ROLES:
+            if role and role not in VALID_ROLES:
+                valid = ", ".join(repr(r) for r in VALID_ROLES)
                 result.errors.append(
                     f"Agent '{agent_dir.name}/AGENT.md' has invalid role "
-                    f"'{role}' (must be one of: {', '.join(VALID_AGENT_ROLES)})"
+                    f"'{role}' (must be one of {valid})"
                 )
 
             # Validate name matches directory
