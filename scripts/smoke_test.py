@@ -236,6 +236,23 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
                         f"'{link_target}' but file not found"
                     )
 
+    # 5b. Validate intra-agent reference links in AGENT.md files
+    if agents_dir.exists():
+        for agent_md in agents_dir.rglob("AGENT.md"):
+            agent_content = agent_md.read_text(encoding="utf-8")
+            for match in link_pattern.finditer(agent_content):
+                link_target = match.group(2)
+                # Skip external URLs, anchors, and project-root-relative paths
+                if link_target.startswith(("http://", "https://", "#", ".claude/")):
+                    continue
+                resolved = (agent_md.parent / link_target).resolve()
+                if not resolved.exists():
+                    agent_name = agent_md.parent.name
+                    result.errors.append(
+                        f"Agent '{agent_name}/AGENT.md' links to "
+                        f"'{link_target}' but file not found"
+                    )
+
     # 6. Validate settings.json is valid JSON
     settings_path = dist_path / "settings.json"
     if settings_path.exists():

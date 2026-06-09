@@ -282,6 +282,89 @@ class TestSmokeIntraSkillLinks:
         assert result.passed is True
 
 
+class TestSmokeIntraAgentLinks:
+    """Smoke test validates intra-agent reference links."""
+
+    def test_valid_intra_agent_link_passes(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        # Add an agent with a valid reference link
+        agent_dir = dist / "agents" / "test-agent"
+        agent_dir.mkdir(parents=True)
+        refs_dir = agent_dir / "references"
+        refs_dir.mkdir()
+        (refs_dir / "spec.md").write_text("# Spec\n")
+        (agent_dir / "AGENT.md").write_text(
+            "---\nname: test-agent\ndescription: test\nrole: implementer\n---\n\n"
+            "See [spec](references/spec.md) for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
+
+    def test_broken_intra_agent_link_fails(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        # Add an agent with a broken reference link
+        agent_dir = dist / "agents" / "test-agent"
+        agent_dir.mkdir(parents=True)
+        (agent_dir / "AGENT.md").write_text(
+            "---\nname: test-agent\ndescription: test\nrole: implementer\n---\n\n"
+            "See [missing](references/nonexistent.md) for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is False
+        assert any(
+            "test-agent/AGENT.md" in e and "nonexistent.md" in e for e in result.errors
+        )
+
+    def test_external_links_skipped(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        agent_dir = dist / "agents" / "test-agent"
+        agent_dir.mkdir(parents=True)
+        (agent_dir / "AGENT.md").write_text(
+            "---\nname: test-agent\ndescription: test\nrole: implementer\n---\n\n"
+            "See [docs](https://example.com) and [section](#anchor) for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
+
+    def test_http_links_skipped(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        agent_dir = dist / "agents" / "test-agent"
+        agent_dir.mkdir(parents=True)
+        (agent_dir / "AGENT.md").write_text(
+            "---\nname: test-agent\ndescription: test\nrole: implementer\n---\n\n"
+            "See [docs](http://example.com) for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
+
+    def test_project_root_relative_links_skipped(self, tmp_repo: Path) -> None:
+        """Links to .claude/ paths are project-root-relative, not plugin-internal."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        agent_dir = dist / "agents" / "test-agent"
+        agent_dir.mkdir(parents=True)
+        (agent_dir / "AGENT.md").write_text(
+            "---\nname: test-agent\ndescription: test\nrole: implementer\n---\n\n"
+            "See [project.md](.claude/docs/project.md) for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
+
+
 class TestSmokeSettingsJson:
     """Smoke test validates settings.json."""
 
