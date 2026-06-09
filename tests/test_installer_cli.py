@@ -69,3 +69,12 @@ def test_list_shows_presets_and_detected_agent(tmp_path, monkeypatch, capsys):
     assert rc == 0
     assert "analysis" in out
     assert "claude-code" in out
+
+
+def test_presets_root_default_is_under_the_package():
+    # The CLI's default PRESETS_ROOT must live inside the installed package so a
+    # `uv tool install`'d copy can find bundled presets without a checkout.
+    from scripts.installer import cli
+
+    assert cli.PRESETS_ROOT.name == "presets"
+    assert cli.PRESETS_ROOT.parent.name == "installer"

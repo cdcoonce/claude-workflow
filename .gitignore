@@ -11,3 +11,6 @@ __pycache__/
 # macOS conflict copies (created when checkout hits dirty files)
 * 2.*
 * 3.*
+
+# Generated preset bundles (populated by the pre-build step before uv build)
+scripts/installer/presets/
