@@ -365,6 +365,72 @@ class TestSmokeIntraAgentLinks:
         assert result.passed is True
 
 
+def _write_valid_plugin_json(dist: Path) -> None:
+    """Write a minimal valid .claude-plugin/plugin.json into ``dist``.
+
+    Lets a hand-built dist tree clear the plugin.json validation gate so a test
+    can exercise a later error branch (agents, hooks) without early-returning.
+    """
+    plugin_dir = dist / ".claude-plugin"
+    plugin_dir.mkdir(parents=True, exist_ok=True)
+    (plugin_dir / "plugin.json").write_text(
+        json.dumps({"name": "demo", "version": "1.0.0", "description": "demo"})
+    )
+
+
+class TestSmokeMalformedInputs:
+    """Smoke test reports malformed JSON and structurally invalid agents.
+
+    Each test builds its own minimal dist tree under tmp_path so the corrupted
+    input is the only variable, independent of any real preset's contents.
+    """
+
+    def test_invalid_plugin_json_fails(self, tmp_path: Path) -> None:
+        plugin_dir = tmp_path / ".claude-plugin"
+        plugin_dir.mkdir(parents=True)
+        (plugin_dir / "plugin.json").write_text("{ not valid json")
+
+        result = smoke_test(tmp_path)
+        assert result.passed is False
+        assert any("plugin.json is not valid JSON" in e for e in result.errors)
+
+    def test_agent_directory_without_agent_md_fails(self, tmp_path: Path) -> None:
+        _write_valid_plugin_json(tmp_path)
+        agents_dir = tmp_path / "agents"
+        agents_dir.mkdir()
+        # A stray non-directory entry is skipped; the real agent directory has
+        # no AGENT.md and must be reported.
+        (agents_dir / "README.md").write_text("# not an agent\n")
+        (agents_dir / "lonely-agent").mkdir()
+
+        result = smoke_test(tmp_path)
+        assert result.passed is False
+        assert any("lonely-agent" in e and "no AGENT.md" in e for e in result.errors)
+
+    def test_agent_md_missing_required_field_fails(self, tmp_path: Path) -> None:
+        _write_valid_plugin_json(tmp_path)
+        agent_dir = tmp_path / "agents" / "demo-agent"
+        agent_dir.mkdir(parents=True)
+        # Valid frontmatter, but the required ``role`` field is absent.
+        (agent_dir / "AGENT.md").write_text(
+            "---\nname: demo-agent\ndescription: test\n---\n\n# Demo\n"
+        )
+
+        result = smoke_test(tmp_path)
+        assert result.passed is False
+        assert any("missing required field" in e and "role" in e for e in result.errors)
+
+    def test_invalid_hooks_json_fails(self, tmp_path: Path) -> None:
+        _write_valid_plugin_json(tmp_path)
+        hooks_dir = tmp_path / "hooks"
+        hooks_dir.mkdir()
+        (hooks_dir / "hooks.json").write_text("{ not valid json")
+
+        result = smoke_test(tmp_path)
+        assert result.passed is False
+        assert any("hooks/hooks.json is not valid JSON" in e for e in result.errors)
+
+
 class TestSmokeSettingsJson:
     """Smoke test validates settings.json."""
 
