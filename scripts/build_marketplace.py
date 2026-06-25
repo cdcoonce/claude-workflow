@@ -11,6 +11,37 @@ import sys
 from pathlib import Path
 
 
+def _scan_presets(presets_dir: Path) -> list[dict[str, str]]:
+    """Scan *presets_dir* and return one entry per preset that has a manifest.
+
+    Parameters
+    ----------
+    presets_dir
+        Directory containing one sub-directory per preset.
+
+    Returns
+    -------
+    list[dict[str, str]]
+        Unsorted list of plugin descriptor dicts with keys
+        ``name``, ``version``, ``description``, and ``source``.
+    """
+    plugins: list[dict[str, str]] = []
+    for preset_dir in sorted(presets_dir.iterdir()):
+        if not preset_dir.is_dir():
+            continue
+        manifest_path = preset_dir / "manifest.json"
+        if not manifest_path.exists():
+            continue
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        plugins.append({
+            "name": manifest["name"],
+            "version": manifest.get("version", "0.0.0"),
+            "description": manifest.get("description", ""),
+            "source": f"./dist/{manifest['name']}",
+        })
+    return plugins
+
+
 def build_marketplace(repo_root: Path | None = None) -> Path:
     """Generate marketplace.json listing all available plugins.
 
@@ -27,21 +58,7 @@ def build_marketplace(repo_root: Path | None = None) -> Path:
     root = repo_root or Path.cwd()
     presets_dir = root / "presets"
 
-    plugins: list[dict[str, str]] = []
-    for preset_dir in sorted(presets_dir.iterdir()):
-        if not preset_dir.is_dir():
-            continue
-        manifest_path = preset_dir / "manifest.json"
-        if not manifest_path.exists():
-            continue
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        plugins.append({
-            "name": manifest["name"],
-            "version": manifest.get("version", "0.0.0"),
-            "description": manifest.get("description", ""),
-            "source": f"./dist/{manifest['name']}",
-        })
-
+    plugins = _scan_presets(presets_dir)
     plugins.sort(key=lambda p: p["name"])
 
     marketplace_dir = root / ".claude-plugin"
