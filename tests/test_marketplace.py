@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from scripts.build_marketplace import build_marketplace
+from scripts.build_marketplace import _scan_presets, build_marketplace
 
 
 class TestBuildMarketplace:
@@ -111,3 +111,42 @@ class TestBuildMarketplace:
         # Should still have exactly the presets that existed before
         names = [p["name"] for p in data["plugins"]]
         assert "python-api" in names
+
+
+class TestScanPresets:
+    """Unit tests for _scan_presets helper."""
+
+    def test_returns_list_of_dicts(self, tmp_repo: Path) -> None:
+        result = _scan_presets(tmp_repo / "presets")
+        assert isinstance(result, list)
+        assert all(isinstance(item, dict) for item in result)
+
+    def test_includes_preset_with_manifest(self, tmp_repo: Path) -> None:
+        result = _scan_presets(tmp_repo / "presets")
+        names = [p["name"] for p in result]
+        assert "python-api" in names
+
+    def test_entry_has_required_fields(self, tmp_repo: Path) -> None:
+        result = _scan_presets(tmp_repo / "presets")
+        for entry in result:
+            assert "name" in entry
+            assert "version" in entry
+            assert "description" in entry
+            assert "source" in entry
+
+    def test_source_uses_dist_prefix(self, tmp_repo: Path) -> None:
+        result = _scan_presets(tmp_repo / "presets")
+        for entry in result:
+            assert entry["source"].startswith("./dist/")
+
+    def test_skips_dir_without_manifest(self, tmp_repo: Path) -> None:
+        (tmp_repo / "presets" / "bare-dir").mkdir()
+        result = _scan_presets(tmp_repo / "presets")
+        names = [p["name"] for p in result]
+        assert "bare-dir" not in names
+
+    def test_skips_non_directory_entries(self, tmp_repo: Path) -> None:
+        (tmp_repo / "presets" / "README.md").write_text("# hi")
+        result = _scan_presets(tmp_repo / "presets")
+        names = [p["name"] for p in result]
+        assert "README.md" not in names
