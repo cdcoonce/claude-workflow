@@ -225,6 +225,10 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
         shutil.copy2(core_path / "hooks" / hook_name, hooks_scripts_dir / hook_name)
     for hook_name in manifest.get("preset_hooks", []):
         shutil.copy2(preset_path / "hooks" / hook_name, hooks_scripts_dir / hook_name)
+    # Copy the portable run-hook.sh shim
+    run_hook_src = core_path / "hooks" / "run-hook.sh"
+    if run_hook_src.exists():
+        shutil.copy2(run_hook_src, dist_path / "hooks" / "run-hook.sh")
 
     # 6. Generate hooks/hooks.json (merged hook config)
     merged_settings = _merge_settings(
