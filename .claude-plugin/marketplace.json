@@ -29,6 +29,12 @@
       "source": "./dist/full-stack"
     },
     {
+      "name": "personas",
+      "version": "1.0.0",
+      "description": "Swappable output-style personalities — terse staff engineer, deep staff engineer, pair programmer, thinking partner, and ship-it.",
+      "source": "./dist/personas"
+    },
+    {
       "name": "python-api",
       "version": "1.0.0",
       "description": "Python backend services — Lambda, FastAPI, Flask",

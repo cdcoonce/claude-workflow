@@ -6,6 +6,7 @@ Build order (plugin format):
 3. Copy core agents -> dist/<preset>/agents/
 4. Copy preset agents -> dist/<preset>/agents/ (override on collision)
 5. Copy agent-matching.md -> dist/<preset>/docs/
+5b. Copy preset output-styles -> dist/<preset>/output-styles/ (optional)
 6. Copy hook scripts to dist/<preset>/hooks/scripts/
 7. Generate hooks/hooks.json (merged hook config)
 8. Generate settings.json at root (hooks removed)
@@ -242,6 +243,12 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
         docs_dir = dist_path / "docs"
         docs_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(agent_matching_src, docs_dir / "agent-matching.md")
+
+    # 5b. Copy preset output-styles -> output-styles/ (optional component;
+    # auto-discovered by Claude Code at the plugin root, like skills/agents).
+    output_styles_src = preset_path / "output-styles"
+    if output_styles_src.exists():
+        shutil.copytree(output_styles_src, dist_path / "output-styles")
 
     # 6. Copy hook scripts to hooks/scripts/
     hooks_scripts_dir = dist_path / "hooks" / "scripts"

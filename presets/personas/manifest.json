@@ -1,0 +1,14 @@
+{
+  "name": "personas",
+  "description": "Swappable output-style personalities — terse staff engineer, deep staff engineer, pair programmer, thinking partner, and ship-it.",
+  "version": "1.0.0",
+  "core": {
+    "skills": [],
+    "agents": [],
+    "hooks": ["protect-files.py"]
+  },
+  "exclude": ["docs/agent-matching.md"],
+  "preset_skills": [],
+  "preset_hooks": [],
+  "preset_agents": []
+}
