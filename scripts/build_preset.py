@@ -237,9 +237,12 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copytree(src, dest)
 
-    # 5. Copy agent-matching.md -> docs/
+    # 5. Copy agent-matching.md -> docs/ (only when the plugin ships agents;
+    # an agent-less plugin -- e.g. a style-only persona -- has no use for it).
     agent_matching_src = core_path / "docs" / "agent-matching.md"
-    if agent_matching_src.exists():
+    built_agents = dist_path / "agents"
+    has_agents = built_agents.exists() and any(built_agents.iterdir())
+    if agent_matching_src.exists() and has_agents:
         docs_dir = dist_path / "docs"
         docs_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(agent_matching_src, docs_dir / "agent-matching.md")
@@ -258,11 +261,19 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     for hook_name in manifest.get("preset_hooks", []):
         shutil.copy2(preset_path / "hooks" / hook_name, hooks_scripts_dir / hook_name)
 
-    # 7. Generate hooks/hooks.json (merged hook config)
-    merged_settings = _merge_settings(
-        core_path / "settings-base.json",
-        preset_path / "settings-preset.json",
-    )
+    # 7. Generate hooks/hooks.json (merged hook config).
+    # A preset may opt out of the shared base settings (e.g. the protect-files
+    # PreToolUse guard) with "base_settings": false -- used by style-only plugins
+    # that ship a single SessionStart hook and nothing else.
+    if manifest.get("base_settings", True):
+        merged_settings = _merge_settings(
+            core_path / "settings-base.json",
+            preset_path / "settings-preset.json",
+        )
+    else:
+        merged_settings = json.loads(
+            (preset_path / "settings-preset.json").read_text()
+        )
     hooks_config = {"hooks": merged_settings.get("hooks", {})}
     (dist_path / "hooks" / "hooks.json").write_text(
         json.dumps(hooks_config, indent=2) + "\n"
