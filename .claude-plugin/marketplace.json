@@ -29,10 +29,34 @@
       "source": "./dist/full-stack"
     },
     {
-      "name": "personas",
+      "name": "persona-pair-programmer",
       "version": "1.0.0",
-      "description": "Swappable output-style personalities — terse staff engineer, deep staff engineer, pair programmer, thinking partner, and ship-it.",
-      "source": "./dist/personas"
+      "description": "Collaborative pair-programmer voice — brief think-aloud, checks in at decision points.",
+      "source": "./dist/persona-pair-programmer"
+    },
+    {
+      "name": "persona-ship-it",
+      "version": "1.0.0",
+      "description": "Momentum-first voice — blunt, bias-to-action, picks a sensible default and moves.",
+      "source": "./dist/persona-ship-it"
+    },
+    {
+      "name": "persona-staff-eng-deep",
+      "version": "1.0.0",
+      "description": "Senior-staff-engineer voice at full depth — reasoning, tradeoffs, and edge cases spelled out.",
+      "source": "./dist/persona-staff-eng-deep"
+    },
+    {
+      "name": "persona-terse-staff-eng",
+      "version": "1.0.0",
+      "description": "Terse senior-staff-engineer voice — answer-first, minimal, expert assumptions. The least verbose persona.",
+      "source": "./dist/persona-terse-staff-eng"
+    },
+    {
+      "name": "persona-thinking-partner",
+      "version": "1.0.0",
+      "description": "Socratic thinking partner — sharp questions and decision-sharpening over answers.",
+      "source": "./dist/persona-thinking-partner"
     },
     {
       "name": "python-api",

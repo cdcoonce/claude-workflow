@@ -1,6 +1,6 @@
-# personas
+# persona-ship-it
 
-Swappable output-style personalities — terse staff engineer, deep staff engineer, pair programmer, thinking partner, and ship-it.
+Momentum-first voice — blunt, bias-to-action, picks a sensible default and moves.
 
 ## CLAUDE.md Template
 
@@ -11,7 +11,7 @@ Copy the following into your project's `CLAUDE.md` to reference this plugin:
 
 ## Plugins
 
-This project uses the personas plugin for Claude Code configuration.
+This project uses the persona-ship-it plugin for Claude Code configuration.
 
 ## Methodology
 
