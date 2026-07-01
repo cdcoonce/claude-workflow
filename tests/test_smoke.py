@@ -145,6 +145,23 @@ class TestSmokeSkills:
         result = smoke_test(dist)
         assert not any("commit/SKILL.md" in e for e in result.errors)
 
+    def test_skill_with_folded_description_passes(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        skill_md = dist / "skills" / "commit" / "SKILL.md"
+
+        skill_md.write_text(
+            "---\n"
+            "name: commit\n"
+            "description: >\n"
+            "  A folded block scalar description that spans\n"
+            "  multiple lines and even contains a colon: like this.\n"
+            "---\n# Valid\n"
+        )
+
+        result = smoke_test(dist)
+        assert not any("commit/SKILL.md" in e for e in result.errors)
+
 
 class TestSmokeAgents:
     """Smoke test validates agent integrity."""

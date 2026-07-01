@@ -65,6 +65,7 @@ def _parse_frontmatter(text: str) -> dict | None:
         return None
     result: dict = {}
     current_key: str | None = None
+    block_scalar = False
     for line in frontmatter_text.split("\n"):
         stripped = line.strip()
         if not stripped:
@@ -76,13 +77,27 @@ def _parse_frontmatter(text: str) -> dict | None:
             value = value.strip()
             if value.startswith("[") and value.endswith("]"):
                 result[key] = [v.strip() for v in value[1:-1].split(",") if v.strip()]
+                current_key = None
+                block_scalar = False
+            elif value and value[0] in ("|", ">"):
+                # YAML block scalar (|, >, with optional chomping/indent indicator):
+                # the value continues on the following indented lines.
+                result[key] = ""
+                current_key = key
+                block_scalar = True
             elif value:
                 result[key] = value
+                current_key = None
+                block_scalar = False
             else:
                 result[key] = {}
                 current_key = key
+                block_scalar = False
         elif current_key and is_indented:
-            if ":" in stripped:
+            if block_scalar:
+                # Fold every indented line into the value, colons and all.
+                result[current_key] = f"{result[current_key]} {stripped}".strip()
+            elif ":" in stripped:
                 if not isinstance(result[current_key], dict):
                     result[current_key] = {}
                 sub_key, _, sub_value = stripped.partition(":")
