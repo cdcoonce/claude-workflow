@@ -65,6 +65,7 @@ def _parse_frontmatter(text: str) -> dict | None:
         return None
     result: dict = {}
     current_key: str | None = None
+    block_scalar = False
     for line in frontmatter_text.split("\n"):
         stripped = line.strip()
         if not stripped:
@@ -76,21 +77,42 @@ def _parse_frontmatter(text: str) -> dict | None:
             value = value.strip()
             if value.startswith("[") and value.endswith("]"):
                 result[key] = [v.strip() for v in value[1:-1].split(",") if v.strip()]
+                current_key = None
+                block_scalar = False
+            elif value and value[0] in ("|", ">"):
+                # YAML block scalar (|, >, with optional chomping/indent indicator):
+                # the value continues on the following indented lines.
+                result[key] = ""
+                current_key = key
+                block_scalar = True
             elif value:
                 result[key] = value
+                current_key = None
+                block_scalar = False
             else:
                 result[key] = {}
                 current_key = key
-        elif current_key and ":" in stripped and is_indented:
-            sub_key, _, sub_value = stripped.partition(":")
-            sub_key = sub_key.strip()
-            sub_value = sub_value.strip()
-            if sub_value.startswith("[") and sub_value.endswith("]"):
-                result[current_key][sub_key] = [
-                    v.strip() for v in sub_value[1:-1].split(",") if v.strip()
-                ]
-            else:
-                result[current_key][sub_key] = sub_value
+                block_scalar = False
+        elif current_key and is_indented:
+            if block_scalar:
+                # Fold every indented line into the value, colons and all.
+                result[current_key] = f"{result[current_key]} {stripped}".strip()
+            elif ":" in stripped:
+                if not isinstance(result[current_key], dict):
+                    result[current_key] = {}
+                sub_key, _, sub_value = stripped.partition(":")
+                sub_key = sub_key.strip()
+                sub_value = sub_value.strip()
+                if sub_value.startswith("[") and sub_value.endswith("]"):
+                    result[current_key][sub_key] = [
+                        v.strip() for v in sub_value[1:-1].split(",") if v.strip()
+                    ]
+                else:
+                    result[current_key][sub_key] = sub_value
+            elif result[current_key] == {}:
+                result[current_key] = stripped
+            elif isinstance(result[current_key], str):
+                result[current_key] = f"{result[current_key]} {stripped}"
     return result if result else None
 
 
@@ -127,16 +149,32 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
                 f"plugin.json missing required field '{required_field}'"
             )
 
-    # 2. Validate skills: every directory in skills/ has a SKILL.md
+    # 2. Validate skills: every directory in skills/ has a valid SKILL.md
     skills_dir = dist_path / "skills"
     if skills_dir.exists():
         for skill_dir in sorted(skills_dir.iterdir()):
             if not skill_dir.is_dir():
                 continue
-            if not (skill_dir / "SKILL.md").exists():
+            skill_md = skill_dir / "SKILL.md"
+            if not skill_md.exists():
                 result.errors.append(
                     f"Skill '{skill_dir.name}' directory has no SKILL.md"
                 )
+                continue
+
+            frontmatter = _parse_frontmatter(skill_md.read_text(encoding="utf-8"))
+            if frontmatter is None:
+                result.errors.append(
+                    f"Skill '{skill_dir.name}/SKILL.md' has no valid frontmatter"
+                )
+                continue
+
+            for req_field in ["name", "description"]:
+                if req_field not in frontmatter or not frontmatter.get(req_field):
+                    result.errors.append(
+                        f"Skill '{skill_dir.name}/SKILL.md' missing required "
+                        f"field '{req_field}'"
+                    )
 
     # 3. Validate agents: every directory in agents/ has a valid AGENT.md
     agents_dir = dist_path / "agents"
