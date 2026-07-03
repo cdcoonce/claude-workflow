@@ -43,6 +43,7 @@ def build_marketplace(repo_root: Path | None = None) -> Path:
     presets_dir = root / "presets"
 
     plugins: list[dict[str, str]] = []
+    seen_names: dict[str, str] = {}
     for preset_dir in sorted(presets_dir.iterdir()):
         if not preset_dir.is_dir():
             continue
@@ -56,6 +57,12 @@ def build_marketplace(repo_root: Path | None = None) -> Path:
                 f"Preset manifest missing required 'name' field: {preset_dir.name} "
                 f"({manifest_path})"
             )
+        if name in seen_names:
+            raise ValueError(
+                f"Duplicate plugin name '{name}' in presets "
+                f"'{seen_names[name]}' and '{preset_dir.name}'"
+            )
+        seen_names[name] = preset_dir.name
         plugins.append(
             {
                 "name": name,
