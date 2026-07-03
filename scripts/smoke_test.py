@@ -116,6 +116,25 @@ def _parse_frontmatter(text: str) -> dict | None:
     return result if result else None
 
 
+def _iter_links_outside_fences(content: str, pattern: re.Pattern[str]):
+    """Yield ``pattern`` matches in ``content`` that fall outside ``` fenced blocks.
+
+    Links inside fenced code blocks are illustrative examples, not real
+    references, so they must not be validated against the filesystem.
+    """
+    in_fence = False
+    fence_flags = []
+    for line in content.split("\n"):
+        if line.strip().startswith("```"):
+            in_fence = not in_fence
+        fence_flags.append(in_fence)
+
+    for match in pattern.finditer(content):
+        line_idx = content.count("\n", 0, match.start())
+        if not fence_flags[line_idx]:
+            yield match
+
+
 def smoke_test(dist_path: Path) -> SmokeTestResult:
     """Validate internal consistency of a built plugin.
 
@@ -261,7 +280,7 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
     if skills_dir.exists():
         for skill_md in skills_dir.rglob("SKILL.md"):
             skill_content = skill_md.read_text(encoding="utf-8")
-            for match in link_pattern.finditer(skill_content):
+            for match in _iter_links_outside_fences(skill_content, link_pattern):
                 link_target = match.group(2)
                 # Skip external URLs, anchors, and project-root-relative paths
                 if link_target.startswith(("http://", "https://", "#", ".claude/")):
@@ -278,7 +297,7 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
     if agents_dir.exists():
         for agent_md in agents_dir.rglob("AGENT.md"):
             agent_content = agent_md.read_text(encoding="utf-8")
-            for match in link_pattern.finditer(agent_content):
+            for match in _iter_links_outside_fences(agent_content, link_pattern):
                 link_target = match.group(2)
                 # Skip external URLs, anchors, and project-root-relative paths
                 if link_target.startswith(("http://", "https://", "#", ".claude/")):
