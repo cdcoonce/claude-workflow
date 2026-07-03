@@ -514,9 +514,8 @@ class MarkdownAnalyzer:
                 )
 
             # Check for broken image links
-            if (
-                self.base_path
-                and not image_url.startswith(("http://", "https://", "data:"))
+            if self.base_path and not image_url.startswith(
+                ("http://", "https://", "data:")
             ):
                 target_path = self.base_path / image_url
                 if not target_path.exists():
@@ -525,9 +524,7 @@ class MarkdownAnalyzer:
                             severity=Severity.ERROR,
                             category=IssueCategory.MARKDOWN,
                             message=f"Broken image: file '{image_url}' not found",
-                            location=Location(
-                                file_path=file_path, line_start=line_num
-                            ),
+                            location=Location(file_path=file_path, line_start=line_num),
                             rule_id="MD053",
                             source="markdown-analyzer",
                             context=match.group(0),
@@ -611,8 +608,8 @@ class MarkdownAnalyzer:
         # Check for trailing whitespace
         for match in TRAILING_WHITESPACE_PATTERN.finditer(content):
             line_num = self._find_line_number(content, match.start())
-            # Skip if it's an intentional line break (2 spaces)
-            if len(match.group(0)) != 2:
+            # Skip if it's an intentional line break (exactly two spaces)
+            if match.group(0) != "  ":
                 issues.append(
                     Issue(
                         severity=Severity.INFO,

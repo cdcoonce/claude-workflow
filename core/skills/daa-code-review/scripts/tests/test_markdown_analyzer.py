@@ -8,9 +8,8 @@ import tempfile
 
 import pytest
 
-from models import FileType, IssueCategory, Severity
+from models import FileType, Severity
 from markdown_analyzer import (
-    MarkdownAnalyzer,
     analyze_markdown,
     analyze_markdown_file,
 )
@@ -145,7 +144,8 @@ class TestMarkdownAnalyzerImages:
         result = analyze_markdown(content)
 
         md045_issues = [
-            i for i in result.issues
+            i
+            for i in result.issues
             if i.rule_id == "MD045" and "alt text" in i.message.lower()
         ]
         assert len(md045_issues) == 1
@@ -157,7 +157,8 @@ class TestMarkdownAnalyzerImages:
         result = analyze_markdown(content)
 
         alt_issues = [
-            i for i in result.issues
+            i
+            for i in result.issues
             if i.rule_id == "MD045" and "alt text" in i.message.lower()
         ]
         assert len(alt_issues) == 0
@@ -172,7 +173,8 @@ class TestMarkdownAnalyzerReferenceLinks:
         result = analyze_markdown(content)
 
         md052_issues = [
-            i for i in result.issues
+            i
+            for i in result.issues
             if i.rule_id == "MD052" and "undefined reference" in i.message.lower()
         ]
         assert len(md052_issues) == 1
@@ -183,7 +185,8 @@ class TestMarkdownAnalyzerReferenceLinks:
         result = analyze_markdown(content)
 
         ref_issues = [
-            i for i in result.issues
+            i
+            for i in result.issues
             if i.rule_id == "MD052" and "undefined reference" in i.message.lower()
         ]
         assert len(ref_issues) == 0
@@ -200,6 +203,22 @@ class TestMarkdownAnalyzerFormatting:
         md009_issues = [i for i in result.issues if i.rule_id == "MD009"]
         assert len(md009_issues) >= 1
         assert md009_issues[0].severity == Severity.INFO
+
+    def test_exactly_two_spaces_is_intentional_line_break(self):
+        """Test that exactly two trailing spaces is not flagged as MD009."""
+        content = "# Title\n\nSome text with a line break  \n\nMore text"
+        result = analyze_markdown(content)
+
+        md009_issues = [i for i in result.issues if i.rule_id == "MD009"]
+        assert len(md009_issues) == 0
+
+    def test_trailing_tab_combination_is_flagged(self):
+        """Test that a two-char trailing run of tabs/space+tab is still flagged."""
+        content = "# Title\n\nSome text with trailing\t\t\n\nMore text with trailing \t\n\nMore text"
+        result = analyze_markdown(content)
+
+        md009_issues = [i for i in result.issues if i.rule_id == "MD009"]
+        assert len(md009_issues) == 2
 
     def test_multiple_blank_lines(self):
         """Test detection of multiple consecutive blank lines."""
@@ -273,9 +292,7 @@ class TestMarkdownAnalyzeFile:
 
     def test_analyze_existing_file(self):
         """Test analyzing an existing Markdown file."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as tmp:
             tmp.write("## No h1\n\nContent")
             tmp.flush()
             tmp_path = Path(tmp.name)
