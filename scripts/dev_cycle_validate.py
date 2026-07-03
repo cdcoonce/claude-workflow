@@ -3,6 +3,7 @@
 Parses YAML frontmatter from dev-cycle state files and validates
 schema integrity, phase transitions, and artifact completeness.
 """
+
 from __future__ import annotations
 
 import re
@@ -10,8 +11,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 VALID_PHASES = (
-    "brainstorm", "plan", "ceo_review", "issues",
-    "implement", "code_review", "pr",
+    "brainstorm",
+    "plan",
+    "ceo_review",
+    "issues",
+    "implement",
+    "code_review",
+    "pr",
 )
 VALID_STATUSES = ("not_started", "in_progress", "completed", "abandoned")
 VALID_ARTIFACT_STATUSES = ("pending", "in_progress", "completed", "blocked")
@@ -48,6 +54,7 @@ class StateFile:
     branch: str = ""
     path: Path = field(default_factory=lambda: Path())
     artifacts: list[ArtifactRow] = field(default_factory=list)
+    had_schema_version: bool = True
 
 
 def _parse_artifacts(text: str) -> list[ArtifactRow]:
@@ -74,18 +81,6 @@ def _parse_artifacts(text: str) -> list[ArtifactRow]:
             continue
         rows.append(ArtifactRow(phase=phase, status=status, artifact=artifact))
     return rows
-
-
-def _has_schema_version(path: Path) -> bool:
-    """Check if a state file contains a schema_version field in frontmatter."""
-    text = path.read_text()
-    match = _FRONTMATTER_RE.search(text)
-    if not match:
-        return False
-    raw_fields: dict[str, str] = {}
-    for field_match in _FIELD_RE.finditer(match.group(1)):
-        raw_fields[field_match.group(1)] = field_match.group(2).strip()
-    return "schema_version" in raw_fields
 
 
 def parse_state_file(path: Path) -> StateFile:
@@ -117,11 +112,10 @@ def parse_state_file(path: Path) -> StateFile:
 
     for req in REQUIRED_FIELDS:
         if req not in raw_fields:
-            raise ValueError(
-                f"Missing required field '{req}' in {path.name}"
-            )
+            raise ValueError(f"Missing required field '{req}' in {path.name}")
 
-    if "schema_version" not in raw_fields:
+    had_schema_version = "schema_version" in raw_fields
+    if not had_schema_version:
         raw_fields["schema_version"] = "1"
 
     state = StateFile(
@@ -133,6 +127,7 @@ def parse_state_file(path: Path) -> StateFile:
         updated=raw_fields.get("updated", ""),
         branch=raw_fields.get("branch", ""),
         path=path,
+        had_schema_version=had_schema_version,
     )
     state.artifacts = _parse_artifacts(text)
     return state
@@ -194,8 +189,7 @@ def _validate_parsed_state(state: StateFile) -> list[str]:
     for row in state.artifacts:
         if row.status == "completed" and row.artifact in ("—", "\u2014", "-", ""):
             errors.append(
-                f"Phase '{row.phase}' is completed but has no artifact "
-                f"in {name}"
+                f"Phase '{row.phase}' is completed but has no artifact in {name}"
             )
 
     return errors
@@ -215,17 +209,14 @@ def validate_state_file(path: Path) -> ValidationResult:
         Validation result with any errors found.
     """
     warnings: list[str] = []
-    had_schema_version = _has_schema_version(path)
 
     try:
         state = parse_state_file(path)
     except ValueError as exc:
         return ValidationResult(errors=[str(exc)])
 
-    if not had_schema_version:
-        warnings.append(
-            f"Missing 'schema_version' in {path.name} (defaulting to 1)"
-        )
+    if not state.had_schema_version:
+        warnings.append(f"Missing 'schema_version' in {path.name} (defaulting to 1)")
 
     return ValidationResult(errors=_validate_parsed_state(state), warnings=warnings)
 
@@ -272,7 +263,9 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) != 2:
-        print("Usage: uv run python -m scripts.dev_cycle_validate <dev-cycle-directory>")
+        print(
+            "Usage: uv run python -m scripts.dev_cycle_validate <dev-cycle-directory>"
+        )
         print("  Validates all *.state.md files in the given directory.")
         sys.exit(1)
 
