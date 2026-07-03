@@ -22,7 +22,6 @@ from models import (
 from report_generator import (
     Colors,
     ConsoleReporter,
-    MarkdownReporter,
     colorize,
     generate_console_report,
     generate_markdown_report,
@@ -30,7 +29,27 @@ from report_generator import (
     severity_color,
     severity_emoji,
     severity_symbol,
+    supports_color,
 )
+
+
+class TestSupportsColor:
+    """Tests for supports_color NO_COLOR handling."""
+
+    def test_no_color_env_set_returns_false_even_on_tty(self, monkeypatch):
+        """NO_COLOR set should force False regardless of isatty."""
+        monkeypatch.setenv("NO_COLOR", "1")
+        monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+        assert supports_color() is False
+
+    def test_no_color_env_unset_preserves_isatty_behavior(self, monkeypatch):
+        """NO_COLOR unset should fall back to isatty-based detection."""
+        monkeypatch.delenv("NO_COLOR", raising=False)
+        monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+        assert supports_color() is True
+
+        monkeypatch.setattr("sys.stdout.isatty", lambda: False)
+        assert supports_color() is False
 
 
 class TestColorHelpers:
