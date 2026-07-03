@@ -266,7 +266,10 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
                 # Skip external URLs, anchors, and project-root-relative paths
                 if link_target.startswith(("http://", "https://", "#", ".claude/")):
                     continue
-                resolved = (skill_md.parent / link_target).resolve()
+                file_part = re.split(r"[#?]", link_target, maxsplit=1)[0]
+                if not file_part:
+                    continue
+                resolved = (skill_md.parent / file_part).resolve()
                 if not resolved.exists():
                     skill_name = skill_md.parent.name
                     result.errors.append(
@@ -283,7 +286,10 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
                 # Skip external URLs, anchors, and project-root-relative paths
                 if link_target.startswith(("http://", "https://", "#", ".claude/")):
                     continue
-                resolved = (agent_md.parent / link_target).resolve()
+                file_part = re.split(r"[#?]", link_target, maxsplit=1)[0]
+                if not file_part:
+                    continue
+                resolved = (agent_md.parent / file_part).resolve()
                 if not resolved.exists():
                     agent_name = agent_md.parent.name
                     result.errors.append(

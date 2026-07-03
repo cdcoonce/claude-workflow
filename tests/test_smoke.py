@@ -341,6 +341,42 @@ class TestSmokeIntraSkillLinks:
         result = smoke_test(dist)
         assert result.passed is True
 
+    def test_anchored_link_to_existing_file_passes(self, tmp_repo: Path) -> None:
+        """A link with a #fragment should validate the file portion only."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "test-skill"
+        skill_dir.mkdir(parents=True)
+        refs_dir = skill_dir / "references"
+        refs_dir.mkdir()
+        (refs_dir / "guide.md").write_text("# Guide\n\n## Heading\n")
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\n"
+            "See [guide](references/guide.md#heading) for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
+
+    def test_anchored_link_to_missing_file_fails(self, tmp_repo: Path) -> None:
+        """A #fragment on a nonexistent file should still be reported broken."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "test-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\n"
+            "See [missing](references/nonexistent.md#heading) for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is False
+        assert any(
+            "test-skill/SKILL.md" in e and "nonexistent.md" in e for e in result.errors
+        )
+
 
 class TestSmokeIntraAgentLinks:
     """Smoke test validates intra-agent reference links."""
@@ -419,6 +455,24 @@ class TestSmokeIntraAgentLinks:
         (agent_dir / "AGENT.md").write_text(
             "---\nname: test-agent\ndescription: test\nrole: implementer\n---\n\n"
             "See [project.md](.claude/docs/project.md) for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
+
+    def test_anchored_link_to_existing_file_passes(self, tmp_repo: Path) -> None:
+        """A link with a #fragment should validate the file portion only."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        agent_dir = dist / "agents" / "test-agent"
+        agent_dir.mkdir(parents=True)
+        refs_dir = agent_dir / "references"
+        refs_dir.mkdir()
+        (refs_dir / "spec.md").write_text("# Spec\n\n## Heading\n")
+        (agent_dir / "AGENT.md").write_text(
+            "---\nname: test-agent\ndescription: test\nrole: implementer\n---\n\n"
+            "See [spec](references/spec.md#heading) for details.\n"
         )
 
         result = smoke_test(dist)
