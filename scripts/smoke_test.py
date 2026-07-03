@@ -30,6 +30,10 @@ VALID_ROLES = (
     "strategy",
 )
 
+# Matches any URI scheme prefix (e.g. "mailto:", "tel:", "https:") so such
+# links aren't mistaken for relative file paths.
+URI_SCHEME_PATTERN = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
+
 
 @dataclass
 class SmokeTestResult:
@@ -263,8 +267,11 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
             skill_content = skill_md.read_text(encoding="utf-8")
             for match in link_pattern.finditer(skill_content):
                 link_target = match.group(2)
-                # Skip external URLs, anchors, and project-root-relative paths
-                if link_target.startswith(("http://", "https://", "#", ".claude/")):
+                # Skip external URLs, anchors, project-root-relative paths, and
+                # other URI schemes (e.g. mailto:, tel:)
+                if link_target.startswith(
+                    ("#", ".claude/")
+                ) or URI_SCHEME_PATTERN.match(link_target):
                     continue
                 resolved = (skill_md.parent / link_target).resolve()
                 if not resolved.exists():
@@ -280,8 +287,11 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
             agent_content = agent_md.read_text(encoding="utf-8")
             for match in link_pattern.finditer(agent_content):
                 link_target = match.group(2)
-                # Skip external URLs, anchors, and project-root-relative paths
-                if link_target.startswith(("http://", "https://", "#", ".claude/")):
+                # Skip external URLs, anchors, project-root-relative paths, and
+                # other URI schemes (e.g. mailto:, tel:)
+                if link_target.startswith(
+                    ("#", ".claude/")
+                ) or URI_SCHEME_PATTERN.match(link_target):
                     continue
                 resolved = (agent_md.parent / link_target).resolve()
                 if not resolved.exists():
