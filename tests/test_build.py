@@ -360,6 +360,19 @@ class TestBuildExclusions:
         build_preset("python-api", repo_root=tmp_repo)
         assert (tmp_repo / "dist" / "python-api").exists()
 
+    def test_exclusion_missing_target_warns(self, tmp_repo: Path, capsys) -> None:
+        """A typo'd exclusion that matches nothing still builds, but warns."""
+        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["exclude"] = ["skills/comit"]
+        manifest_path.write_text(json.dumps(manifest))
+
+        dist_path = build_preset("python-api", repo_root=tmp_repo)
+        assert dist_path.exists()
+        captured = capsys.readouterr()
+        assert "WARNING" in captured.out
+        assert "skills/comit" in captured.out
+
 
 class TestBuildPresetAgentValidation:
     """Validation for preset agents."""
