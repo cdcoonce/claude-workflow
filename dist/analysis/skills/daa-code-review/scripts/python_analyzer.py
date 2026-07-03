@@ -8,6 +8,7 @@ import json
 import subprocess
 import tempfile
 import time
+from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
@@ -157,8 +158,12 @@ def get_severity_for_rule(rule_id: str) -> Severity:
     return Severity.WARNING
 
 
+@lru_cache(maxsize=1)
 def check_ruff_available() -> bool:
     """Check if ruff is available on the system.
+
+    Result is cached for the lifetime of the process since ruff's
+    availability does not change within a single run.
 
     Returns
     -------

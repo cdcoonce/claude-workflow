@@ -4,6 +4,7 @@ This module contains pytest tests for the Python code analyzer.
 """
 
 from pathlib import Path
+import subprocess
 import tempfile
 
 import pytest
@@ -90,6 +91,26 @@ class TestRuffIntegration:
     def test_ruff_available(self):
         """Test that ruff is available on the system."""
         assert check_ruff_available() is True
+
+    def test_ruff_availability_probe_is_cached(self, monkeypatch):
+        """Test that the ruff --version probe subprocess runs at most once."""
+        check_ruff_available.cache_clear()
+        call_count = 0
+        real_run = subprocess.run
+
+        def counting_run(args, *pos_args, **kwargs):
+            nonlocal call_count
+            if args[:2] == ["ruff", "--version"]:
+                call_count += 1
+            return real_run(args, *pos_args, **kwargs)
+
+        monkeypatch.setattr(subprocess, "run", counting_run)
+
+        analyze_python("x = 1\n")
+        analyze_python("y = 2\n")
+        analyze_python("import os\n")
+
+        assert call_count <= 1
 
     def test_run_ruff_on_clean_code(self):
         """Test ruff on code with minimal issues."""
@@ -230,9 +251,7 @@ class TestAnalyzePythonFile:
 
     def test_analyze_existing_file(self):
         """Test analyzing an existing Python file."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
             tmp.write("import os\nx = 1\n")
             tmp.flush()
             tmp_path = Path(tmp.name)
