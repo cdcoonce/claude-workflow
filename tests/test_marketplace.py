@@ -192,3 +192,26 @@ class TestBuildMarketplace:
 
         with pytest.raises(ValueError, match="nameless-preset"):
             build_marketplace(tmp_repo)
+
+    def test_marketplace_duplicate_name_raises_clear_error(
+        self, tmp_repo: Path
+    ) -> None:
+        """Two presets resolving to the same plugin name raise a naming error."""
+        duplicate = tmp_repo / "presets" / "python-api-copy"
+        duplicate.mkdir()
+        (duplicate / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "name": "python-api",
+                    "description": "Duplicate of python-api",
+                    "version": "1.0.0",
+                    "core": {"skills": "all", "hooks": ["protect-files.py"]},
+                    "exclude": [],
+                    "preset_skills": [],
+                    "preset_hooks": [],
+                }
+            )
+        )
+
+        with pytest.raises(ValueError, match="python-api-copy"):
+            build_marketplace(tmp_repo)
