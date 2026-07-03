@@ -131,7 +131,9 @@ def _generate_readme(manifest: dict, skills: list[str], agents: list[str]) -> st
 
     lines.append("## CLAUDE.md Template")
     lines.append("")
-    lines.append("Copy the following into your project's `CLAUDE.md` to reference this plugin:")
+    lines.append(
+        "Copy the following into your project's `CLAUDE.md` to reference this plugin:"
+    )
     lines.append("")
     lines.append("```")
     lines.append("# Project Name")
@@ -142,7 +144,9 @@ def _generate_readme(manifest: dict, skills: list[str], agents: list[str]) -> st
     lines.append("")
     lines.append("## Methodology")
     lines.append("")
-    lines.append("See plugin documentation for TDD, root cause tracing, and subagent development processes.")
+    lines.append(
+        "See plugin documentation for TDD, root cause tracing, and subagent development processes."
+    )
     lines.append("```")
     lines.append("")
 
@@ -170,9 +174,7 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     dist_path = root / "dist" / preset_name
 
     if not preset_path.exists():
-        raise BuildValidationError(
-            f"Preset '{preset_name}' not found at {preset_path}"
-        )
+        raise BuildValidationError(f"Preset '{preset_name}' not found at {preset_path}")
 
     manifest = json.loads((preset_path / "manifest.json").read_text())
     _validate_manifest(manifest, core_path, preset_path)
@@ -190,7 +192,9 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
         src = preset_path / "skills" / skill_name
         dest = dist_path / "skills" / skill_name
         if dest.exists():
-            print(f"WARNING: preset skill '{skill_name}' overrides core skill '{skill_name}'")
+            print(
+                f"WARNING: preset skill '{skill_name}' overrides core skill '{skill_name}'"
+            )
             shutil.rmtree(dest)
         shutil.copytree(src, dest)
 
@@ -213,7 +217,9 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
         src = preset_path / "agents" / agent_name
         dest = dist_path / "agents" / agent_name
         if dest.exists():
-            print(f"WARNING: preset agent '{agent_name}' overrides core agent '{agent_name}'")
+            print(
+                f"WARNING: preset agent '{agent_name}' overrides core agent '{agent_name}'"
+            )
             shutil.rmtree(dest)
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copytree(src, dest)
@@ -295,14 +301,18 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     agents_dir = dist_path / "agents"
     if agents_dir.exists():
         agent_names = [d.name for d in agents_dir.iterdir() if d.is_dir()]
-    (dist_path / "README.md").write_text(_generate_readme(manifest, skill_names, agent_names))
+    (dist_path / "README.md").write_text(
+        _generate_readme(manifest, skill_names, agent_names)
+    )
 
     # 10. Apply exclusions (paths are now relative to dist_path, not .claude/)
     for exclusion in manifest.get("exclude", []):
         excluded_path = (dist_path / exclusion).resolve()
         # Path containment check: ensure resolved path is within dist_path
         if not excluded_path.is_relative_to(dist_path.resolve()):
-            print(f"WARNING: exclusion '{exclusion}' resolves outside build directory, skipping")
+            print(
+                f"WARNING: exclusion '{exclusion}' resolves outside build directory, skipping"
+            )
             continue
         if excluded_path.exists():
             if excluded_path.is_dir():
@@ -319,7 +329,11 @@ if __name__ == "__main__":
         sys.exit(1)
 
     preset = sys.argv[1]
-    output = build_preset(preset)
+    try:
+        output = build_preset(preset)
+    except BuildValidationError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
     print(f"\nBuilt plugin '{preset}' -> {output}/")
     print(f"  {output}/.claude-plugin/plugin.json")
     print(f"  {output}/.codex-plugin/plugin.json")

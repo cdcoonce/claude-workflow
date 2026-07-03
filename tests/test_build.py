@@ -426,3 +426,30 @@ class TestSettingsMerge:
         assert len(data["hooks"]["PreToolUse"]) == 2
         assert data["hooks"]["PreToolUse"][0]["matcher"] == "Edit|Write"
         assert data["hooks"]["PreToolUse"][1]["matcher"] == "Bash"
+
+
+class TestBuildPresetCLI:
+    """Tests for the command-line interface."""
+
+    def test_cli_unknown_preset_prints_message_and_exits_nonzero(self) -> None:
+        import subprocess
+
+        result = subprocess.run(
+            ["uv", "run", "python", "-m", "scripts.build_preset", "nonexistent"],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode != 0
+        assert "Traceback" not in result.stderr
+        assert "not found" in result.stderr
+
+    def test_cli_successful_build_prints_summary_and_exits_zero(self) -> None:
+        import subprocess
+
+        result = subprocess.run(
+            ["uv", "run", "python", "-m", "scripts.build_preset", "python-api"],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+        assert "Built plugin 'python-api'" in result.stdout
