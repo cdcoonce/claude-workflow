@@ -29,6 +29,7 @@ See [.claude/docs/project.md](.claude/docs/project.md) for detailed project cont
 - SOLID, DRY, YAGNI — simplicity over complexity
 - Type hints on all function signatures
 - Numpy-style docstrings for public functions
+- Link/image validators (`markdown_analyzer.py` link/image checks, `smoke_test.py` link validation) must detect external/non-local URIs with the RFC-3986 scheme regex `^[a-z][a-z0-9+.-]*:` (case-insensitive), never a hardcoded scheme/prefix list — see [markdown-checks.md#uri-scheme-detection](core/skills/daa-code-review/references/markdown-checks.md#uri-scheme-detection) (PR #142)
 
 ## Planning
 

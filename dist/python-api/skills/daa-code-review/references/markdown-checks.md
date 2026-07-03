@@ -95,6 +95,37 @@ Image paths should point to existing files.
 **Severity:** ERROR  
 **Auto-fixable:** No
 
+### URI Scheme Detection
+
+MD052 and MD053 only flag genuinely broken relative links — before doing so
+they must first rule out anchors (`#section`), root-relative paths (`/path`),
+and external URIs (`https://...`, `mailto:...`, `tel:...`, etc.), none of
+which resolve against `base_path`.
+
+**Convention:** detect an external/non-local URI by matching the RFC-3986
+scheme grammar, never by enumerating known prefixes:
+
+```text
+^[a-z][a-z0-9+.-]*:      (case-insensitive)
+```
+
+Hardcoded prefix lists (e.g. `link.startswith(("http://", "https://", "mailto:"))`)
+are disallowed. An enumeration only covers the schemes someone thought to
+list, so every new scheme (`tel:`, `ftp:`, `slack:`, ...) requires a one-off
+follow-up fix instead of being handled automatically. PR #142 replaced such a
+list in the link check with the scheme regex for exactly this reason.
+
+This applies to every surface that decides "is this URL external or a local
+file reference," including:
+
+- `markdown_analyzer.py`'s link check (MD052) and image check (MD053)
+- `scripts/smoke_test.py`'s SKILL.md/AGENT.md link validation
+
+Anchors (`#...`), root-relative paths (`/...`), and links/images that fail
+the scheme match must still go through the existing relative-file-exists
+check — the scheme regex only rules out external URIs, it doesn't replace
+the broken-relative-link check itself.
+
 ## Formatting
 
 ### MD009 - Trailing Whitespace
