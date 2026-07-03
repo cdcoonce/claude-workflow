@@ -27,6 +27,27 @@ class BuildValidationError(Exception):
     """Raised when manifest validation fails."""
 
 
+def _copy_with_override(src: Path, dest: Path, *, kind: str) -> None:
+    """Copy src to dest, warning and replacing any existing dest (D19).
+
+    Parameters
+    ----------
+    src
+        Source directory to copy.
+    dest
+        Destination directory; removed first if it already exists.
+    kind
+        Human-readable label for the override warning (e.g. "skill", "agent").
+    """
+    if dest.exists():
+        print(
+            f"WARNING: preset {kind} '{dest.name}' overrides core {kind} '{dest.name}'"
+        )
+        shutil.rmtree(dest)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(src, dest)
+
+
 def _validate_manifest(
     manifest: dict,
     core_path: Path,
@@ -138,7 +159,9 @@ def _generate_readme(manifest: dict, skills: list[str], agents: list[str]) -> st
 
     lines.append("## CLAUDE.md Template")
     lines.append("")
-    lines.append("Copy the following into your project's `CLAUDE.md` to reference this plugin:")
+    lines.append(
+        "Copy the following into your project's `CLAUDE.md` to reference this plugin:"
+    )
     lines.append("")
     lines.append("```")
     lines.append("# Project Name")
@@ -149,7 +172,9 @@ def _generate_readme(manifest: dict, skills: list[str], agents: list[str]) -> st
     lines.append("")
     lines.append("## Methodology")
     lines.append("")
-    lines.append("See plugin documentation for TDD, root cause tracing, and subagent development processes.")
+    lines.append(
+        "See plugin documentation for TDD, root cause tracing, and subagent development processes."
+    )
     lines.append("```")
     lines.append("")
 
@@ -177,9 +202,7 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     dist_path = root / "dist" / preset_name
 
     if not preset_path.exists():
-        raise BuildValidationError(
-            f"Preset '{preset_name}' not found at {preset_path}"
-        )
+        raise BuildValidationError(f"Preset '{preset_name}' not found at {preset_path}")
 
     manifest = json.loads((preset_path / "manifest.json").read_text())
     _validate_manifest(manifest, core_path, preset_path)
@@ -202,10 +225,7 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     for skill_name in manifest.get("preset_skills", []):
         src = preset_path / "skills" / skill_name
         dest = dist_path / "skills" / skill_name
-        if dest.exists():
-            print(f"WARNING: preset skill '{skill_name}' overrides core skill '{skill_name}'")
-            shutil.rmtree(dest)
-        shutil.copytree(src, dest)
+        _copy_with_override(src, dest, kind="skill")
 
     # 3. Copy core agents -> agents/ (root level)
     core_agents_dir = core_path / "agents"
@@ -225,11 +245,7 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     for agent_name in manifest.get("preset_agents", []):
         src = preset_path / "agents" / agent_name
         dest = dist_path / "agents" / agent_name
-        if dest.exists():
-            print(f"WARNING: preset agent '{agent_name}' overrides core agent '{agent_name}'")
-            shutil.rmtree(dest)
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(src, dest)
+        _copy_with_override(src, dest, kind="agent")
 
     # 5. Copy agent-matching.md -> docs/ (only when the plugin ships agents;
     # an agent-less plugin -- e.g. a style-only persona -- has no use for it).
@@ -318,14 +334,18 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     agents_dir = dist_path / "agents"
     if agents_dir.exists():
         agent_names = [d.name for d in agents_dir.iterdir() if d.is_dir()]
-    (dist_path / "README.md").write_text(_generate_readme(manifest, skill_names, agent_names))
+    (dist_path / "README.md").write_text(
+        _generate_readme(manifest, skill_names, agent_names)
+    )
 
     # 11. Apply exclusions (paths are now relative to dist_path, not .claude/)
     for exclusion in manifest.get("exclude", []):
         excluded_path = (dist_path / exclusion).resolve()
         # Path containment check: ensure resolved path is within dist_path
         if not excluded_path.is_relative_to(dist_path.resolve()):
-            print(f"WARNING: exclusion '{exclusion}' resolves outside build directory, skipping")
+            print(
+                f"WARNING: exclusion '{exclusion}' resolves outside build directory, skipping"
+            )
             continue
         if excluded_path.exists():
             if excluded_path.is_dir():
