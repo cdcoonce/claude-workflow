@@ -30,6 +30,32 @@ See [.claude/docs/project.md](.claude/docs/project.md) for detailed project cont
 - Type hints on all function signatures
 - Numpy-style docstrings for public functions
 
+### Frontmatter/YAML parsing
+
+Prefer a real YAML parser (e.g. `PyYAML`) over hand-rolled line-based parsing
+whenever one is available. When a dependency-free, line-based parser is
+unavoidable (e.g. `scripts/smoke_test.py::_parse_frontmatter`, or any
+frontmatter validation logic added to the daa-code-review skill), it must
+correctly handle:
+
+- **Block scalars** — `>` (folded) and `|` (literal), including chomping
+  (`-`, `+`) and explicit indentation indicators (e.g. `>-`, `|2`). The
+  indicator character itself must never be stored as the parsed value.
+- **Quoted values** — surrounding `'single'` or `"double"` quotes must be
+  stripped from scalar values.
+- **Comments** — full-line and inline `#` comments must be stripped, without
+  treating a `#` inside a quoted value or a folded block-scalar line as a
+  comment.
+
+Any change that adds or modifies a hand-rolled frontmatter parser must
+include a folded/block-scalar test case (e.g. `description: >` followed by
+wrapped, colon-containing lines) exercising these behaviors.
+
+Context: in PR #105, `_parse_frontmatter`'s original block-scalar handling
+stored the literal `>` indicator as the value instead of the folded text,
+and a folded line containing a colon was misparsed as a nested sub-key — a
+follow-up commit was required to fix both.
+
 ## Planning
 
 Write plans to `docs/plans/{file_name}.md`. Archive completed plans to `docs/archive/`.
