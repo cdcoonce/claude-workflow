@@ -208,6 +208,21 @@ class TestMarkdownAnalyzerImages:
             md056_issues = [i for i in result.issues if i.rule_id == "MD056"]
             assert len(md056_issues) == 1
 
+    def test_root_relative_image_is_not_broken_image(self):
+        """Test that root-relative image paths are not checked as local files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            md_file = tmppath / "test.md"
+            md_file.write_text(
+                "# Title\n\n![Logo](/assets/logo.png)\n![Missing](missing.png)\n"
+            )
+
+            result = analyze_markdown_file(md_file)
+
+            md056_issues = [i for i in result.issues if i.rule_id == "MD056"]
+            assert len(md056_issues) == 1
+            assert "missing.png" in md056_issues[0].message
+
 
 class TestMarkdownAnalyzerReferenceLinks:
     """Tests for reference link analysis."""
