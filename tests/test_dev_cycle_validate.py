@@ -146,6 +146,20 @@ class TestValidateStateFile:
         assert not result.passed
         assert any("current_phase" in e for e in result.errors)
 
+    def test_below_minimum_schema_version_fails(self, tmp_path: Path) -> None:
+        # schema_version 0 (or negative) is not a real version — the only valid
+        # value is 1 — so it must be rejected, not pass silently (#127).
+        path = self._write_state_file(tmp_path, schema_version="0")
+        result = validate_state_file(path)
+        assert not result.passed
+        assert any("schema_version" in e for e in result.errors)
+
+    def test_negative_schema_version_fails(self, tmp_path: Path) -> None:
+        path = self._write_state_file(tmp_path, schema_version="-1")
+        result = validate_state_file(path)
+        assert not result.passed
+        assert any("schema_version" in e for e in result.errors)
+
     def _write_state_with_artifact(
         self, tmp_path: Path, *, status: str, artifact: str = "docs/x.md"
     ) -> Path:

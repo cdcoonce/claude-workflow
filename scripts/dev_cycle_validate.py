@@ -174,6 +174,11 @@ def _validate_parsed_state(state: StateFile) -> list[str]:
             f"Unsupported schema_version {state.schema_version} "
             f"in {name} (max supported: {CURRENT_SCHEMA_VERSION})"
         )
+    elif state.schema_version < 1:
+        errors.append(
+            f"Unsupported schema_version {state.schema_version} "
+            f"in {name} (minimum supported: 1)"
+        )
 
     if state.status not in VALID_STATUSES:
         errors.append(

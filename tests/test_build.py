@@ -312,6 +312,19 @@ class TestBuildPluginReadme:
         content = readme.read_text()
         assert "Python backend services" in content
 
+    def test_excluded_skill_absent_from_readme(self, tmp_repo: Path) -> None:
+        # Exclusions must apply BEFORE the README scan, so an excluded skill is not
+        # listed in a README for output that no longer contains it (#122).
+        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["exclude"] = ["skills/daa-code-review"]
+        manifest_path.write_text(json.dumps(manifest))
+
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        assert not (dist / "skills" / "daa-code-review").exists()
+        assert "daa-code-review" not in (dist / "README.md").read_text()
+
     def test_readme_contains_claude_md_template_section(self, tmp_repo: Path) -> None:
         build_preset("python-api", repo_root=tmp_repo)
         readme = tmp_repo / "dist" / "python-api" / "README.md"

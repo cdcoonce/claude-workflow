@@ -338,20 +338,11 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
         json.dumps(codex_plugin_json, indent=2) + "\n"
     )
 
-    # 10. Generate README.md
-    skill_names = []
-    skills_dir = dist_path / "skills"
-    if skills_dir.exists():
-        skill_names = [d.name for d in skills_dir.iterdir() if d.is_dir()]
-    agent_names = []
-    agents_dir = dist_path / "agents"
-    if agents_dir.exists():
-        agent_names = [d.name for d in agents_dir.iterdir() if d.is_dir()]
-    (dist_path / "README.md").write_text(
-        _generate_readme(manifest, skill_names, agent_names)
-    )
-
-    # 11. Apply exclusions (paths are now relative to dist_path, not .claude/)
+    # 10. Apply exclusions BEFORE the README scan, so the skill/agent listings
+    # reflect the final built output — an excluded dir must not appear in the
+    # generated README (#122). Paths are relative to dist_path, not .claude/.
+    # Steps 7-9 (settings/hooks/plugin.json) read the manifest, not the dist tree,
+    # so applying exclusions here does not affect them.
     for exclusion in manifest.get("exclude", []):
         excluded_path = (dist_path / exclusion).resolve()
         # Path containment check: ensure resolved path is within dist_path
@@ -367,6 +358,25 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
                 excluded_path.unlink()
         else:
             print(f"WARNING: exclusion '{exclusion}' did not match anything, skipping")
+
+    # 11. Generate README.md (scans the post-exclusion dist tree), unless README.md
+    # is itself excluded — exclusions already ran, so generating it here would undo
+    # a README-targeting exclusion.
+    excluded_paths = {
+        (dist_path / exclusion).resolve() for exclusion in manifest.get("exclude", [])
+    }
+    if (dist_path / "README.md").resolve() not in excluded_paths:
+        skill_names = []
+        skills_dir = dist_path / "skills"
+        if skills_dir.exists():
+            skill_names = [d.name for d in skills_dir.iterdir() if d.is_dir()]
+        agent_names = []
+        agents_dir = dist_path / "agents"
+        if agents_dir.exists():
+            agent_names = [d.name for d in agents_dir.iterdir() if d.is_dir()]
+        (dist_path / "README.md").write_text(
+            _generate_readme(manifest, skill_names, agent_names)
+        )
 
     return dist_path
 
