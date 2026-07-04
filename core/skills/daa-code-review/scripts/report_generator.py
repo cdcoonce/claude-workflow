@@ -7,6 +7,7 @@ from code review analysis results.
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, TextIO
+import os
 import sys
 
 from models import (
@@ -40,6 +41,9 @@ def supports_color() -> bool:
     bool
         True if color is supported, False otherwise.
     """
+    # NO_COLOR (https://no-color.org): set to ANY value (incl. empty) disables color.
+    if os.environ.get("NO_COLOR") is not None:
+        return False
     if not hasattr(sys.stdout, "isatty"):
         return False
     if not sys.stdout.isatty():

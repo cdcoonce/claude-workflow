@@ -133,6 +133,15 @@ class TestRuleMapping:
         assert get_severity_for_rule("W291") == Severity.INFO
         assert get_severity_for_rule("D100") == Severity.INFO
 
+    def test_complexity_severity(self):
+        """C90x mccabe-complexity rules map to INFO via the 'C90' prefix (#130).
+
+        The digit-stripped prefix 'C' is not in the map, so the full prefix must
+        be tried first — previously this fell through to WARNING and the 'C90'
+        map entry was dead code.
+        """
+        assert get_severity_for_rule("C901") == Severity.INFO
+
     def test_unknown_rule_defaults(self):
         """Test that unknown rules get sensible defaults."""
         assert get_category_for_rule("UNKNOWN123") == IssueCategory.PEP8

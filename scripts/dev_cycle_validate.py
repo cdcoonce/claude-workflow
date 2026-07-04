@@ -1,7 +1,9 @@
 """Dev cycle state file parser and validator.
 
-Parses YAML frontmatter from dev-cycle state files and validates
-schema integrity, phase transitions, and artifact completeness.
+Parses YAML frontmatter from dev-cycle state files and validates schema_version
+bounds, status/current_phase membership, feature-slug/filename agreement,
+artifact completeness, and duplicate-slug detection across a directory. It does
+not validate phase transitions.
 """
 from __future__ import annotations
 

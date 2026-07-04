@@ -31,7 +31,39 @@ from report_generator import (
     severity_color,
     severity_emoji,
     severity_symbol,
+    supports_color,
 )
+
+
+class _FakeTTY:
+    def isatty(self) -> bool:
+        return True
+
+
+class TestSupportsColor:
+    """supports_color honors NO_COLOR (#128, https://no-color.org)."""
+
+    def test_no_color_env_disables_color_even_on_tty(self, monkeypatch):
+        import report_generator
+
+        monkeypatch.setattr(report_generator.sys, "stdout", _FakeTTY())
+        monkeypatch.setenv("NO_COLOR", "1")
+        assert supports_color() is False
+
+    def test_no_color_empty_value_still_disables(self, monkeypatch):
+        # The spec: NO_COLOR set to ANY value (including empty) disables color.
+        import report_generator
+
+        monkeypatch.setattr(report_generator.sys, "stdout", _FakeTTY())
+        monkeypatch.setenv("NO_COLOR", "")
+        assert supports_color() is False
+
+    def test_tty_without_no_color_keeps_color(self, monkeypatch):
+        import report_generator
+
+        monkeypatch.setattr(report_generator.sys, "stdout", _FakeTTY())
+        monkeypatch.delenv("NO_COLOR", raising=False)
+        assert supports_color() is True
 
 
 class TestColorHelpers:

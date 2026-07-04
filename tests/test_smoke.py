@@ -628,3 +628,27 @@ class TestSmokeSettingsJson:
         result = smoke_test(dist)
         assert result.passed is False
         assert any("settings.json" in e for e in result.errors)
+
+
+class TestDocLinkTitles:
+    """Optional markdown link titles must not break link validation (#123)."""
+
+    def test_link_with_title_to_existing_file_passes(self, tmp_path: Path) -> None:
+        from scripts.smoke_test import _validate_doc_links
+
+        (tmp_path / "s").mkdir()
+        (tmp_path / "s" / "ref.md").write_text("x")
+        (tmp_path / "s" / "SKILL.md").write_text('[text](./ref.md "A Title")\n')
+        assert _validate_doc_links(tmp_path, "SKILL.md", "Skill") == []
+
+    def test_link_with_title_to_missing_file_reports_path_only(
+        self, tmp_path: Path
+    ) -> None:
+        from scripts.smoke_test import _validate_doc_links
+
+        (tmp_path / "s").mkdir()
+        (tmp_path / "s" / "SKILL.md").write_text('[text](./missing.md "A Title")\n')
+        errors = _validate_doc_links(tmp_path, "SKILL.md", "Skill")
+        assert len(errors) == 1
+        assert "./missing.md" in errors[0]
+        assert "A Title" not in errors[0]  # error names the path, not the title

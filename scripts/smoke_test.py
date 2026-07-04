@@ -74,7 +74,12 @@ def _validate_doc_links(docs_dir: Path, doc_filename: str, label: str) -> list[s
             line_num = doc_content.count("\n", 0, match.start())
             if line_num in fenced_lines:
                 continue
-            link_target = match.group(2)
+            link_target = match.group(2).strip()
+            # Strip an optional markdown link title — [text](path "Title") — keeping
+            # only the path token. Skip when the path is quote-wrapped, since such a
+            # path may legitimately contain spaces.
+            if link_target and not link_target.startswith(("'", '"')):
+                link_target = link_target.split(None, 1)[0]
             if link_target.startswith(_LINK_SKIP_PREFIXES) or _URI_SCHEME_PATTERN.match(
                 link_target
             ):
