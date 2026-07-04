@@ -30,6 +30,58 @@ VALID_ROLES = (
     "strategy",
 )
 
+# Link prefixes that are not intra-doc relative paths and should be skipped
+# during link resolution (external URLs, anchors, project-root-relative paths).
+_LINK_SKIP_PREFIXES = ("http://", "https://", "#", ".claude/")
+
+_LINK_PATTERN = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+
+
+def _validate_doc_links(docs_dir: Path, doc_filename: str, label: str) -> list[str]:
+    """Validate that relative links in doc files resolve to existing files.
+
+    Parameters
+    ----------
+    docs_dir
+        Root directory to search recursively for doc files (e.g., skills/).
+    doc_filename
+        Name of the doc file to look for (e.g., "SKILL.md").
+    label
+        Human-readable label used in error messages (e.g., "Skill").
+
+    Returns
+    -------
+    list[str]
+        Error strings for any links that fail to resolve.
+    """
+    errors: list[str] = []
+    for doc_md in docs_dir.rglob(doc_filename):
+        doc_content = doc_md.read_text(encoding="utf-8")
+        in_fence = False
+        fenced_lines: set[int] = set()
+        for line_num, line in enumerate(doc_content.split("\n")):
+            if line.strip().startswith("```"):
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                fenced_lines.add(line_num)
+
+        for match in _LINK_PATTERN.finditer(doc_content):
+            line_num = doc_content.count("\n", 0, match.start())
+            if line_num in fenced_lines:
+                continue
+            link_target = match.group(2)
+            if link_target.startswith(_LINK_SKIP_PREFIXES):
+                continue
+            resolved = (doc_md.parent / link_target).resolve()
+            if not resolved.exists():
+                doc_name = doc_md.parent.name
+                errors.append(
+                    f"{label} '{doc_name}/{doc_filename}' links to "
+                    f"'{link_target}' but file not found"
+                )
+    return errors
+
 
 @dataclass
 class SmokeTestResult:
@@ -257,39 +309,12 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
                             )
 
     # 5. Validate intra-skill reference links in SKILL.md files
-    link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
     if skills_dir.exists():
-        for skill_md in skills_dir.rglob("SKILL.md"):
-            skill_content = skill_md.read_text(encoding="utf-8")
-            for match in link_pattern.finditer(skill_content):
-                link_target = match.group(2)
-                # Skip external URLs, anchors, and project-root-relative paths
-                if link_target.startswith(("http://", "https://", "#", ".claude/")):
-                    continue
-                resolved = (skill_md.parent / link_target).resolve()
-                if not resolved.exists():
-                    skill_name = skill_md.parent.name
-                    result.errors.append(
-                        f"Skill '{skill_name}/SKILL.md' links to "
-                        f"'{link_target}' but file not found"
-                    )
+        result.errors.extend(_validate_doc_links(skills_dir, "SKILL.md", "Skill"))
 
     # 5b. Validate intra-agent reference links in AGENT.md files
     if agents_dir.exists():
-        for agent_md in agents_dir.rglob("AGENT.md"):
-            agent_content = agent_md.read_text(encoding="utf-8")
-            for match in link_pattern.finditer(agent_content):
-                link_target = match.group(2)
-                # Skip external URLs, anchors, and project-root-relative paths
-                if link_target.startswith(("http://", "https://", "#", ".claude/")):
-                    continue
-                resolved = (agent_md.parent / link_target).resolve()
-                if not resolved.exists():
-                    agent_name = agent_md.parent.name
-                    result.errors.append(
-                        f"Agent '{agent_name}/AGENT.md' links to "
-                        f"'{link_target}' but file not found"
-                    )
+        result.errors.extend(_validate_doc_links(agents_dir, "AGENT.md", "Agent"))
 
     # 6. Validate settings.json is valid JSON
     settings_path = dist_path / "settings.json"

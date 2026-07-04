@@ -360,6 +360,25 @@ class TestBuildExclusions:
         build_preset("python-api", repo_root=tmp_repo)
         assert (tmp_repo / "dist" / "python-api").exists()
 
+    def test_exclusion_sibling_prefix_not_treated_as_contained(
+        self, tmp_repo: Path
+    ) -> None:
+        """A sibling dir sharing dist_path's name as a prefix must not pass the
+        containment check (a string startswith check would wrongly allow it)."""
+        sibling = tmp_repo / "dist" / "python-api-evil"
+        sibling.mkdir(parents=True)
+        sentinel = sibling / "x"
+        sentinel.write_text("do not delete")
+
+        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["exclude"] = ["../python-api-evil/x"]
+        manifest_path.write_text(json.dumps(manifest))
+
+        build_preset("python-api", repo_root=tmp_repo)
+        assert sentinel.exists()
+        assert sentinel.read_text() == "do not delete"
+
 
 class TestBuildPresetAgentValidation:
     """Validation for preset agents."""
