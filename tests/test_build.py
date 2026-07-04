@@ -278,6 +278,35 @@ class TestBuildPluginSettings:
         data = json.loads(settings.read_text())
         assert "hooks" not in data
 
+    def test_non_hook_preset_key_reaches_root_settings(self, tmp_repo: Path) -> None:
+        """Non-hook top-level preset keys (e.g. env) carry through to settings.json."""
+        preset_settings = tmp_repo / "presets" / "python-api" / "settings-preset.json"
+        preset_settings.write_text(
+            json.dumps(
+                {
+                    "hooks": {
+                        "PostToolUse": [
+                            {
+                                "matcher": "Edit|Write",
+                                "hooks": [
+                                    {
+                                        "type": "command",
+                                        "command": 'python3 "$CLAUDE_PLUGIN_ROOT"/hooks/scripts/post-edit-lint.py',
+                                    }
+                                ],
+                            }
+                        ]
+                    },
+                    "env": {"FOO": "bar"},
+                }
+            )
+        )
+
+        build_preset("python-api", repo_root=tmp_repo)
+        settings = tmp_repo / "dist" / "python-api" / "settings.json"
+        data = json.loads(settings.read_text())
+        assert data["env"] == {"FOO": "bar"}
+
 
 class TestBuildPluginReadme:
     """README.md is generated with plugin info."""
