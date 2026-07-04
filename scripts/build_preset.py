@@ -30,7 +30,9 @@ class BuildValidationError(Exception):
 def _copy_with_override(src: Path, dest: Path, *, kind: str) -> None:
     """Copy src to dest, warning and replacing dest if it already exists (D19)."""
     if dest.exists():
-        print(f"WARNING: preset {kind} '{dest.name}' overrides core {kind} '{dest.name}'")
+        print(
+            f"WARNING: preset {kind} '{dest.name}' overrides core {kind} '{dest.name}'"
+        )
         shutil.rmtree(dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(src, dest)
@@ -62,6 +64,16 @@ def _validate_manifest(
         for skill_name in core_skills:
             if not (core_path / "skills" / skill_name).exists():
                 errors.append(f"Core skill not found: {skill_name}")
+    elif core_skills != "all":
+        errors.append(
+            f"core.skills must be 'all' or a list of skill names, got: {core_skills!r}"
+        )
+
+    core_agents = manifest["core"].get("agents", "all")
+    if not isinstance(core_agents, list) and core_agents != "all":
+        errors.append(
+            f"core.agents must be 'all' or a list of agent names, got: {core_agents!r}"
+        )
 
     for skill_name in manifest.get("preset_skills", []):
         if not (preset_path / "skills" / skill_name).exists():
@@ -156,7 +168,9 @@ def _generate_readme(manifest: dict, skills: list[str], agents: list[str]) -> st
 
     lines.append("## CLAUDE.md Template")
     lines.append("")
-    lines.append("Copy the following into your project's `CLAUDE.md` to reference this plugin:")
+    lines.append(
+        "Copy the following into your project's `CLAUDE.md` to reference this plugin:"
+    )
     lines.append("")
     lines.append("```")
     lines.append("# Project Name")
@@ -167,7 +181,9 @@ def _generate_readme(manifest: dict, skills: list[str], agents: list[str]) -> st
     lines.append("")
     lines.append("## Methodology")
     lines.append("")
-    lines.append("See plugin documentation for TDD, root cause tracing, and subagent development processes.")
+    lines.append(
+        "See plugin documentation for TDD, root cause tracing, and subagent development processes."
+    )
     lines.append("```")
     lines.append("")
 
@@ -195,9 +211,7 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     dist_path = root / "dist" / preset_name
 
     if not preset_path.exists():
-        raise BuildValidationError(
-            f"Preset '{preset_name}' not found at {preset_path}"
-        )
+        raise BuildValidationError(f"Preset '{preset_name}' not found at {preset_path}")
 
     manifest = json.loads((preset_path / "manifest.json").read_text())
     _validate_manifest(manifest, core_path, preset_path)
@@ -329,14 +343,18 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     agents_dir = dist_path / "agents"
     if agents_dir.exists():
         agent_names = [d.name for d in agents_dir.iterdir() if d.is_dir()]
-    (dist_path / "README.md").write_text(_generate_readme(manifest, skill_names, agent_names))
+    (dist_path / "README.md").write_text(
+        _generate_readme(manifest, skill_names, agent_names)
+    )
 
     # 11. Apply exclusions (paths are now relative to dist_path, not .claude/)
     for exclusion in manifest.get("exclude", []):
         excluded_path = (dist_path / exclusion).resolve()
         # Path containment check: ensure resolved path is within dist_path
         if not excluded_path.is_relative_to(dist_path.resolve()):
-            print(f"WARNING: exclusion '{exclusion}' resolves outside build directory, skipping")
+            print(
+                f"WARNING: exclusion '{exclusion}' resolves outside build directory, skipping"
+            )
             continue
         if excluded_path.exists():
             if excluded_path.is_dir():
