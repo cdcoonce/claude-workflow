@@ -376,6 +376,42 @@ class TestSmokeIntraSkillLinks:
             "test-skill/SKILL.md" in e and "nonexistent.md" in e for e in result.errors
         )
 
+    def test_anchored_cross_doc_link_passes(self, tmp_repo: Path) -> None:
+        """A link with a #fragment resolves against the file portion only."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "test-skill"
+        skill_dir.mkdir(parents=True)
+        refs_dir = skill_dir / "references"
+        refs_dir.mkdir()
+        (refs_dir / "guide.md").write_text("# Guide\n")
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\n"
+            "See [guide](references/guide.md#section) for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
+
+    def test_anchored_link_to_missing_file_fails(self, tmp_repo: Path) -> None:
+        """The #fragment doesn't hide a missing file portion."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "test-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\n"
+            "See [missing](references/nonexistent.md#section) for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is False
+        assert any(
+            "test-skill/SKILL.md" in e and "nonexistent.md" in e for e in result.errors
+        )
+
 
 class TestSmokeIntraAgentLinks:
     """Smoke test validates intra-agent reference links."""
@@ -415,6 +451,24 @@ class TestSmokeIntraAgentLinks:
         assert any(
             "test-agent/AGENT.md" in e and "nonexistent.md" in e for e in result.errors
         )
+
+    def test_anchored_cross_doc_link_passes(self, tmp_repo: Path) -> None:
+        """A link with a #fragment resolves against the file portion only."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        agent_dir = dist / "agents" / "test-agent"
+        agent_dir.mkdir(parents=True)
+        refs_dir = agent_dir / "references"
+        refs_dir.mkdir()
+        (refs_dir / "spec.md").write_text("# Spec\n")
+        (agent_dir / "AGENT.md").write_text(
+            "---\nname: test-agent\ndescription: test\nrole: implementer\n---\n\n"
+            "See [spec](references/spec.md#section) for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
 
     def test_external_links_skipped(self, tmp_repo: Path) -> None:
         build_preset("python-api", repo_root=tmp_repo)
