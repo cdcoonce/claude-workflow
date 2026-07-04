@@ -1,0 +1,28 @@
+# AFK config — read-only producers (F0) on claude-workflow (afk's dev-cycle foundation).
+# Executor stays OFF until a green gate is confirmed; scout is read-only.
+test_command = "uv run --with pytest python -m pytest -q"
+permission_mode = "acceptEdits"
+
+# Integration posture (2026-06-15): promoted to F2 — slices merge-queue onto a
+# standing afk/staging branch and surface as ONE staging→main integration PR.
+# auto_promote stays OFF: staging→main is Charles's deliberate human gate. This
+# repo is load-bearing estate infra, so the consolidated MR still gets a full
+# human review. allow_f2_to_main left at default (false): never silently land on main.
+autonomy_frontier = "F2"
+integration_target = "afk/staging"
+auto_promote = false
+
+agent_prompt = """Implement the linked GitHub issue using test-driven development \
+(red-green-refactor). Keep changes minimal and scoped to the issue's acceptance \
+criteria. Match the surrounding code style."""
+
+[caps]
+max_retries = 2
+timeout_seconds = 1800
+max_run_cost_usd = 15.0  # circuit-breaker: stop the drain if a run's cumulative cost exceeds this (unattended-F2 safety)
+
+# Scheduled --cycle: read-only producers only (no executor seeded here),
+# so each pass files scout proposals + harvests prompt-rules from merged-PR
+# review comments. Pure proposal/telemetry data; zero containment exposure.
+[cycle]
+producers = ["scout", "harvest"]
