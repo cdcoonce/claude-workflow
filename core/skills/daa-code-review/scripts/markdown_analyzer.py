@@ -548,8 +548,10 @@ class MarkdownAnalyzer:
                 )
 
             # Check for broken image links
-            if self.base_path and not image_url.startswith(
-                ("http://", "https://", "data:")
+            if (
+                self.base_path
+                and not image_url.startswith(("http://", "https://", "data:"))
+                and not image_url.startswith("/")
             ):
                 target_path = self.base_path / image_url
                 if not target_path.exists():
