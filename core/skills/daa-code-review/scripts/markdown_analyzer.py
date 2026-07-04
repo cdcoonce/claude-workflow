@@ -29,10 +29,8 @@ IMAGE_PATTERN = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
 REFERENCE_LINK_PATTERN = re.compile(r"\[([^\]]+)\]\[([^\]]*)\]")
 REFERENCE_DEF_PATTERN = re.compile(r"^\[([^\]]+)\]:\s*(.+)$", re.MULTILINE)
 CODE_BLOCK_PATTERN = re.compile(r"```(\w*)\n(.*?)```", re.DOTALL)
-INLINE_CODE_PATTERN = re.compile(r"`([^`]+)`")
 TRAILING_WHITESPACE_PATTERN = re.compile(r"[ \t]+$", re.MULTILINE)
 MULTIPLE_BLANK_LINES_PATTERN = re.compile(r"\n{3,}")
-DUPLICATE_HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
 
 
 # UTF-8 encoding corruption patterns
