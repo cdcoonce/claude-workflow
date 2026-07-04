@@ -7,6 +7,7 @@ import pytest
 
 from scripts.dev_cycle_validate import StateFile, parse_state_file, ValidationResult, validate_state_file
 from scripts.dev_cycle_validate import validate_directory
+from scripts.dev_cycle_validate import _parse_artifacts
 
 
 class TestParseStateFile:
@@ -209,6 +210,17 @@ updated: 2026-03-21
         path.write_text(content)
         result = validate_state_file(path)
         assert result.passed
+
+
+class TestParseArtifactsSkipsHeaderAndSeparator:
+    """Header and separator rows must never become ArtifactRow entries."""
+
+    def test_header_and_separator_rows_yield_no_artifacts(self) -> None:
+        text = (
+            "| Phase       | Status      | Artifact                               |\n"
+            "| ----------- | ----------- | -------------------------------------- |\n"
+        )
+        assert _parse_artifacts(text) == []
 
 
 class TestValidateDirectory:

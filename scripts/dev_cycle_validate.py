@@ -71,8 +71,6 @@ def _parse_artifacts(text: str) -> list[ArtifactRow]:
         phase = match.group(1)
         status = match.group(2)
         artifact = match.group(3).strip()
-        if phase in ("Phase", "---") or status in ("Status", "---"):
-            continue
         if phase not in VALID_PHASES:
             continue
         rows.append(ArtifactRow(phase=phase, status=status, artifact=artifact))
