@@ -4,9 +4,9 @@ This file is auto-loaded every conversation. It defines how Claude should work i
 
 ## What This Repo Is
 
-A template system for Claude Code plugin configurations. It builds self-contained plugin directories (with `.claude-plugin/plugin.json`, skills, agents, hooks, and settings) for new projects.
+A template system for coding-agent plugin configurations, targeting Claude Code, Codex, and Cortex Code (CoCo) as first-class outputs. It builds self-contained plugin directories (manifests, skills, agents, hooks, and settings) for new projects.
 
-See [.claude/docs/project.md](.claude/docs/project.md) for detailed project context (tech stack, data flow, architecture patterns).
+See [ROADMAP.md](ROADMAP.md) for the multi-platform goal and design principle, [COMPATIBILITY.md](COMPATIBILITY.md) for per-platform requirements, and [.claude/docs/project.md](.claude/docs/project.md) for detailed project context (tech stack, data flow, architecture patterns).
 
 ## Architecture
 
