@@ -73,7 +73,10 @@ def _validate_doc_links(docs_dir: Path, doc_filename: str, label: str) -> list[s
             link_target = match.group(2)
             if link_target.startswith(_LINK_SKIP_PREFIXES):
                 continue
-            resolved = (doc_md.parent / link_target).resolve()
+            file_part = re.split(r"[#?]", link_target, maxsplit=1)[0]
+            if not file_part:
+                continue
+            resolved = (doc_md.parent / file_part).resolve()
             if not resolved.exists():
                 doc_name = doc_md.parent.name
                 errors.append(
