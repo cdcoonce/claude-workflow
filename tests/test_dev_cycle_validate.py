@@ -158,6 +158,23 @@ class TestValidateStateFile:
         assert result.passed
         assert any("schema_version" in w for w in result.warnings)
 
+    def test_validate_state_file_reads_file_only_once(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Guards against re-reading the file to check for schema_version."""
+        path = self._write_state_file(tmp_path, schema_version="")
+        read_calls: list[Path] = []
+        original_read_text = Path.read_text
+
+        def counting_read_text(self: Path, *args: object, **kwargs: object) -> str:
+            if self == path:
+                read_calls.append(self)
+            return original_read_text(self, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "read_text", counting_read_text)
+        validate_state_file(path)
+        assert len(read_calls) == 1
+
     def test_feature_slug_mismatch_fails(self, tmp_path: Path) -> None:
         """Feature slug must match the filename."""
         path = self._write_state_file(tmp_path, feature="wrong-name")
