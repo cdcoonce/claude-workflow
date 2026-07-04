@@ -31,12 +31,15 @@ def cmd_install(args: argparse.Namespace) -> int:
     target = _resolve_target(scope)
 
     if args.agent:
-        adapter = get_adapter(args.agent) if args.agent in adapter_names() else None
+        if args.agent not in adapter_names():
+            print(f"unknown agent {args.agent!r}. known: {adapter_names()}")
+            return 2
+        adapter = get_adapter(args.agent)
     else:
         adapter = detect_adapter(target)
-    if adapter is None:
-        print(f"no supported agent detected/selected. known: {adapter_names()}")
-        return 2
+        if adapter is None:
+            print(f"no supported agent detected/selected. known: {adapter_names()}")
+            return 2
 
     try:
         bundle = Bundle.load(PRESETS_ROOT, args.preset)
