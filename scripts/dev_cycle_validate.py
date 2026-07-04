@@ -3,6 +3,7 @@
 Parses YAML frontmatter from dev-cycle state files and validates
 schema integrity, phase transitions, and artifact completeness.
 """
+
 from __future__ import annotations
 
 import re
@@ -10,8 +11,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 VALID_PHASES = (
-    "brainstorm", "plan", "ceo_review", "issues",
-    "implement", "code_review", "pr",
+    "brainstorm",
+    "plan",
+    "ceo_review",
+    "issues",
+    "implement",
+    "code_review",
+    "pr",
 )
 VALID_STATUSES = ("not_started", "in_progress", "completed", "abandoned")
 VALID_ARTIFACT_STATUSES = ("pending", "in_progress", "completed", "blocked")
@@ -108,9 +114,7 @@ def parse_state_file(path: Path) -> StateFile:
 
     for req in REQUIRED_FIELDS:
         if req not in raw_fields:
-            raise ValueError(
-                f"Missing required field '{req}' in {path.name}"
-            )
+            raise ValueError(f"Missing required field '{req}' in {path.name}")
 
     had_schema_version = "schema_version" in raw_fields
     if not had_schema_version:
@@ -172,6 +176,11 @@ def _validate_parsed_state(state: StateFile) -> list[str]:
             f"Unsupported schema_version {state.schema_version} "
             f"in {name} (max supported: {CURRENT_SCHEMA_VERSION})"
         )
+    elif state.schema_version < 1:
+        errors.append(
+            f"Unsupported schema_version {state.schema_version} "
+            f"in {name} (minimum supported: 1)"
+        )
 
     if state.status not in VALID_STATUSES:
         errors.append(
@@ -195,8 +204,7 @@ def _validate_parsed_state(state: StateFile) -> list[str]:
     for row in state.artifacts:
         if row.status == "completed" and row.artifact in _EMPTY_ARTIFACT_MARKERS:
             errors.append(
-                f"Phase '{row.phase}' is completed but has no artifact "
-                f"in {name}"
+                f"Phase '{row.phase}' is completed but has no artifact in {name}"
             )
 
     return errors
@@ -288,7 +296,9 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) != 2:
-        print("Usage: uv run python -m scripts.dev_cycle_validate <dev-cycle-directory>")
+        print(
+            "Usage: uv run python -m scripts.dev_cycle_validate <dev-cycle-directory>"
+        )
         print("  Validates all *.state.md files in the given directory.")
         sys.exit(1)
 
