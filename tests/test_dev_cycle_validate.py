@@ -1,11 +1,12 @@
 """Tests for dev_cycle_validate — state file parser and validator."""
+
 from __future__ import annotations
 
 from pathlib import Path
 
 import pytest
 
-from scripts.dev_cycle_validate import StateFile, parse_state_file, ValidationResult, validate_state_file
+from scripts.dev_cycle_validate import parse_state_file, validate_state_file
 from scripts.dev_cycle_validate import validate_directory
 from scripts.dev_cycle_validate import _parse_artifacts
 
@@ -110,9 +111,7 @@ updated: 2026-03-21
 class TestValidateStateFile:
     """Tests for field value validation."""
 
-    def _write_state_file(
-        self, tmp_path: Path, **overrides: str
-    ) -> Path:
+    def _write_state_file(self, tmp_path: Path, **overrides: str) -> Path:
         """Helper: write a valid state file, then override specific fields."""
         defaults = {
             "schema_version": "1",
@@ -169,13 +168,36 @@ class TestValidateStateFile:
         assert not result.passed
         assert any("filename" in e for e in result.errors)
 
+    def test_no_frontmatter_fails_without_raising(self, tmp_path: Path) -> None:
+        """A parse-time ValueError must be caught and returned as an error."""
+        state_file = tmp_path / "bad.state.md"
+        state_file.write_text("# No frontmatter here\n")
+
+        result = validate_state_file(state_file)
+
+        assert result.passed is False
+        assert any("frontmatter" in e for e in result.errors)
+
+    def test_missing_required_field_fails_without_raising(self, tmp_path: Path) -> None:
+        content = """\
+---
+schema_version: 1
+feature: dark-mode-toggle
+---
+"""
+        state_file = tmp_path / "incomplete.state.md"
+        state_file.write_text(content)
+
+        result = validate_state_file(state_file)
+
+        assert result.passed is False
+        assert any("Missing required field" in e for e in result.errors)
+
 
 class TestArtifactCompleteness:
     """Completed phases must have non-empty artifacts."""
 
-    def test_completed_phase_without_artifact_fails(
-        self, tmp_path: Path
-    ) -> None:
+    def test_completed_phase_without_artifact_fails(self, tmp_path: Path) -> None:
         content = """\
 ---
 schema_version: 1
@@ -201,9 +223,7 @@ updated: 2026-03-21
         assert not result.passed
         assert any("brainstorm" in e and "artifact" in e.lower() for e in result.errors)
 
-    def test_completed_phase_with_artifact_passes(
-        self, tmp_path: Path
-    ) -> None:
+    def test_completed_phase_with_artifact_passes(self, tmp_path: Path) -> None:
         content = """\
 ---
 schema_version: 1
@@ -274,7 +294,9 @@ class TestValidateDirectory:
             )
         result = validate_directory(dev_cycle)
         assert not result.passed
-        assert any("collision" in e.lower() or "duplicate" in e.lower() for e in result.errors)
+        assert any(
+            "collision" in e.lower() or "duplicate" in e.lower() for e in result.errors
+        )
 
     def test_missing_schema_version_warning_in_directory(self, tmp_path: Path) -> None:
         dev_cycle = tmp_path / "docs" / "dev-cycle"
@@ -340,6 +362,8 @@ class TestValidateDirectory:
         assert not result.passed
         assert any("frontmatter" in e.lower() for e in result.errors)
         assert not any("duplicate" in e.lower() for e in result.errors)
+        # The valid file must still be validated cleanly alongside the broken one.
+        assert len(result.errors) == 1
 
 
 import subprocess
@@ -359,7 +383,8 @@ class TestCLI:
         )
         result = subprocess.run(
             ["uv", "run", "python", "scripts/dev_cycle_validate.py", str(dev_cycle)],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 0
         assert "PASS" in result.stdout
@@ -375,7 +400,8 @@ class TestCLI:
         )
         result = subprocess.run(
             ["uv", "run", "python", "scripts/dev_cycle_validate.py", str(dev_cycle)],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 0
         assert "WARNING" in result.stdout
@@ -391,7 +417,8 @@ class TestCLI:
         )
         result = subprocess.run(
             ["uv", "run", "python", "scripts/dev_cycle_validate.py", str(dev_cycle)],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 1
         assert "FAIL" in result.stdout
