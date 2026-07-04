@@ -376,6 +376,41 @@ class TestSmokeIntraSkillLinks:
             "test-skill/SKILL.md" in e and "nonexistent.md" in e for e in result.errors
         )
 
+    def test_link_with_title_to_existing_file_passes(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "test-skill"
+        skill_dir.mkdir(parents=True)
+        refs_dir = skill_dir / "references"
+        refs_dir.mkdir()
+        (refs_dir / "guide.md").write_text("# Guide\n")
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\n"
+            'See [guide](references/guide.md "Guide Title") for details.\n'
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
+
+    def test_link_with_title_to_missing_file_fails(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "test-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\n"
+            'See [missing](references/nonexistent.md "Guide Title") for details.\n'
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is False
+        assert any(
+            "test-skill/SKILL.md" in e and "nonexistent.md" in e for e in result.errors
+        )
+        assert not any("Guide Title" in e for e in result.errors)
+
 
 class TestSmokeIntraAgentLinks:
     """Smoke test validates intra-agent reference links."""
@@ -458,6 +493,41 @@ class TestSmokeIntraAgentLinks:
 
         result = smoke_test(dist)
         assert result.passed is True
+
+    def test_link_with_title_to_existing_file_passes(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        agent_dir = dist / "agents" / "test-agent"
+        agent_dir.mkdir(parents=True)
+        refs_dir = agent_dir / "references"
+        refs_dir.mkdir()
+        (refs_dir / "spec.md").write_text("# Spec\n")
+        (agent_dir / "AGENT.md").write_text(
+            "---\nname: test-agent\ndescription: test\nrole: implementer\n---\n\n"
+            'See [spec](references/spec.md "Spec Title") for details.\n'
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
+
+    def test_link_with_title_to_missing_file_fails(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        agent_dir = dist / "agents" / "test-agent"
+        agent_dir.mkdir(parents=True)
+        (agent_dir / "AGENT.md").write_text(
+            "---\nname: test-agent\ndescription: test\nrole: implementer\n---\n\n"
+            'See [missing](references/nonexistent.md "Spec Title") for details.\n'
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is False
+        assert any(
+            "test-agent/AGENT.md" in e and "nonexistent.md" in e for e in result.errors
+        )
+        assert not any("Spec Title" in e for e in result.errors)
 
 
 def _write_valid_plugin_json(dist: Path) -> None:
