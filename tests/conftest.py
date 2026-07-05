@@ -40,6 +40,17 @@ def tmp_repo(tmp_path: Path) -> Path:
     (docs / "agent-matching.md").write_text(
         "# Agent-Matching Algorithm\n\nCanonical matching spec for tests.\n"
     )
+    # Methodology docs bundled into every preset (#97); project.md must NOT ship.
+    for _doc in [
+        "tdd.md",
+        "root-cause-tracing.md",
+        "subagent-development.md",
+        "parallel-agents.md",
+    ]:
+        (docs / _doc).write_text(f"# {_doc}\n\nMethodology doc for tests.\n")
+    (docs / "project.md").write_text(
+        "# Project\n\nProject-specific — must not ship in a preset.\n"
+    )
 
     (core / "settings-base.json").write_text(json.dumps({
         "hooks": {

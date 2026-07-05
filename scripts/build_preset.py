@@ -268,15 +268,24 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
         dest = dist_path / "agents" / agent_name
         _copy_with_override(src, dest, kind="agent")
 
-    # 5. Copy agent-matching.md -> docs/ (only when the plugin ships agents;
-    # an agent-less plugin -- e.g. a style-only persona -- has no use for it).
-    agent_matching_src = core_path / "docs" / "agent-matching.md"
-    built_agents = dist_path / "agents"
-    has_agents = built_agents.exists() and any(built_agents.iterdir())
-    if agent_matching_src.exists() and has_agents:
+    # 5. Copy core/docs -> docs/ (#97). The methodology docs the README names
+    # (tdd, root-cause-tracing, subagent-development) plus parallel-agents always
+    # ship, so the plugin is self-documenting rather than pointing at absent
+    # files. agent-matching.md ships only when the plugin has agents (an
+    # agent-less plugin -- e.g. a style-only persona -- has no use for the
+    # selection algorithm). project.md is project-specific and never ships.
+    docs_src = core_path / "docs"
+    if docs_src.exists():
+        built_agents = dist_path / "agents"
+        has_agents = built_agents.exists() and any(built_agents.iterdir())
         docs_dir = dist_path / "docs"
-        docs_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(agent_matching_src, docs_dir / "agent-matching.md")
+        for doc in sorted(docs_src.glob("*.md")):
+            if doc.name == "project.md":
+                continue
+            if doc.name == "agent-matching.md" and not has_agents:
+                continue
+            docs_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(doc, docs_dir / doc.name)
 
     # 6. Copy hook scripts to hooks/scripts/
     hooks_scripts_dir = dist_path / "hooks" / "scripts"
