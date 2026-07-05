@@ -225,7 +225,17 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     if not preset_path.exists():
         raise BuildValidationError(f"Preset '{preset_name}' not found at {preset_path}")
 
-    manifest = json.loads((preset_path / "manifest.json").read_text())
+    manifest_path = preset_path / "manifest.json"
+    if not manifest_path.exists():
+        raise BuildValidationError(
+            f"Preset '{preset_name}' has no manifest.json at {manifest_path}"
+        )
+    try:
+        manifest = json.loads(manifest_path.read_text())
+    except json.JSONDecodeError as exc:
+        raise BuildValidationError(
+            f"Preset '{preset_name}' has invalid JSON in {manifest_path}: {exc}"
+        ) from exc
     _validate_manifest(manifest, core_path, preset_path)
 
     if dist_path.exists():
