@@ -230,12 +230,36 @@ class TestBuildPluginDocs:
         doc = tmp_repo / "dist" / "python-api" / "docs" / "agent-matching.md"
         assert doc.read_text().strip() != ""
 
-    def test_build_skips_docs_when_agent_matching_missing(self, tmp_repo: Path) -> None:
-        """No docs/ dir when source agent-matching.md is absent."""
+    def test_build_omits_agent_matching_when_missing_but_ships_methodology(
+        self, tmp_repo: Path
+    ) -> None:
+        """agent-matching.md is agent-gated; methodology docs ship regardless (#97)."""
         (tmp_repo / "core" / "docs" / "agent-matching.md").unlink()
         build_preset("python-api", repo_root=tmp_repo)
         docs_dir = tmp_repo / "dist" / "python-api" / "docs"
-        assert not docs_dir.exists()
+        assert docs_dir.exists()
+        assert not (docs_dir / "agent-matching.md").exists()
+        assert (docs_dir / "tdd.md").exists()
+
+    def test_build_bundles_methodology_docs(self, tmp_repo: Path) -> None:
+        """#97: the methodology docs the README names ship, so the plugin is
+        self-documenting rather than pointing at absent files."""
+        build_preset("python-api", repo_root=tmp_repo)
+        docs = tmp_repo / "dist" / "python-api" / "docs"
+        for name in (
+            "tdd.md",
+            "root-cause-tracing.md",
+            "subagent-development.md",
+            "parallel-agents.md",
+        ):
+            assert (docs / name).exists(), f"{name} should be bundled"
+
+    def test_build_excludes_project_doc(self, tmp_repo: Path) -> None:
+        """#97: project.md is project-specific and must never ship in a preset."""
+        build_preset("python-api", repo_root=tmp_repo)
+        assert not (
+            tmp_repo / "dist" / "python-api" / "docs" / "project.md"
+        ).exists()
 
     def test_build_no_claude_subdir_in_docs(self, tmp_repo: Path) -> None:
         """docs/ must not be nested under .claude/ in plugin format."""
