@@ -341,6 +341,45 @@ class TestMarkdownAnalyzerLinks:
             assert len(md055_issues) == 1
             assert "missing.md" in md055_issues[0].message
 
+    def test_empty_link_url_in_fenced_code_not_flagged(self):
+        """Test that an example empty-URL link inside a fenced code block isn't flagged (#265)."""
+        content = "# Title\n\n```markdown\n[Broken Example]()\n```\n"
+        result = analyze_markdown(content)
+
+        md042_issues = [i for i in result.issues if i.rule_id == "MD042"]
+        assert md042_issues == []
+
+    def test_broken_relative_link_in_fenced_code_not_flagged(self):
+        """Test that an example broken relative link inside a fenced code block isn't flagged (#265)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            md_file = tmppath / "test.md"
+            md_file.write_text(
+                "# Title\n\n```markdown\n[Link](nonexistent.md)\n```\n"
+            )
+
+            result = analyze_markdown_file(md_file)
+
+            md055_issues = [i for i in result.issues if i.rule_id == "MD055"]
+            assert md055_issues == []
+
+    def test_broken_link_adjacent_to_fence_still_flagged(self):
+        """Test that a real broken link next to a fenced example is still flagged (#265)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            md_file = tmppath / "test.md"
+            md_file.write_text(
+                "# Title\n\n"
+                "```markdown\n[Link](nonexistent.md)\n```\n\n"
+                "[Real Link](also-nonexistent.md)\n"
+            )
+
+            result = analyze_markdown_file(md_file)
+
+            md055_issues = [i for i in result.issues if i.rule_id == "MD055"]
+            assert len(md055_issues) == 1
+            assert "also-nonexistent.md" in md055_issues[0].message
+
 
 class TestMarkdownAnalyzerImages:
     """Tests for image analysis."""
@@ -394,6 +433,22 @@ class TestMarkdownAnalyzerImages:
             md056_issues = [i for i in result.issues if i.rule_id == "MD056"]
             assert len(md056_issues) == 1
             assert "missing.png" in md056_issues[0].message
+
+    def test_missing_alt_text_in_fenced_code_not_flagged(self):
+        """Test that an example missing-alt-text image inside a fenced code block isn't flagged (#265)."""
+        content = "# Title\n\n```markdown\n![](missing.png)\n```\n"
+        result = analyze_markdown(content)
+
+        md045_issues = [i for i in result.issues if i.rule_id == "MD045"]
+        assert md045_issues == []
+
+    def test_missing_alt_text_adjacent_to_fence_still_flagged(self):
+        """Test that a real missing-alt-text image next to a fenced example is still flagged (#265)."""
+        content = "# Title\n\n```markdown\n![](missing.png)\n```\n\n![](also-missing.png)\n"
+        result = analyze_markdown(content)
+
+        md045_issues = [i for i in result.issues if i.rule_id == "MD045"]
+        assert len(md045_issues) == 1
 
 
 class TestMarkdownAnalyzerReferenceLinks:
