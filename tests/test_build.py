@@ -537,6 +537,25 @@ class TestManifestRequiredFields:
             build_preset("python-api", repo_root=tmp_repo)
 
 
+class TestManifestLoading:
+    """Validation for manifest.json presence and JSON validity."""
+
+    def test_validation_fails_missing_manifest_file(self, tmp_repo: Path) -> None:
+        preset = tmp_repo / "presets" / "no-manifest"
+        preset.mkdir()
+
+        with pytest.raises(BuildValidationError, match="no-manifest.*manifest.json"):
+            build_preset("no-manifest", repo_root=tmp_repo)
+
+    def test_validation_fails_malformed_json(self, tmp_repo: Path) -> None:
+        preset = tmp_repo / "presets" / "bad-json"
+        preset.mkdir()
+        (preset / "manifest.json").write_text("{not valid json")
+
+        with pytest.raises(BuildValidationError, match="bad-json.*manifest.json"):
+            build_preset("bad-json", repo_root=tmp_repo)
+
+
 class TestSettingsMerge:
     """Settings merge handles edge cases correctly."""
 

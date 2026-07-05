@@ -495,16 +495,20 @@ class MarkdownAnalyzer:
         """
         issues: list[Issue] = []
 
-        for match in LINK_PATTERN.finditer(content):
+        # Mask code blocks/spans so example links shown inside fenced code
+        # aren't parsed as live document links.
+        masked_content = self._mask_code_regions(content)
+
+        for match in LINK_PATTERN.finditer(masked_content):
             # Image syntax `![alt](url)` also matches LINK_PATTERN on its
             # `[alt](url)` suffix; skip those so _check_images is the sole
             # source of image findings.
-            if match.start() > 0 and content[match.start() - 1] == "!":
+            if match.start() > 0 and masked_content[match.start() - 1] == "!":
                 continue
 
             link_text = match.group(1)
             link_url = match.group(2)
-            line_num = self._find_line_number(content, match.start())
+            line_num = self._find_line_number(masked_content, match.start())
 
             # Check for empty link text
             if not link_text.strip():
@@ -587,10 +591,14 @@ class MarkdownAnalyzer:
         """
         issues: list[Issue] = []
 
-        for match in IMAGE_PATTERN.finditer(content):
+        # Mask code blocks/spans so example images shown inside fenced code
+        # aren't parsed as live document images.
+        masked_content = self._mask_code_regions(content)
+
+        for match in IMAGE_PATTERN.finditer(masked_content):
             alt_text = match.group(1)
             image_url = match.group(2)
-            line_num = self._find_line_number(content, match.start())
+            line_num = self._find_line_number(masked_content, match.start())
 
             # Check for missing alt text
             if not alt_text.strip():
