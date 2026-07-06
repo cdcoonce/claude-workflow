@@ -3,7 +3,7 @@ name: frontend-builder
 description: Builds frontend components with React, TypeScript, and modern CSS
 role: implementer
 skills:
-  add: [tdd, commit]
+  add: [tdd, commit, react-ui-ux]
   remove: []
 ---
 
