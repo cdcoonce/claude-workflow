@@ -7,7 +7,11 @@ import shutil
 import subprocess
 import sys
 
-data = json.load(sys.stdin)
+try:
+    data = json.load(sys.stdin)
+except json.JSONDecodeError:
+    # Fail open: a malformed/empty stdin payload should no-op, not traceback.
+    sys.exit(0)
 file_path = data.get("tool_input", {}).get("file_path", "")
 
 if not file_path:
@@ -28,7 +32,7 @@ def run(cmd, label):
 
 # Prettier on Markdown and JSON files
 if file_path.endswith((".md", ".json")):
-    run(["npx", "prettier", "--write", file_path], "prettier")
+    run(["npx", "--no-install", "prettier", "--write", file_path], "prettier")
 
 # Ruff on Python files
 if file_path.endswith(".py") and shutil.which("ruff"):

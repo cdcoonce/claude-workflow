@@ -1,0 +1,34 @@
+# AFK config — read-only producers (F0) on claude-workflow (afk's dev-cycle foundation).
+# Executor stays OFF until a green gate is confirmed; scout is read-only.
+# `make test` runs BOTH the root suite and the daa-code-review analyzer suite
+# (the latter in its own rootdir, with ruff) — see the Makefile `test` target
+# and #141. Keep this as `make test` so a gate can't silently skip the analyzer.
+test_command = "make test"
+permission_mode = "acceptEdits"
+
+# Integration posture (2026-06-15): promoted to F2 — slices merge-queue onto a
+# standing afk/staging branch and surface as ONE staging→main integration PR.
+# auto_promote stays OFF: staging→main is Charles's deliberate human gate. This
+# repo is load-bearing estate infra, so the consolidated MR still gets a full
+# human review. allow_f2_to_main left at default (false): never silently land on main.
+autonomy_frontier = "F2"
+integration_target = "afk/staging"
+auto_promote = false
+
+agent_prompt = """Implement the linked GitHub issue using test-driven development \
+(red-green-refactor). Keep changes minimal and scoped to the issue's acceptance \
+criteria. Match the surrounding code style. If the root cause of a failing test \
+is unclear after targeted investigation, do not broaden the diff into unrelated \
+files chasing a green run you do not understand — record your analysis in .afk/question.md \
+and stop."""
+
+[caps]
+max_retries = 2
+timeout_seconds = 1800
+max_run_cost_usd = 15.0  # circuit-breaker: stop the drain if a run's cumulative cost exceeds this (unattended-F2 safety)
+
+# Scheduled --cycle: read-only producers only (no executor seeded here),
+# so each pass files scout proposals + harvests prompt-rules from merged-PR
+# review comments. Pure proposal/telemetry data; zero containment exposure.
+[cycle]
+producers = ["scout", "harvest"]

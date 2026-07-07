@@ -1,12 +1,15 @@
 """Tests for dev_cycle_validate — state file parser and validator."""
+
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import pytest
 
-from scripts.dev_cycle_validate import StateFile, parse_state_file, ValidationResult, validate_state_file
+from scripts.dev_cycle_validate import parse_state_file, validate_state_file
 from scripts.dev_cycle_validate import validate_directory
+from scripts.dev_cycle_validate import _parse_artifacts
 
 
 class TestParseStateFile:
@@ -28,7 +31,7 @@ branch: feat/dark-mode-toggle
 
 | Phase       | Status      | Artifact                               |
 | ----------- | ----------- | -------------------------------------- |
-| brainstorm  | completed   | https://gitlab.com/user/repo/-/issues/42 |
+| brainstorm  | completed   | https://github.com/user/repo/issues/42 |
 | plan        | in_progress | docs/plans/dark-mode-toggle.md         |
 | ceo_review  | pending     | —                                      |
 
@@ -88,13 +91,28 @@ updated: 2026-03-21
         result = parse_state_file(state_file)
         assert result.schema_version == 1
 
+    def test_parse_non_integer_schema_version_raises(self, tmp_path: Path) -> None:
+        content = """\
+---
+schema_version: draft
+feature: test-feature
+status: in_progress
+current_phase: plan
+created: 2026-03-21
+updated: 2026-03-21
+---
+"""
+        state_file = tmp_path / "test-feature.state.md"
+        state_file.write_text(content)
+
+        with pytest.raises(ValueError, match="test-feature.state.md.*draft"):
+            parse_state_file(state_file)
+
 
 class TestValidateStateFile:
     """Tests for field value validation."""
 
-    def _write_state_file(
-        self, tmp_path: Path, **overrides: str
-    ) -> Path:
+    def _write_state_file(self, tmp_path: Path, **overrides: str) -> Path:
         """Helper: write a valid state file, then override specific fields."""
         defaults = {
             "schema_version": "1",
@@ -129,6 +147,55 @@ class TestValidateStateFile:
         assert not result.passed
         assert any("current_phase" in e for e in result.errors)
 
+    def test_below_minimum_schema_version_fails(self, tmp_path: Path) -> None:
+        # schema_version 0 (or negative) is not a real version — the only valid
+        # value is 1 — so it must be rejected, not pass silently (#127).
+        path = self._write_state_file(tmp_path, schema_version="0")
+        result = validate_state_file(path)
+        assert not result.passed
+        assert any("schema_version" in e for e in result.errors)
+
+    def test_negative_schema_version_fails(self, tmp_path: Path) -> None:
+        path = self._write_state_file(tmp_path, schema_version="-1")
+        result = validate_state_file(path)
+        assert not result.passed
+        assert any("schema_version" in e for e in result.errors)
+
+    def _write_state_with_artifact(
+        self, tmp_path: Path, *, status: str, artifact: str = "docs/x.md"
+    ) -> Path:
+        content = (
+            "---\n"
+            "schema_version: 1\n"
+            "feature: test-feature\n"
+            "status: in_progress\n"
+            "current_phase: plan\n"
+            "created: 2026-03-21\n"
+            "updated: 2026-03-21\n"
+            "---\n\n"
+            "## Artifacts\n\n"
+            "| Phase | Status | Artifact |\n"
+            "| ----- | ------ | -------- |\n"
+            f"| plan  | {status} | {artifact} |\n"
+            "\n## Log\n"
+        )
+        path = tmp_path / "test-feature.state.md"
+        path.write_text(content)
+        return path
+
+    def test_invalid_artifact_status_fails(self, tmp_path: Path) -> None:
+        # A typo'd artifact-row status must be flagged against
+        # VALID_ARTIFACT_STATUSES, naming the phase and the bad value (#101).
+        path = self._write_state_with_artifact(tmp_path, status="done")
+        result = validate_state_file(path)
+        assert not result.passed
+        assert any("done" in e and "plan" in e for e in result.errors)
+
+    def test_valid_artifact_status_passes(self, tmp_path: Path) -> None:
+        path = self._write_state_with_artifact(tmp_path, status="in_progress")
+        result = validate_state_file(path)
+        assert result.passed
+
     def test_unsupported_schema_version_fails(self, tmp_path: Path) -> None:
         path = self._write_state_file(tmp_path, schema_version="99")
         result = validate_state_file(path)
@@ -141,6 +208,23 @@ class TestValidateStateFile:
         assert result.passed
         assert any("schema_version" in w for w in result.warnings)
 
+    def test_validate_state_file_reads_file_only_once(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Guards against re-reading the file to check for schema_version."""
+        path = self._write_state_file(tmp_path, schema_version="")
+        read_calls: list[Path] = []
+        original_read_text = Path.read_text
+
+        def counting_read_text(self: Path, *args: object, **kwargs: object) -> str:
+            if self == path:
+                read_calls.append(self)
+            return original_read_text(self, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "read_text", counting_read_text)
+        validate_state_file(path)
+        assert len(read_calls) == 1
+
     def test_feature_slug_mismatch_fails(self, tmp_path: Path) -> None:
         """Feature slug must match the filename."""
         path = self._write_state_file(tmp_path, feature="wrong-name")
@@ -151,13 +235,36 @@ class TestValidateStateFile:
         assert not result.passed
         assert any("filename" in e for e in result.errors)
 
+    def test_no_frontmatter_fails_without_raising(self, tmp_path: Path) -> None:
+        """A parse-time ValueError must be caught and returned as an error."""
+        state_file = tmp_path / "bad.state.md"
+        state_file.write_text("# No frontmatter here\n")
+
+        result = validate_state_file(state_file)
+
+        assert result.passed is False
+        assert any("frontmatter" in e for e in result.errors)
+
+    def test_missing_required_field_fails_without_raising(self, tmp_path: Path) -> None:
+        content = """\
+---
+schema_version: 1
+feature: dark-mode-toggle
+---
+"""
+        state_file = tmp_path / "incomplete.state.md"
+        state_file.write_text(content)
+
+        result = validate_state_file(state_file)
+
+        assert result.passed is False
+        assert any("Missing required field" in e for e in result.errors)
+
 
 class TestArtifactCompleteness:
     """Completed phases must have non-empty artifacts."""
 
-    def test_completed_phase_without_artifact_fails(
-        self, tmp_path: Path
-    ) -> None:
+    def test_completed_phase_without_artifact_fails(self, tmp_path: Path) -> None:
         content = """\
 ---
 schema_version: 1
@@ -183,9 +290,7 @@ updated: 2026-03-21
         assert not result.passed
         assert any("brainstorm" in e and "artifact" in e.lower() for e in result.errors)
 
-    def test_completed_phase_with_artifact_passes(
-        self, tmp_path: Path
-    ) -> None:
+    def test_completed_phase_with_artifact_passes(self, tmp_path: Path) -> None:
         content = """\
 ---
 schema_version: 1
@@ -200,7 +305,7 @@ updated: 2026-03-21
 
 | Phase       | Status      | Artifact                               |
 | ----------- | ----------- | -------------------------------------- |
-| brainstorm  | completed   | https://gitlab.com/user/repo/-/issues/42 |
+| brainstorm  | completed   | https://github.com/user/repo/issues/42 |
 | plan        | in_progress | docs/plans/test-feature.md             |
 
 ## Log
@@ -209,6 +314,17 @@ updated: 2026-03-21
         path.write_text(content)
         result = validate_state_file(path)
         assert result.passed
+
+
+class TestParseArtifactsSkipsHeaderAndSeparator:
+    """Header and separator rows must never become ArtifactRow entries."""
+
+    def test_header_and_separator_rows_yield_no_artifacts(self) -> None:
+        text = (
+            "| Phase       | Status      | Artifact                               |\n"
+            "| ----------- | ----------- | -------------------------------------- |\n"
+        )
+        assert _parse_artifacts(text) == []
 
 
 class TestValidateDirectory:
@@ -245,7 +361,9 @@ class TestValidateDirectory:
             )
         result = validate_directory(dev_cycle)
         assert not result.passed
-        assert any("collision" in e.lower() or "duplicate" in e.lower() for e in result.errors)
+        assert any(
+            "collision" in e.lower() or "duplicate" in e.lower() for e in result.errors
+        )
 
     def test_missing_schema_version_warning_in_directory(self, tmp_path: Path) -> None:
         dev_cycle = tmp_path / "docs" / "dev-cycle"
@@ -266,8 +384,53 @@ class TestValidateDirectory:
         result = validate_directory(dev_cycle)
         assert result.passed
 
+    def test_parses_each_file_at_most_once(self, tmp_path: Path, monkeypatch) -> None:
+        """Each state file should be read/parsed a single time, not twice."""
+        import scripts.dev_cycle_validate as dcv
 
-import subprocess
+        dev_cycle = tmp_path / "docs" / "dev-cycle"
+        dev_cycle.mkdir(parents=True)
+        for name in ("feature-a", "feature-b"):
+            (dev_cycle / f"{name}.state.md").write_text(
+                f"---\nschema_version: 1\nfeature: {name}\n"
+                f"status: in_progress\ncurrent_phase: brainstorm\n"
+                f"created: 2026-03-21\nupdated: 2026-03-21\n---\n\n"
+                f"## Artifacts\n\n## Log\n"
+            )
+
+        call_counts: dict[Path, int] = {}
+        original_parse = dcv.parse_state_file
+
+        def counting_parse(path: Path):
+            call_counts[path] = call_counts.get(path, 0) + 1
+            return original_parse(path)
+
+        monkeypatch.setattr(dcv, "parse_state_file", counting_parse)
+
+        result = dcv.validate_directory(dev_cycle)
+
+        assert result.passed
+        assert len(call_counts) == 2
+        assert all(count == 1 for count in call_counts.values())
+
+    def test_unparseable_file_skipped_for_slug_collection(self, tmp_path: Path) -> None:
+        """A file that fails to parse should not raise and should be excluded
+        from duplicate-slug detection."""
+        dev_cycle = tmp_path / "docs" / "dev-cycle"
+        dev_cycle.mkdir(parents=True)
+        (dev_cycle / "broken.state.md").write_text("not valid frontmatter at all")
+        (dev_cycle / "feature-a.state.md").write_text(
+            "---\nschema_version: 1\nfeature: feature-a\n"
+            "status: in_progress\ncurrent_phase: brainstorm\n"
+            "created: 2026-03-21\nupdated: 2026-03-21\n---\n\n"
+            "## Artifacts\n\n## Log\n"
+        )
+        result = validate_directory(dev_cycle)
+        assert not result.passed
+        assert any("frontmatter" in e.lower() for e in result.errors)
+        assert not any("duplicate" in e.lower() for e in result.errors)
+        # The valid file must still be validated cleanly alongside the broken one.
+        assert len(result.errors) == 1
 
 
 class TestCLI:
@@ -284,7 +447,8 @@ class TestCLI:
         )
         result = subprocess.run(
             ["uv", "run", "python", "scripts/dev_cycle_validate.py", str(dev_cycle)],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 0
         assert "PASS" in result.stdout
@@ -300,7 +464,8 @@ class TestCLI:
         )
         result = subprocess.run(
             ["uv", "run", "python", "scripts/dev_cycle_validate.py", str(dev_cycle)],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 0
         assert "WARNING" in result.stdout
@@ -316,7 +481,8 @@ class TestCLI:
         )
         result = subprocess.run(
             ["uv", "run", "python", "scripts/dev_cycle_validate.py", str(dev_cycle)],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 1
         assert "FAIL" in result.stdout

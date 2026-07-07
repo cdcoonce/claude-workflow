@@ -1,7 +1,9 @@
 """Dev cycle state file parser and validator.
 
-Parses YAML frontmatter from dev-cycle state files and validates
-schema integrity, phase transitions, and artifact completeness.
+Parses YAML frontmatter from dev-cycle state files and validates schema_version
+bounds, status/current_phase membership, feature-slug/filename agreement,
+artifact completeness, and duplicate-slug detection across a directory. It does
+not validate phase transitions.
 """
 from __future__ import annotations
 
@@ -24,6 +26,9 @@ _ARTIFACT_ROW_RE = re.compile(
 )
 
 REQUIRED_FIELDS = ("feature", "status", "current_phase")
+
+# Values that mean "no artifact": em dash, hyphen, empty string.
+_EMPTY_ARTIFACT_MARKERS = ("—", "-", "")
 
 
 @dataclass
@@ -48,6 +53,7 @@ class StateFile:
     branch: str = ""
     path: Path = field(default_factory=lambda: Path())
     artifacts: list[ArtifactRow] = field(default_factory=list)
+    had_schema_version: bool = True
 
 
 def _parse_artifacts(text: str) -> list[ArtifactRow]:
@@ -68,24 +74,10 @@ def _parse_artifacts(text: str) -> list[ArtifactRow]:
         phase = match.group(1)
         status = match.group(2)
         artifact = match.group(3).strip()
-        if phase in ("Phase", "---") or status in ("Status", "---"):
-            continue
         if phase not in VALID_PHASES:
             continue
         rows.append(ArtifactRow(phase=phase, status=status, artifact=artifact))
     return rows
-
-
-def _has_schema_version(path: Path) -> bool:
-    """Check if a state file contains a schema_version field in frontmatter."""
-    text = path.read_text()
-    match = _FRONTMATTER_RE.search(text)
-    if not match:
-        return False
-    raw_fields: dict[str, str] = {}
-    for field_match in _FIELD_RE.finditer(match.group(1)):
-        raw_fields[field_match.group(1)] = field_match.group(2).strip()
-    return "schema_version" in raw_fields
 
 
 def parse_state_file(path: Path) -> StateFile:
@@ -104,7 +96,8 @@ def parse_state_file(path: Path) -> StateFile:
     Raises
     ------
     ValueError
-        If the file has no frontmatter or is missing required fields.
+        If the file has no frontmatter, is missing required fields, or has
+        a non-integer schema_version.
     """
     text = path.read_text()
     match = _FRONTMATTER_RE.search(text)
@@ -121,11 +114,20 @@ def parse_state_file(path: Path) -> StateFile:
                 f"Missing required field '{req}' in {path.name}"
             )
 
-    if "schema_version" not in raw_fields:
+    had_schema_version = "schema_version" in raw_fields
+    if not had_schema_version:
         raw_fields["schema_version"] = "1"
 
+    raw_schema_version = raw_fields["schema_version"]
+    try:
+        schema_version = int(raw_schema_version)
+    except ValueError:
+        raise ValueError(
+            f"{path.name} has a non-integer schema_version: '{raw_schema_version}'"
+        ) from None
+
     state = StateFile(
-        schema_version=int(raw_fields["schema_version"]),
+        schema_version=schema_version,
         feature=raw_fields["feature"],
         status=raw_fields["status"],
         current_phase=raw_fields["current_phase"],
@@ -133,6 +135,7 @@ def parse_state_file(path: Path) -> StateFile:
         updated=raw_fields.get("updated", ""),
         branch=raw_fields.get("branch", ""),
         path=path,
+        had_schema_version=had_schema_version,
     )
     state.artifacts = _parse_artifacts(text)
     return state
@@ -171,6 +174,11 @@ def _validate_parsed_state(state: StateFile) -> list[str]:
             f"Unsupported schema_version {state.schema_version} "
             f"in {name} (max supported: {CURRENT_SCHEMA_VERSION})"
         )
+    elif state.schema_version < 1:
+        errors.append(
+            f"Unsupported schema_version {state.schema_version} "
+            f"in {name} (minimum supported: 1)"
+        )
 
     if state.status not in VALID_STATUSES:
         errors.append(
@@ -192,13 +200,39 @@ def _validate_parsed_state(state: StateFile) -> list[str]:
         )
 
     for row in state.artifacts:
-        if row.status == "completed" and row.artifact in ("—", "\u2014", "-", ""):
+        if row.status not in VALID_ARTIFACT_STATUSES:
+            errors.append(
+                f"Invalid artifact status '{row.status}' for phase '{row.phase}' "
+                f"in {name}. Valid values: {', '.join(VALID_ARTIFACT_STATUSES)}"
+            )
+        if row.status == "completed" and row.artifact in _EMPTY_ARTIFACT_MARKERS:
             errors.append(
                 f"Phase '{row.phase}' is completed but has no artifact "
                 f"in {name}"
             )
 
     return errors
+
+
+def _validation_result_for_state(state: StateFile) -> ValidationResult:
+    """Build a ValidationResult for an already-parsed StateFile.
+
+    Parameters
+    ----------
+    state : StateFile
+        A parsed state file object.
+
+    Returns
+    -------
+    ValidationResult
+        Validation result with any errors and warnings found.
+    """
+    warnings: list[str] = []
+    if not state.had_schema_version:
+        warnings.append(
+            f"Missing 'schema_version' in {state.path.name} (defaulting to 1)"
+        )
+    return ValidationResult(errors=_validate_parsed_state(state), warnings=warnings)
 
 
 def validate_state_file(path: Path) -> ValidationResult:
@@ -214,20 +248,12 @@ def validate_state_file(path: Path) -> ValidationResult:
     ValidationResult
         Validation result with any errors found.
     """
-    warnings: list[str] = []
-    had_schema_version = _has_schema_version(path)
-
     try:
         state = parse_state_file(path)
     except ValueError as exc:
         return ValidationResult(errors=[str(exc)])
 
-    if not had_schema_version:
-        warnings.append(
-            f"Missing 'schema_version' in {path.name} (defaulting to 1)"
-        )
-
-    return ValidationResult(errors=_validate_parsed_state(state), warnings=warnings)
+    return _validation_result_for_state(state)
 
 
 def validate_directory(directory: Path) -> ValidationResult:
@@ -249,22 +275,16 @@ def validate_directory(directory: Path) -> ValidationResult:
 
     state_files = sorted(directory.glob("*.state.md"))
     for path in state_files:
-        file_result = validate_state_file(path)
+        try:
+            state = parse_state_file(path)
+        except ValueError as exc:
+            errors.append(str(exc))
+            continue
+
+        file_result = _validation_result_for_state(state)
         errors.extend(file_result.errors)
         warnings.extend(file_result.warnings)
-        if file_result.passed:
-            try:
-                state = parse_state_file(path)
-            except ValueError:
-                continue
-            slugs.setdefault(state.feature, []).append(path.name)
-        else:
-            # Still try to parse for slug collision detection
-            try:
-                state = parse_state_file(path)
-                slugs.setdefault(state.feature, []).append(path.name)
-            except ValueError:
-                pass
+        slugs.setdefault(state.feature, []).append(path.name)
 
     for slug, filenames in slugs.items():
         if len(filenames) > 1:

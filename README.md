@@ -1,31 +1,20 @@
 # Claude Workflow
 
-![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white) ![Claude Code](https://img.shields.io/badge/Claude_Code-Opus_4.6-6B4FBB?logo=anthropic&logoColor=white) ![pytest](https://img.shields.io/badge/Tests-pytest-0A9EDC?logo=pytest&logoColor=white) ![uv](https://img.shields.io/badge/Package_Manager-uv-DE5FE9) ![Hatchling](https://img.shields.io/badge/Build-Hatchling-F5A623) ![GitLab](https://img.shields.io/badge/GitLab-glab_CLI-FC6D26?logo=gitlab&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white) ![Claude Code](https://img.shields.io/badge/Claude_Code-Opus_4.6-6B4FBB?logo=anthropic&logoColor=white) ![pytest](https://img.shields.io/badge/Tests-pytest-0A9EDC?logo=pytest&logoColor=white) ![uv](https://img.shields.io/badge/Package_Manager-uv-DE5FE9) ![Hatchling](https://img.shields.io/badge/Build-Hatchling-F5A623) ![GitHub](https://img.shields.io/badge/GitHub-gh_CLI-181717?logo=github&logoColor=white)
 
-A **template system for Claude Code plugins** shared across the team. Build a preset for your project type, install it as a Claude Code plugin, and get a fully configured environment with 19 skills, methodology docs, agents, and hooks -- ready to go in seconds.
+A **Claude Code plugin** that gives any project a fully configured AI development environment — 20 skills, methodology docs, agents, and hooks — picked up in seconds by pasting a URL.
 
 ---
 
 ## Table of Contents
 
-- [Quick Start: Install a Plugin](#quick-start-install-a-plugin)
-- [Overview](#overview)
-- [Architecture](#architecture)
-  - [High-Level Architecture](#high-level-architecture)
-  - [Folder Structure](#folder-structure)
-  - [Build Pipeline](#build-pipeline)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Running Tests](#running-tests)
-- [Usage](#usage)
-  - [Build a Preset](#build-a-preset)
-  - [Build Marketplace Index](#build-marketplace-index)
-  - [Smoke Test a Built Preset](#smoke-test-a-built-preset)
-  - [Validate Dev-Cycle State Files](#validate-dev-cycle-state-files)
+- [What Is This](#what-is-this)
+- [Installation](#installation)
+  - [Claude (Primary)](#claude-primary)
+  - [Other Agents (Manual Copy-Paste)](#other-agents-manual-copy-paste)
 - [Presets](#presets)
 - [Skills](#skills)
-  - [Universal Skills (19)](#universal-skills-19)
+  - [Universal Skills (20)](#universal-skills-20)
   - [Preset-Specific Skills](#preset-specific-skills)
 - [Agents](#agents)
   - [Core Agents](#core-agents)
@@ -34,263 +23,115 @@ A **template system for Claude Code plugins** shared across the team. Build a pr
 - [Dev-Cycle Orchestrator](#dev-cycle-orchestrator)
   - [7-Phase Pipeline](#7-phase-pipeline)
   - [State Management](#state-management)
+- [Development](#development)
+  - [Architecture](#architecture)
+  - [Build Pipeline](#build-pipeline)
+  - [Folder Structure](#folder-structure)
+  - [Scripts Reference](#scripts-reference)
+  - [Running Tests](#running-tests)
 - [Troubleshooting](#troubleshooting)
 - [Contact](#contact)
 - [License](#license)
 
 ---
 
-## Quick Start: Install a Plugin
+## What Is This
 
-Already have the repo cloned? Pick a preset and go:
+Every project that uses **Claude Code** needs skills, hooks, settings, and development standards. Setting these up manually is repetitive and error-prone.
 
-```bash
-# 1. Build the preset that matches your project type
-uv run python -m scripts.build_preset python-api
+**Claude Workflow** is a Claude Code plugin that solves this. Paste the repo URL into Claude, pick a preset, and you get a fully configured environment with 20 skills, domain-specific agents, methodology docs, and hooks — installed automatically.
 
-# 2. Install the plugin into your project
-#    (copy the built plugin directory or symlink it)
-cp -r dist/python-api/ /path/to/your-project/.claude/plugins/python-api/
+The plugin is organized into six **presets** for different project types (`python-api`, `data-pipeline`, `full-stack`, `claude-tooling`, `analysis`, `vault-ops`). Each preset is listed in `.claude-plugin/marketplace.json` and maps to a self-contained plugin directory under `dist/`. Claude reads this marketplace index and can install any preset on demand.
 
-# 3. Done -- Claude Code now has 19 skills, agents, hooks, and methodology docs
-```
-
-```mermaid
-flowchart LR
-    A["Pick a preset"] --> B["Build it"]
-    B --> C["Install plugin"]
-    C --> D["Start using Claude Code"]
-
-    style A fill:#f5f5f5,stroke:#333
-    style D fill:#e8f5e9,stroke:#2e7d32
-```
-
-**Available presets:** `python-api` | `data-pipeline` | `full-stack` | `claude-tooling` | `analysis`
-
-See [Presets](#presets) for details on what each one includes.
+For teams using non-Claude agents (OpenAI, Cursor, etc.), the `dist/` output can also be copied manually.
 
 ---
 
-## Overview
+## Installation
 
-Every new project that uses **Claude Code** needs skills, hooks, settings, and development standards. Setting these up manually is repetitive and error-prone.
+### Claude (Primary)
 
-**Claude Workflow** solves this with a layered plugin system:
-
-1. **Core** -- 19 universal skills, 2 agents, 4 methodology docs, and a file-protection hook that apply to every project
-2. **Presets** -- Named configurations (e.g., `python-api`, `full-stack`) that add project-type-specific skills, hooks, and agents
-3. **Build tooling** -- Python scripts that assemble core + preset into a self-contained Claude Code plugin in `dist/`
-
-The result is a consistent, tested Claude Code plugin that can be installed into any new repo in seconds.
-
----
-
-## Architecture
-
-### High-Level Architecture
-
-```mermaid
-graph TD
-    CORE[core/] --> BUILD[build_preset.py]
-    PRESETS[presets/] --> BUILD
-    BUILD --> DIST[dist/preset-name/]
-
-    subgraph "core/"
-        SKILLS_CORE[skills/ -- 19 universal]
-        DOCS[docs/ -- 4 methodology]
-        HOOKS_CORE[hooks/ -- protect-files.py]
-        AGENTS_CORE[agents/ -- 2 universal]
-        BASE_JSON[settings-base.json]
-    end
-
-    subgraph "presets/preset-name/"
-        MANIFEST[manifest.json]
-        PRESET_JSON[settings-preset.json]
-        SKILLS_PRESET[skills/ -- overrides]
-        HOOKS_PRESET[hooks/ -- additions]
-        AGENTS_PRESET[agents/ -- overrides]
-    end
-
-    subgraph "dist/preset-name/ (plugin)"
-        OUT_PLUGIN[.claude-plugin/plugin.json]
-        OUT_SKILLS[skills/]
-        OUT_AGENTS[agents/]
-        OUT_HOOKS[hooks/]
-        OUT_SETTINGS[settings.json]
-        OUT_README[README.md]
-    end
-```
-
-### Folder Structure
+Paste the repo URL into Claude and tell it which preset you want:
 
 ```
-claude-workflow/
-├── core/                    # Universal components shared by all presets
-│   ├── settings-base.json   # Base hook configuration
-│   ├── agents/              # 2 universal agents (tdd-implementer, code-reviewer)
-│   ├── docs/                # TDD, root-cause tracing, subagent, parallel agents
-│   ├── hooks/               # File protection hook
-│   └── skills/              # 19 universal skills
-├── presets/                  # Project-type configurations
-│   ├── python-api/          # Python backend services (+ api-builder, security-reviewer)
-│   ├── data-pipeline/       # ETL/ELT pipelines (+ pipeline-builder, data-quality-reviewer)
-│   ├── full-stack/          # React/Next.js + Python (+ frontend/backend-builder, ux-reviewer)
-│   ├── claude-tooling/      # Claude skill/hook development (+ skill-builder, skill-reviewer)
-│   └── analysis/            # Notebooks, statistical analysis (+ analysis-builder)
-├── scripts/                 # Build, marketplace, smoke-test, validation tooling
-├── tests/                   # 93 pytest tests
-├── dist/                    # Build output (gitignored)
-├── docs/                    # Plans, archives, dev-cycle state
-└── .claude/                 # Self-applicable template (dogfooding)
+https://github.com/cdcoonce/claude-workflow
 ```
 
-### Build Pipeline
+Claude will read `.claude-plugin/marketplace.json`, find the available presets, and install the one you select into your project. No cloning or building required.
 
-The build script assembles a self-contained plugin directory in 10 steps:
+**Available presets:** `python-api` | `data-pipeline` | `full-stack` | `claude-tooling` | `analysis` | `vault-ops`
 
-```mermaid
-flowchart LR
-    A[Read manifest.json] --> B[Validate references]
-    B --> C[Copy core skills/agents]
-    C --> D[Copy preset skills/agents -- overrides core]
-    D --> E[Copy hook scripts]
-    E --> F[Generate hooks/hooks.json]
-    F --> G[Generate settings.json]
-    G --> H[Generate .claude-plugin/plugin.json]
-    H --> I[Generate README.md]
-    I --> J[Apply exclusions]
-    J --> K["dist/{preset}/ (plugin)"]
-```
+See [Presets](#presets) for what each one includes.
 
-Key design decisions:
-- **Plugin format** -- Output is a self-contained Claude Code plugin with `.claude-plugin/plugin.json`
-- **Override semantics** -- A preset skill or agent with the same name as a core one **replaces** it entirely
-- **Settings merge** -- Base and preset JSON are shallow-merged; hook arrays are appended, not replaced
-- **Fail-fast validation** -- All manifest references are checked upfront before any files are copied
-- **Path containment safety** -- Exclusion paths are resolved and verified to prevent directory traversal
+### Other Agents (Manual Copy-Paste)
 
----
-
-## Getting Started
-
-### Prerequisites
-
-- **Python 3.12+**
-- **[uv](https://docs.astral.sh/uv/)** — Python package manager
-- **Claude Code** — Anthropic's CLI for Claude (to use the built configurations)
-
-### Installation
+For non-Claude agents, copy the pre-built plugin directory directly into your project:
 
 ```bash
-git clone https://gitlab.com/clearwayenergy-group/data-architecture-and-analytics/ai-tools/claude-workflow
-cd claude-workflow
-uv sync
-```
-
-### Running Tests
-
-```bash
-# Run all tests
-uv run pytest
-
-# Run with coverage
-uv run pytest --cov=scripts --cov-report=term-missing
-```
-
----
-
-## Usage
-
-### Build a Preset
-
-Assemble core + preset into a self-contained plugin directory:
-
-```bash
-uv run python -m scripts.build_preset python-api
-```
-
-Output lands in `dist/python-api/` as a complete Claude Code plugin. Install it by copying the directory to your target project's plugin location:
-
-```bash
+# Replace python-api with your chosen preset
 cp -r dist/python-api/ /path/to/your-project/.claude/plugins/python-api/
 ```
 
-### Build Marketplace Index
+The `dist/` directories are self-contained — each one is a complete Claude Code plugin with `.claude-plugin/plugin.json`, skills, agents, hooks, settings, and a README.
 
-Generate a `marketplace.json` listing all available plugins:
-
-```bash
-uv run python -m scripts.build_marketplace
-```
-
-Output lands at `.claude-plugin/marketplace.json` in the repo root.
-
-### Smoke Test a Built Preset
-
-Validate internal consistency after building:
-
-```bash
-uv run python -m scripts.smoke_test python-api
-```
-
-Checks that `.claude-plugin/plugin.json` has required fields, every skill has a `SKILL.md`, every agent has valid `AGENT.md` frontmatter, hook scripts referenced in `hooks.json` exist, and `settings.json` is valid JSON.
-
-### Validate Dev-Cycle State Files
-
-```bash
-uv run python -m scripts.dev_cycle_validate docs/dev-cycle/
-```
-
-Validates YAML frontmatter, phase transitions, artifact completeness, and slug uniqueness across all `*.state.md` files.
+> **Note:** If `dist/` is empty (it is gitignored), you need to build it first. See [Development](#development).
 
 ---
 
 ## Presets
 
-| Preset               | Target                                  | Preset Skills                | Preset Agents                                        | Key Conventions                            |
-| -------------------- | --------------------------------------- | ---------------------------- | ---------------------------------------------------- | ------------------------------------------ |
-| **`python-api`**     | Lambda, FastAPI, Flask backends         | `deploy`, `setup-pre-commit` | `api-builder`, `security-reviewer`                   | Ruff linting, structured logging           |
-| **`data-pipeline`**  | ETL/ELT, SQL transforms, scheduled jobs | —                            | `pipeline-builder`, `data-quality-reviewer`          | SQL lowercase, idempotent stages           |
-| **`full-stack`**     | React/Next.js + Python backend          | `setup-pre-commit`           | `frontend-builder`, `backend-builder`, `ux-reviewer` | Dual test runners, fixture patterns        |
-| **`claude-tooling`** | Claude skills, hooks, agents            | —                            | `skill-builder`, `skill-reviewer`                    | Skill structure requirements               |
-| **`analysis`**       | Notebooks, R/Python scripts             | —                            | `analysis-builder`                                   | Reproducible seeds, documented assumptions |
+| Preset               | Target                                  | Preset Skills                  | Preset Agents                                        | Key Conventions                            |
+| -------------------- | --------------------------------------- | ------------------------------ | ---------------------------------------------------- | ------------------------------------------ |
+| **`python-api`**     | Lambda, FastAPI, Flask backends         | `deploy`                       | `api-builder`, `security-reviewer`                   | Ruff linting, structured logging           |
+| **`data-pipeline`**  | ETL/ELT, SQL transforms, scheduled jobs | `dagster-expert`, `dbt-expert` | `pipeline-builder`, `data-quality-reviewer`          | SQL lowercase, idempotent stages           |
+| **`full-stack`**     | React/Next.js + Python backend          | —                              | `frontend-builder`, `backend-builder`, `ux-reviewer` | Dual test runners, fixture patterns        |
+| **`claude-tooling`** | Claude skills, hooks, agents            | —                              | `skill-builder`, `skill-reviewer`                    | Skill structure requirements               |
+| **`analysis`**       | Notebooks, R/Python scripts             | —                              | `analysis-builder`                                   | Reproducible seeds, documented assumptions |
+| **`vault-ops`**     | My Brain vault sessions                 | `vault-*`                      | —                                                    | Frontmatter, wikilinks, handoff, sync      |
 
-Each preset's `manifest.json` controls which core components to include, which to exclude, and what preset-specific overrides to layer on top. All presets inherit the full set of 19 core skills, 2 core agents, 4 methodology docs, and the file-protection hook.
+Project presets inherit the full set of 20 core skills, 2 core agents, 4 methodology docs, and the file-protection hook. Supplemental presets such as `vault-ops` can ship only their domain-specific skills.
+
+Each preset's `manifest.json` controls which core components to include, which to exclude, and what preset-specific overrides to layer on top.
 
 ---
 
 ## Skills
 
-### Universal Skills (19)
+### Universal Skills (20)
 
 These ship with every preset:
 
-| Skill                            | Trigger                             | Description                                   |
-| -------------------------------- | ----------------------------------- | --------------------------------------------- |
-| `/commit`                        | "commit", "save work"               | Conventional commit style enforcement         |
-| `/daa-code-review`               | "code review", "quality check"      | Python, Markdown, and Mermaid analysis        |
-| `/design-an-interface`           | "design it twice", API design       | Parallel sub-agents for interface comparison  |
-| `/dev-cycle`                     | "dev cycle", "development workflow" | Full 7-phase GitLab-issues-driven pipeline    |
-| `/gitlab-cli`                    | GitLab operations                   | Issues, MRs, branches, reviews via `glab`     |
-| `/grill-me`                      | "grill me", stress-test a plan      | Systematic interrogation via AskUserQuestion  |
-| `/improve-codebase-architecture` | architecture improvement            | Deep-module refactoring opportunities         |
-| `/plan-ceo-review`               | "CEO review", "mega review"         | 3-mode plan review (expand/hold/reduce scope) |
-| `/prd-to-issues`                 | "convert PRD to issues"             | Vertical-slice GitLab issue creation          |
-| `/prd-to-plan`                   | "break down PRD", "tracer bullets"  | Multi-phase implementation planning           |
-| `/project-context`               | "update project.md"                 | Generate `.claude/docs/project.md`            |
-| `/readme-generator`              | "README", "document this project"   | Codebase analysis + README generation         |
-| `/request-refactor-plan`         | "plan a refactor"                   | Tiny-commit refactor RFC as GitLab issue      |
-| `/setup-pre-commit`              | "set up pre-commit"                 | Pre-commit hooks for linting and formatting   |
-| `/tdd`                           | "red-green-refactor", TDD           | Test-driven development loop                  |
-| `/triage-issue`                  | "triage", bug report                | Root-cause investigation + issue creation     |
-| `/write-a-prd`                   | "write a PRD"                       | Interview-driven PRD as GitLab issue          |
-| `/write-a-skill`                 | "create a skill"                    | Skill authoring with proper structure         |
+| Skill                            | Trigger                             | Description                                                  |
+| -------------------------------- | ----------------------------------- | ------------------------------------------------------------ |
+| `/commit`                        | "commit", "save work"               | Conventional commit style enforcement                        |
+| `/daa-code-review`               | "code review", "quality check"      | Python, Markdown, and Mermaid analysis                       |
+| `/design-an-interface`           | "design it twice", API design       | Parallel sub-agents for interface comparison                 |
+| `/dev-cycle`                     | "dev cycle", "development workflow" | Full 7-phase GitHub-issues-driven pipeline                   |
+| `/dignified-python`              | "pythonic", type hints, code review | Production Python standards for 3.10-3.13                    |
+| `/github-cli`                    | GitHub operations                   | Issues, PRs, branches, reviews via `gh`                      |
+| `/grill-me`                      | "grill me", stress-test a plan      | Systematic interrogation via AskUserQuestion                 |
+| `/improve-codebase-architecture` | architecture improvement            | Deep-module refactoring opportunities                        |
+| `/plan-ceo-review`               | "CEO review", "mega review"         | 3-mode plan review (expand/hold/reduce scope)                |
+| `/prd-to-issues`                 | "convert PRD to issues"             | Vertical-slice GitHub issue creation                         |
+| `/prd-to-plan`                   | "break down PRD", "tracer bullets"  | Multi-phase implementation planning                          |
+| `/project-context`               | "update project.md"                 | Generate `.claude/docs/project.md`                           |
+| `/readme-generator`              | "README", "document this project"   | Codebase analysis + README generation                        |
+| `/request-refactor-plan`         | "plan a refactor"                   | Tiny-commit refactor RFC as GitHub issue                     |
+| `/security-review`               | "security review", "find vulns"     | OWASP-based vulnerability analysis with confidence reporting |
+| `/setup-pre-commit`              | "set up pre-commit"                 | Pre-commit hooks for linting and formatting                  |
+| `/tdd`                           | "red-green-refactor", TDD           | Test-driven development loop                                 |
+| `/triage-issue`                  | "triage", bug report                | Root-cause investigation + issue creation                    |
+| `/write-a-prd`                   | "write a PRD"                       | Interview-driven PRD as GitHub issue                         |
+| `/write-a-skill`                 | "create a skill"                    | Skill authoring with proper structure                        |
 
 ### Preset-Specific Skills
 
-| Preset       | Skill               | Description                       |
-| ------------ | ------------------- | --------------------------------- |
-| `python-api` | `/deploy`           | Lambda/service deployment         |
+| Preset          | Skill             | Description                                     |
+| --------------- | ----------------- | ----------------------------------------------- |
+| `python-api`    | `/deploy`         | Lambda/service deployment                       |
+| `data-pipeline` | `/dagster-expert` | Expert guidance for Dagster and `dg` CLI        |
+| `data-pipeline` | `/dbt-expert`     | Expert guidance for dbt Core and SQL transforms |
+| `vault-ops`     | `/vault-*`        | My Brain vault command workflows                 |
 
 ---
 
@@ -343,7 +184,7 @@ Four methodology documents in `core/docs/` define how Claude Code agents should 
 
 ## Dev-Cycle Orchestrator
 
-The `/dev-cycle` skill orchestrates end-to-end feature development through GitLab issues.
+The `/dev-cycle` skill orchestrates end-to-end feature development through GitHub issues.
 
 ### 7-Phase Pipeline
 
@@ -354,14 +195,14 @@ flowchart LR
     R --> I[Issues]
     I --> IM[Implement]
     IM --> CR[Code Review]
-    CR --> MR[MR]
+    CR --> MR[PR]
 
     B -.- PRD["write-a-prd"]
     P -.- PTP["prd-to-plan"]
     R -.- CEO["plan-ceo-review"]
     IM -.- TDD["tdd + subagents"]
     CR -.- REV["daa-code-review"]
-    MR -.- GL["commit + gitlab-cli"]
+    MR -.- GL["commit + github-cli"]
 ```
 
 Every phase is mandatory. Each phase gates on a specific artifact (issue URL, plan file, approval, etc.) before advancing.
@@ -372,6 +213,131 @@ Every phase is mandatory. Each phase gates on a specific artifact (issue URL, pl
 - **Resume** across conversations — scan for `status: in_progress` files
 - **Archive** on completion — `git mv` state + plan files to `docs/archive/`
 - **Backwards transitions** supported: `implement → plan` or `code_review → plan` when architectural issues arise
+
+---
+
+## Development
+
+This section is for contributors who want to build presets from source, add new presets, or modify core components.
+
+### Prerequisites
+
+- **Python 3.12+**
+- **[uv](https://docs.astral.sh/uv/)** — Python package manager
+
+```bash
+git clone https://github.com/cdcoonce/claude-workflow.git
+cd claude-workflow
+uv sync
+```
+
+### Architecture
+
+```mermaid
+graph TD
+    CORE[core/] --> BUILD[build_preset.py]
+    PRESETS[presets/] --> BUILD
+    BUILD --> DIST[dist/preset-name/]
+
+    subgraph "core/"
+        SKILLS_CORE[skills/ -- 20 universal]
+        DOCS[docs/ -- 4 methodology]
+        HOOKS_CORE[hooks/ -- protect-files.py]
+        AGENTS_CORE[agents/ -- 2 universal]
+        BASE_JSON[settings-base.json]
+    end
+
+    subgraph "presets/preset-name/"
+        MANIFEST[manifest.json]
+        PRESET_JSON[settings-preset.json]
+        SKILLS_PRESET[skills/ -- overrides]
+        HOOKS_PRESET[hooks/ -- additions]
+        AGENTS_PRESET[agents/ -- overrides]
+    end
+
+    subgraph "dist/preset-name/ (plugin)"
+        OUT_PLUGIN[.claude-plugin/plugin.json]
+        OUT_SKILLS[skills/]
+        OUT_AGENTS[agents/]
+        OUT_HOOKS[hooks/]
+        OUT_SETTINGS[settings.json]
+        OUT_README[README.md]
+    end
+```
+
+Key design decisions:
+
+- **Plugin format** — Output is a self-contained Claude Code plugin with `.claude-plugin/plugin.json`
+- **Override semantics** — A preset skill or agent with the same name as a core one **replaces** it entirely
+- **Settings merge** — Base and preset JSON are shallow-merged; hook arrays are appended, not replaced
+- **Fail-fast validation** — All manifest references are checked upfront before any files are copied
+- **Path containment safety** — Exclusion paths are resolved and verified to prevent directory traversal
+- **Marketplace index** — `.claude-plugin/marketplace.json` lists all available plugins with their `dist/` sources, enabling Claude to discover and install presets by URL
+
+### Build Pipeline
+
+The build script assembles a self-contained plugin directory in 10 steps:
+
+```mermaid
+flowchart LR
+    A[Read manifest.json] --> B[Validate references]
+    B --> C[Copy core skills/agents]
+    C --> D[Copy preset skills/agents -- overrides core]
+    D --> E[Copy hook scripts]
+    E --> F[Generate hooks/hooks.json]
+    F --> G[Generate settings.json]
+    G --> H[Generate .claude-plugin/plugin.json]
+    H --> I[Generate README.md]
+    I --> J[Apply exclusions]
+    J --> K["dist/{preset}/ (plugin)"]
+```
+
+### Folder Structure
+
+```
+claude-workflow/
+├── .claude-plugin/
+│   └── marketplace.json     # Plugin registry — lists all presets with dist/ sources
+├── core/                    # Universal components shared by all presets
+│   ├── settings-base.json   # Base hook configuration
+│   ├── agents/              # 2 universal agents (tdd-implementer, code-reviewer)
+│   ├── docs/                # TDD, root-cause tracing, subagent, parallel agents
+│   ├── hooks/               # File protection hook
+│   └── skills/              # 20 universal skills
+├── presets/                  # Project-type configurations
+│   ├── python-api/          # Python backend services (+ api-builder, security-reviewer)
+│   ├── data-pipeline/       # ETL/ELT pipelines (+ pipeline-builder, data-quality-reviewer)
+│   ├── full-stack/          # React/Next.js + Python (+ frontend/backend-builder, ux-reviewer)
+│   ├── claude-tooling/      # Claude skill/hook development (+ skill-builder, skill-reviewer)
+│   ├── analysis/            # Notebooks, statistical analysis (+ analysis-builder)
+│   └── vault-ops/           # My Brain vault lifecycle and graph workflows
+├── scripts/                 # Build, marketplace, smoke-test, validation tooling
+├── tests/                   # 93 pytest tests
+├── dist/                    # Build output (gitignored)
+├── docs/                    # Plans, archives, dev-cycle state
+└── .claude/                 # Self-applicable template (dogfooding)
+```
+
+### Scripts Reference
+
+| Command                                                       | Description                                                     |
+| ------------------------------------------------------------- | --------------------------------------------------------------- |
+| `uv run python -m scripts.build_preset <preset>`              | Assemble core + preset into `dist/<preset>/`                    |
+| `uv run python -m scripts.build_marketplace`                  | Regenerate `.claude-plugin/marketplace.json`                    |
+| `uv run python -m scripts.smoke_test <preset>`                | Validate internal consistency of a built preset                 |
+| `uv run python -m scripts.dev_cycle_validate docs/dev-cycle/` | Validate dev-cycle state file frontmatter and phase transitions |
+
+**Smoke test** checks: `.claude-plugin/plugin.json` has required fields, every skill has a `SKILL.md`, every agent has valid `AGENT.md` frontmatter, hook scripts referenced in `hooks.json` exist, and `settings.json` is valid JSON.
+
+### Running Tests
+
+```bash
+# Run all tests
+uv run pytest
+
+# Run with coverage
+uv run pytest --cov=scripts --cov-report=term-missing
+```
 
 ---
 

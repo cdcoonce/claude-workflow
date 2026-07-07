@@ -14,13 +14,68 @@ from models import (
     Severity,
 )
 from python_analyzer import (
+    _ruff_target,
     analyze_python,
     analyze_python_file,
     check_ruff_available,
     get_category_for_rule,
     get_severity_for_rule,
+    parse_ruff_diagnostic,
     run_ruff_check,
 )
+
+
+class TestRuffTarget:
+    """Tests for the _ruff_target temp-file management helper."""
+
+    def test_existing_file_passed_through(self):
+        """An existing file path is used directly, no temp file created."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
+            tmp.write("x = 1\n")
+            tmp_path = Path(tmp.name)
+
+        try:
+            with _ruff_target("unused source", tmp_path) as target:
+                assert target == str(tmp_path)
+                assert tmp_path.exists()
+            # Existing file must survive the context exit.
+            assert tmp_path.exists()
+        finally:
+            tmp_path.unlink()
+
+    def test_missing_path_creates_temp_file(self):
+        """A None file path creates a temp .py file with the source."""
+        with _ruff_target("x = 1\n", None) as target:
+            target_path = Path(target)
+            assert target_path.exists()
+            assert target_path.suffix == ".py"
+            assert target_path.read_text() == "x = 1\n"
+
+        # Temp file must be cleaned up after the context exits.
+        assert not target_path.exists()
+
+    def test_nonexistent_file_path_creates_temp_file(self):
+        """A file_path that does not exist on disk falls back to a temp file."""
+        missing_path = Path("/nonexistent/definitely-not-here.py")
+
+        with _ruff_target("y = 2\n", missing_path) as target:
+            target_path = Path(target)
+            assert target_path != missing_path
+            assert target_path.exists()
+            assert target_path.read_text() == "y = 2\n"
+
+        assert not target_path.exists()
+
+    def test_cleans_up_temp_file_on_exception(self):
+        """The temp file is unlinked even if the caller raises inside the block."""
+        target_path = None
+        with pytest.raises(RuntimeError):
+            with _ruff_target("z = 3\n", None) as target:
+                target_path = Path(target)
+                raise RuntimeError("boom")
+
+        assert target_path is not None
+        assert not target_path.exists()
 
 
 class TestRuleMapping:
@@ -78,6 +133,15 @@ class TestRuleMapping:
         assert get_severity_for_rule("W291") == Severity.INFO
         assert get_severity_for_rule("D100") == Severity.INFO
 
+    def test_complexity_severity(self):
+        """C90x mccabe-complexity rules map to INFO via the 'C90' prefix (#130).
+
+        The digit-stripped prefix 'C' is not in the map, so the full prefix must
+        be tried first — previously this fell through to WARNING and the 'C90'
+        map entry was dead code.
+        """
+        assert get_severity_for_rule("C901") == Severity.INFO
+
     def test_unknown_rule_defaults(self):
         """Test that unknown rules get sensible defaults."""
         assert get_category_for_rule("UNKNOWN123") == IssueCategory.PEP8
@@ -90,6 +154,30 @@ class TestRuffIntegration:
     def test_ruff_available(self):
         """Test that ruff is available on the system."""
         assert check_ruff_available() is True
+
+    def test_ruff_probe_is_cached(self, monkeypatch):
+        """check_ruff_available probes the subprocess at most once per process (#146)."""
+        import python_analyzer
+
+        python_analyzer.check_ruff_available.cache_clear()
+        calls = {"n": 0}
+
+        class _Result:
+            returncode = 0
+            stdout = "ruff 0.1.0"
+            stderr = ""
+
+        def _fake_run(*args, **kwargs):
+            calls["n"] += 1
+            return _Result()
+
+        monkeypatch.setattr(python_analyzer.subprocess, "run", _fake_run)
+        try:
+            assert python_analyzer.check_ruff_available() is True
+            assert python_analyzer.check_ruff_available() is True
+            assert calls["n"] == 1  # probed once; the second call is cached
+        finally:
+            python_analyzer.check_ruff_available.cache_clear()
 
     def test_run_ruff_on_clean_code(self):
         """Test ruff on code with minimal issues."""
@@ -130,14 +218,6 @@ def hello() -> str:
 
     def test_run_ruff_detects_unused_variable(self):
         """Test that ruff detects unused variables."""
-        code = '''"""Module."""
-
-
-def foo() -> None:
-    """Do nothing."""
-    x = 1  # noqa: F841 - testing detection
-'''
-        # Run without noqa
         code_no_noqa = '''"""Module."""
 
 
@@ -230,9 +310,7 @@ class TestAnalyzePythonFile:
 
     def test_analyze_existing_file(self):
         """Test analyzing an existing Python file."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
             tmp.write("import os\nx = 1\n")
             tmp.flush()
             tmp_path = Path(tmp.name)
@@ -282,3 +360,109 @@ class TestIssueProperties:
         # Should have at least one error
         errors = result.get_issues_by_severity(Severity.ERROR)
         assert len(errors) > 0
+
+
+class TestParseRuffDiagnostic:
+    """Tests for parse_ruff_diagnostic, exercised directly with hand-built diagnostics."""
+
+    def test_line_end_collapses_to_none_when_equal_to_line_start(self):
+        """Test that line_end is None when end_location.row equals location.row."""
+        diagnostic = {
+            "code": "F401",
+            "message": "'os' imported but unused",
+            "location": {"row": 3, "column": 1},
+            "end_location": {"row": 3, "column": 10},
+        }
+        issue = parse_ruff_diagnostic(diagnostic, None, [])
+        assert issue.location.line_end is None
+
+    def test_line_end_kept_when_different_from_line_start(self):
+        """Test that line_end is preserved when it differs from line_start."""
+        diagnostic = {
+            "code": "E501",
+            "message": "line too long",
+            "location": {"row": 3, "column": 1},
+            "end_location": {"row": 5, "column": 10},
+        }
+        issue = parse_ruff_diagnostic(diagnostic, None, [])
+        assert issue.location.line_end == 5
+
+    def test_context_populated_for_in_range_line(self):
+        """Test that context is pulled from source_lines for a valid line_start."""
+        source_lines = ["a = 1\n", "b = 2  \n", "c = 3\n"]
+        diagnostic = {
+            "code": "E225",
+            "message": "missing whitespace",
+            "location": {"row": 2, "column": 1},
+        }
+        issue = parse_ruff_diagnostic(diagnostic, None, source_lines)
+        assert issue.context == "b = 2"
+
+    def test_context_none_when_line_start_exceeds_source_length(self):
+        """Test that context is None when line_start is out of range."""
+        source_lines = ["a = 1\n"]
+        diagnostic = {
+            "code": "E225",
+            "message": "missing whitespace",
+            "location": {"row": 5, "column": 1},
+        }
+        issue = parse_ruff_diagnostic(diagnostic, None, source_lines)
+        assert issue.context is None
+
+    def test_suggested_fix_created_when_edits_present_and_safe(self):
+        """Test that a fix with edits and safe applicability is auto-fixable."""
+        diagnostic = {
+            "code": "F401",
+            "message": "'os' imported but unused",
+            "location": {"row": 1, "column": 1},
+            "fix": {
+                "applicability": "safe",
+                "edits": [{"content": ""}],
+            },
+        }
+        issue = parse_ruff_diagnostic(diagnostic, None, [])
+        assert issue.suggested_fix is not None
+        assert issue.suggested_fix.auto_fixable is True
+
+    def test_suggested_fix_not_auto_fixable_when_not_safe(self):
+        """Test that a fix with non-safe applicability is not auto-fixable."""
+        diagnostic = {
+            "code": "F401",
+            "message": "'os' imported but unused",
+            "location": {"row": 1, "column": 1},
+            "fix": {
+                "applicability": "unsafe",
+                "edits": [{"content": ""}],
+            },
+        }
+        issue = parse_ruff_diagnostic(diagnostic, None, [])
+        assert issue.suggested_fix is not None
+        assert issue.suggested_fix.auto_fixable is False
+
+    def test_no_suggested_fix_when_edits_empty(self):
+        """Test that suggested_fix is None when fix has no edits."""
+        diagnostic = {
+            "code": "F401",
+            "message": "'os' imported but unused",
+            "location": {"row": 1, "column": 1},
+            "fix": {"applicability": "safe", "edits": []},
+        }
+        issue = parse_ruff_diagnostic(diagnostic, None, [])
+        assert issue.suggested_fix is None
+
+    def test_no_suggested_fix_when_fix_key_absent(self):
+        """Test that suggested_fix is None when the diagnostic has no fix key."""
+        diagnostic = {
+            "code": "F401",
+            "message": "'os' imported but unused",
+            "location": {"row": 1, "column": 1},
+        }
+        issue = parse_ruff_diagnostic(diagnostic, None, [])
+        assert issue.suggested_fix is None
+
+    def test_missing_code_and_message_fall_back_to_defaults(self):
+        """Test that missing code/message keys fall back to UNKNOWN/Unknown issue."""
+        diagnostic = {"location": {"row": 1, "column": 1}}
+        issue = parse_ruff_diagnostic(diagnostic, None, [])
+        assert issue.rule_id == "UNKNOWN"
+        assert issue.message == "Unknown issue"

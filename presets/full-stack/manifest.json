@@ -7,7 +7,7 @@
     "hooks": ["protect-files.py"]
   },
   "exclude": [],
-  "preset_skills": [],
+  "preset_skills": ["react-ui-ux"],
   "preset_hooks": ["post-edit-lint.py"],
   "preset_agents": ["frontend-builder", "backend-builder", "ux-reviewer"]
 }

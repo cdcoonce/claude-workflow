@@ -3,7 +3,33 @@
 import json
 from pathlib import Path
 
-from scripts.build_preset import build_preset
+import pytest
+
+from scripts.build_preset import BuildValidationError, _merge_settings, build_preset
+
+
+class TestMergeSettings:
+    """_merge_settings must honor its full contract, not just hooks (#92)."""
+
+    def test_carries_non_hook_keys_with_preset_override(self, tmp_path: Path) -> None:
+        base = tmp_path / "base.json"
+        base.write_text(json.dumps({"hooks": {}, "model": "base", "keep": 1}))
+        preset = tmp_path / "preset.json"
+        preset.write_text(json.dumps({"env": {"X": "1"}, "model": "preset"}))
+
+        merged = _merge_settings(base, preset)
+        assert merged["env"] == {"X": "1"}  # non-hook key carried through
+        assert merged["model"] == "preset"  # preset wins on collision
+        assert merged["keep"] == 1  # base-only key preserved
+
+    def test_hook_arrays_still_append(self, tmp_path: Path) -> None:
+        base = tmp_path / "base.json"
+        base.write_text(json.dumps({"hooks": {"PreToolUse": ["a"]}}))
+        preset = tmp_path / "preset.json"
+        preset.write_text(json.dumps({"hooks": {"PreToolUse": ["b"]}}))
+
+        merged = _merge_settings(base, preset)
+        assert merged["hooks"]["PreToolUse"] == ["a", "b"]  # D13 append unchanged
 
 
 class TestBuildPluginStructure:
@@ -16,12 +42,26 @@ class TestBuildPluginStructure:
 
     def test_build_creates_plugin_json(self, tmp_repo: Path) -> None:
         build_preset("python-api", repo_root=tmp_repo)
-        plugin_json = tmp_repo / "dist" / "python-api" / ".claude-plugin" / "plugin.json"
+        plugin_json = (
+            tmp_repo / "dist" / "python-api" / ".claude-plugin" / "plugin.json"
+        )
         assert plugin_json.exists()
         data = json.loads(plugin_json.read_text())
         assert data["name"] == "python-api"
         assert data["version"] == "1.0.0"
         assert data["description"] == "Python backend services"
+
+    def test_build_creates_codex_plugin_json(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        plugin_json = tmp_repo / "dist" / "python-api" / ".codex-plugin" / "plugin.json"
+        assert plugin_json.exists()
+        data = json.loads(plugin_json.read_text())
+        assert data["name"] == "python-api"
+        assert data["version"] == "1.0.0"
+        assert data["description"] == "Python backend services"
+        assert data["author"] == {"name": "Charles Coonce"}
+        assert data["skills"] == "./skills/"
+        assert data["interface"]["developerName"] == "Charles Coonce"
 
     def test_build_no_claude_subdir(self, tmp_repo: Path) -> None:
         """Plugin format must not contain a .claude/ subdirectory."""
@@ -35,6 +75,12 @@ class TestBuildPluginStructure:
         claude_md = tmp_repo / "dist" / "python-api" / "CLAUDE.md"
         assert not claude_md.exists()
 
+    def test_build_no_template_version(self, tmp_repo: Path) -> None:
+        """Plugin format must not contain .template-version."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        assert not (dist / ".template-version").exists()
+        assert not (dist / ".claude" / ".template-version").exists()
 
     def test_build_no_agent_role_defaults(self, tmp_repo: Path) -> None:
         """Plugin format must not contain agent-role-defaults.json."""
@@ -42,13 +88,6 @@ class TestBuildPluginStructure:
         dist = tmp_repo / "dist" / "python-api"
         assert not (dist / "agent-role-defaults.json").exists()
         assert not (dist / ".claude" / "agent-role-defaults.json").exists()
-
-    def test_build_no_docs_dir(self, tmp_repo: Path) -> None:
-        """Plugin format must not contain a docs/ directory."""
-        build_preset("python-api", repo_root=tmp_repo)
-        dist = tmp_repo / "dist" / "python-api"
-        assert not (dist / "docs").exists()
-        assert not (dist / ".claude" / "docs").exists()
 
 
 class TestBuildPluginSkills:
@@ -65,6 +104,19 @@ class TestBuildPluginSkills:
         build_preset("python-api", repo_root=tmp_repo)
         skills = tmp_repo / "dist" / "python-api" / "skills"
         assert (skills / "deploy" / "SKILL.md").exists()
+
+    def test_build_copies_specific_core_skills(self, tmp_repo: Path) -> None:
+        """core.skills as a list copies exactly the named core skills."""
+        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["core"]["skills"] = ["commit", "tdd"]
+        manifest_path.write_text(json.dumps(manifest))
+
+        build_preset("python-api", repo_root=tmp_repo)
+        skills = tmp_repo / "dist" / "python-api" / "skills"
+        assert (skills / "commit" / "SKILL.md").exists()
+        assert (skills / "tdd" / "SKILL.md").exists()
+        assert not (skills / "daa-code-review").exists()
 
     def test_preset_skill_overrides_core(self, tmp_repo: Path) -> None:
         override = tmp_repo / "presets" / "python-api" / "skills" / "tdd"
@@ -108,6 +160,17 @@ class TestBuildPluginAgents:
         assert (agents / "tdd-implementer" / "AGENT.md").exists()
         assert not (agents / "code-reviewer").exists()
 
+    def test_build_fails_on_missing_core_agent(self, tmp_repo: Path) -> None:
+        # A core.agents list naming a nonexistent agent must fail fast (D19), like
+        # the core.skills check already does — not silently drop it (#88).
+        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["core"]["agents"] = ["does-not-exist"]
+        manifest_path.write_text(json.dumps(manifest))
+
+        with pytest.raises(BuildValidationError, match="Core agent not found: does-not-exist"):
+            build_preset("python-api", repo_root=tmp_repo)
+
     def test_build_copies_preset_agents(self, tmp_repo: Path) -> None:
         manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
         manifest = json.loads(manifest_path.read_text())
@@ -119,7 +182,9 @@ class TestBuildPluginAgents:
         assert (agents / "api-builder" / "AGENT.md").exists()
 
     def test_preset_agent_overrides_core(self, tmp_repo: Path) -> None:
-        override_dir = tmp_repo / "presets" / "python-api" / "agents" / "tdd-implementer"
+        override_dir = (
+            tmp_repo / "presets" / "python-api" / "agents" / "tdd-implementer"
+        )
         override_dir.mkdir(parents=True, exist_ok=True)
         (override_dir / "AGENT.md").write_text(
             "---\nname: tdd-implementer\nrole: implementer\n---\n\n# OVERRIDDEN\n"
@@ -131,11 +196,14 @@ class TestBuildPluginAgents:
         manifest_path.write_text(json.dumps(manifest))
 
         build_preset("python-api", repo_root=tmp_repo)
-        agent_md = tmp_repo / "dist" / "python-api" / "agents" / "tdd-implementer" / "AGENT.md"
+        agent_md = (
+            tmp_repo / "dist" / "python-api" / "agents" / "tdd-implementer" / "AGENT.md"
+        )
         assert "OVERRIDDEN" in agent_md.read_text()
 
     def test_build_skips_agents_when_dir_missing(self, tmp_repo: Path) -> None:
         import shutil
+
         shutil.rmtree(tmp_repo / "core" / "agents")
         build_preset("python-api", repo_root=tmp_repo)
         agents = tmp_repo / "dist" / "python-api" / "agents"
@@ -147,6 +215,57 @@ class TestBuildPluginAgents:
         assert (agents / "tdd-implementer").exists()
         assert (agents / "code-reviewer").exists()
         assert not (agents / "api-builder").exists()
+
+
+class TestBuildPluginDocs:
+    """agent-matching.md is copied into docs/ for every preset."""
+
+    def test_build_copies_agent_matching_doc(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        doc = tmp_repo / "dist" / "python-api" / "docs" / "agent-matching.md"
+        assert doc.exists()
+
+    def test_build_agent_matching_doc_has_content(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        doc = tmp_repo / "dist" / "python-api" / "docs" / "agent-matching.md"
+        assert doc.read_text().strip() != ""
+
+    def test_build_omits_agent_matching_when_missing_but_ships_methodology(
+        self, tmp_repo: Path
+    ) -> None:
+        """agent-matching.md is agent-gated; methodology docs ship regardless (#97)."""
+        (tmp_repo / "core" / "docs" / "agent-matching.md").unlink()
+        build_preset("python-api", repo_root=tmp_repo)
+        docs_dir = tmp_repo / "dist" / "python-api" / "docs"
+        assert docs_dir.exists()
+        assert not (docs_dir / "agent-matching.md").exists()
+        assert (docs_dir / "tdd.md").exists()
+
+    def test_build_bundles_methodology_docs(self, tmp_repo: Path) -> None:
+        """#97: the methodology docs the README names ship, so the plugin is
+        self-documenting rather than pointing at absent files."""
+        build_preset("python-api", repo_root=tmp_repo)
+        docs = tmp_repo / "dist" / "python-api" / "docs"
+        for name in (
+            "tdd.md",
+            "root-cause-tracing.md",
+            "subagent-development.md",
+            "parallel-agents.md",
+        ):
+            assert (docs / name).exists(), f"{name} should be bundled"
+
+    def test_build_excludes_project_doc(self, tmp_repo: Path) -> None:
+        """#97: project.md is project-specific and must never ship in a preset."""
+        build_preset("python-api", repo_root=tmp_repo)
+        assert not (
+            tmp_repo / "dist" / "python-api" / "docs" / "project.md"
+        ).exists()
+
+    def test_build_no_claude_subdir_in_docs(self, tmp_repo: Path) -> None:
+        """docs/ must not be nested under .claude/ in plugin format."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        assert not (dist / ".claude").exists()
 
 
 class TestBuildPluginHooks:
@@ -241,13 +360,28 @@ class TestBuildPluginReadme:
         content = readme.read_text()
         assert "Python backend services" in content
 
+    def test_excluded_skill_absent_from_readme(self, tmp_repo: Path) -> None:
+        # Exclusions must apply BEFORE the README scan, so an excluded skill is not
+        # listed in a README for output that no longer contains it (#122).
+        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["exclude"] = ["skills/daa-code-review"]
+        manifest_path.write_text(json.dumps(manifest))
+
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        assert not (dist / "skills" / "daa-code-review").exists()
+        assert "daa-code-review" not in (dist / "README.md").read_text()
+
     def test_readme_contains_claude_md_template_section(self, tmp_repo: Path) -> None:
         build_preset("python-api", repo_root=tmp_repo)
         readme = tmp_repo / "dist" / "python-api" / "README.md"
         content = readme.read_text()
         assert "## CLAUDE.md Template" in content
 
-    def test_readme_claude_md_template_references_plugin_name(self, tmp_repo: Path) -> None:
+    def test_readme_claude_md_template_references_plugin_name(
+        self, tmp_repo: Path
+    ) -> None:
         build_preset("python-api", repo_root=tmp_repo)
         readme = tmp_repo / "dist" / "python-api" / "README.md"
         content = readme.read_text()
@@ -290,6 +424,17 @@ class TestBuildExclusions:
         assert not (agents / "tdd-implementer").exists()
         assert (agents / "code-reviewer" / "AGENT.md").exists()
 
+    def test_exclude_removes_single_file(self, tmp_repo: Path) -> None:
+        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["exclude"] = ["README.md"]
+        manifest_path.write_text(json.dumps(manifest))
+
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        assert not (dist / "README.md").exists()
+        assert (dist / ".claude-plugin" / "plugin.json").exists()
+
     def test_exclusion_path_containment(self, tmp_repo: Path) -> None:
         """Exclusion paths that escape dist_path are rejected."""
         manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
@@ -299,6 +444,38 @@ class TestBuildExclusions:
 
         build_preset("python-api", repo_root=tmp_repo)
         assert (tmp_repo / "dist" / "python-api").exists()
+
+    def test_exclusion_sibling_prefix_not_treated_as_contained(
+        self, tmp_repo: Path
+    ) -> None:
+        """A sibling dir sharing dist_path's name as a prefix must not pass the
+        containment check (a string startswith check would wrongly allow it)."""
+        sibling = tmp_repo / "dist" / "python-api-evil"
+        sibling.mkdir(parents=True)
+        sentinel = sibling / "x"
+        sentinel.write_text("do not delete")
+
+        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["exclude"] = ["../python-api-evil/x"]
+        manifest_path.write_text(json.dumps(manifest))
+
+        build_preset("python-api", repo_root=tmp_repo)
+        assert sentinel.exists()
+        assert sentinel.read_text() == "do not delete"
+
+    def test_exclusion_missing_target_warns(self, tmp_repo: Path, capsys) -> None:
+        """A typo'd exclusion that matches nothing still builds, but warns."""
+        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["exclude"] = ["skills/comit"]
+        manifest_path.write_text(json.dumps(manifest))
+
+        dist_path = build_preset("python-api", repo_root=tmp_repo)
+        assert dist_path.exists()
+        captured = capsys.readouterr()
+        assert "WARNING" in captured.out
+        assert "skills/comit" in captured.out
 
 
 class TestBuildPresetAgentValidation:
@@ -316,7 +493,9 @@ class TestBuildPresetAgentValidation:
         with pytest.raises(BuildValidationError, match="Preset agent not found"):
             build_preset("python-api", repo_root=tmp_repo)
 
-    def test_validation_catches_agent_in_both_preset_and_exclude(self, tmp_repo: Path) -> None:
+    def test_validation_catches_agent_in_both_preset_and_exclude(
+        self, tmp_repo: Path
+    ) -> None:
         import pytest
         from scripts.build_preset import BuildValidationError
 
@@ -330,20 +509,79 @@ class TestBuildPresetAgentValidation:
             build_preset("python-api", repo_root=tmp_repo)
 
 
+class TestManifestRequiredFields:
+    """Validation for manifest.json required top-level fields."""
+
+    def test_validation_fails_missing_name(self, tmp_repo: Path) -> None:
+        import pytest
+        from scripts.build_preset import BuildValidationError
+
+        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        del manifest["name"]
+        manifest_path.write_text(json.dumps(manifest))
+
+        with pytest.raises(BuildValidationError, match="'name'"):
+            build_preset("python-api", repo_root=tmp_repo)
+
+    def test_validation_fails_missing_core(self, tmp_repo: Path) -> None:
+        import pytest
+        from scripts.build_preset import BuildValidationError
+
+        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        del manifest["core"]
+        manifest_path.write_text(json.dumps(manifest))
+
+        with pytest.raises(BuildValidationError, match="'core'"):
+            build_preset("python-api", repo_root=tmp_repo)
+
+
+class TestManifestLoading:
+    """Validation for manifest.json presence and JSON validity."""
+
+    def test_validation_fails_missing_manifest_file(self, tmp_repo: Path) -> None:
+        preset = tmp_repo / "presets" / "no-manifest"
+        preset.mkdir()
+
+        with pytest.raises(BuildValidationError, match="no-manifest.*manifest.json"):
+            build_preset("no-manifest", repo_root=tmp_repo)
+
+    def test_validation_fails_malformed_json(self, tmp_repo: Path) -> None:
+        preset = tmp_repo / "presets" / "bad-json"
+        preset.mkdir()
+        (preset / "manifest.json").write_text("{not valid json")
+
+        with pytest.raises(BuildValidationError, match="bad-json.*manifest.json"):
+            build_preset("bad-json", repo_root=tmp_repo)
+
+
 class TestSettingsMerge:
     """Settings merge handles edge cases correctly."""
 
     def test_duplicate_hook_type_appends_in_hooks_json(self, tmp_repo: Path) -> None:
         """When base and preset both define PreToolUse, hooks.json appends them."""
         preset_settings = tmp_repo / "presets" / "python-api" / "settings-preset.json"
-        preset_settings.write_text(json.dumps({
-            "hooks": {
-                "PreToolUse": [{"matcher": "Bash", "hooks": []}],
-                "PostToolUse": [{"matcher": "Edit|Write", "hooks": [
-                    {"type": "command", "command": 'python3 "$CLAUDE_PLUGIN_ROOT"/hooks/scripts/post-edit-lint.py'}
-                ]}],
-            }
-        }))
+        preset_settings.write_text(
+            json.dumps(
+                {
+                    "hooks": {
+                        "PreToolUse": [{"matcher": "Bash", "hooks": []}],
+                        "PostToolUse": [
+                            {
+                                "matcher": "Edit|Write",
+                                "hooks": [
+                                    {
+                                        "type": "command",
+                                        "command": 'python3 "$CLAUDE_PLUGIN_ROOT"/hooks/scripts/post-edit-lint.py',
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                }
+            )
+        )
 
         build_preset("python-api", repo_root=tmp_repo)
         hooks_json = tmp_repo / "dist" / "python-api" / "hooks" / "hooks.json"

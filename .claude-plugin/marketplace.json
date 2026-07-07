@@ -23,16 +23,58 @@
       "source": "./dist/data-pipeline"
     },
     {
+      "name": "data-viz",
+      "version": "1.0.0",
+      "description": "Intuitive, context-forward chart design in React (Recharts/Nivo) — right chart type for the data, guided insight over decoration",
+      "source": "./dist/data-viz"
+    },
+    {
       "name": "full-stack",
       "version": "1.0.0",
       "description": "React/Next.js frontend + Python backend",
       "source": "./dist/full-stack"
     },
     {
+      "name": "persona-pair-programmer",
+      "version": "1.0.0",
+      "description": "Collaborative pair-programmer voice — brief think-aloud, checks in at decision points.",
+      "source": "./dist/persona-pair-programmer"
+    },
+    {
+      "name": "persona-ship-it",
+      "version": "1.0.0",
+      "description": "Momentum-first voice — blunt, bias-to-action, picks a sensible default and moves.",
+      "source": "./dist/persona-ship-it"
+    },
+    {
+      "name": "persona-staff-eng-deep",
+      "version": "1.0.0",
+      "description": "Senior-staff-engineer voice at full depth — reasoning, tradeoffs, and edge cases spelled out.",
+      "source": "./dist/persona-staff-eng-deep"
+    },
+    {
+      "name": "persona-terse-staff-eng",
+      "version": "1.0.0",
+      "description": "Terse senior-staff-engineer voice — answer-first, minimal, expert assumptions. The least verbose persona.",
+      "source": "./dist/persona-terse-staff-eng"
+    },
+    {
+      "name": "persona-thinking-partner",
+      "version": "1.0.0",
+      "description": "Socratic thinking partner — sharp questions and decision-sharpening over answers.",
+      "source": "./dist/persona-thinking-partner"
+    },
+    {
       "name": "python-api",
       "version": "1.0.0",
       "description": "Python backend services — Lambda, FastAPI, Flask",
       "source": "./dist/python-api"
+    },
+    {
+      "name": "vault-ops",
+      "version": "1.0.0",
+      "description": "Charles Coonce's My Brain vault lifecycle, graph, capture, search, sync, and writing workflows",
+      "source": "./dist/vault-ops"
     }
   ]
 }

@@ -8,10 +8,10 @@ See the 7-Phase Pipeline table in SKILL.md for delegation targets. This document
 
 ## Brainstorm → Plan
 
-- **Validate:** GitLab issue URL (PRD) is present and accessible via `glab issue view`
+- **Validate:** GitHub issue URL (PRD) is present and accessible via `gh issue view`
 - **Handoff:** Pass issue URL to `prd-to-plan`, which reads the PRD and breaks it into vertical slices
 - **Record:** Plan file path in artifacts table
-- **Failure:** If `glab` is not authenticated or issue is 404, set phase to `blocked`, suggest resolution
+- **Failure:** If `gh` is not authenticated or issue is 404, set phase to `blocked`, suggest resolution
 
 ## Plan → CEO Review
 
@@ -23,25 +23,19 @@ See the 7-Phase Pipeline table in SKILL.md for delegation targets. This document
 ## CEO Review → Issues
 
 - **Validate:** Plan has been reviewed and user approved. Plan file on disk reflects all revisions.
-- **Handoff:** Orchestrator reads the plan's vertical slices and creates one GitLab issue per slice using `glab issue create`. Each issue:
+- **Handoff:** Orchestrator reads the plan's vertical slices and creates one GitHub issue per slice using `gh issue create`. Each issue:
   - References the PRD issue number
   - Includes acceptance criteria from the plan
   - Is created in dependency order so blockers can be referenced by number
 - **Record:** Each issue URL is recorded individually in the Issues table as it's created (not batched)
 - **Partial completion:** On retry, skip slices that already have a recorded issue URL in the Issues table
-- **Failure:** If `glab issue create` fails mid-batch, the Issues table reflects which were created. Retry resumes from next uncreated slice.
+- **Failure:** If `gh issue create` fails mid-batch, the Issues table reflects which were created. Retry resumes from next uncreated slice.
 
 ## Issues → Implement
 
-- **Validate:** All GitLab issues created and URLs recorded in Issues table
-- **Commit planning artifacts (before branching):**
-  1. Stage only the state file and plan file:
-     `git add docs/dev-cycle/{slug}.state.md docs/plans/{feature}.md`
-  2. Commit: `docs(dev-cycle): plan and state for {feature-slug}`
-  3. Push to origin: `git push origin main` (or current default branch)
-  4. This ensures planning commits live on remote main and do NOT appear in the feature branch MR diff
+- **Validate:** All GitHub issues created and URLs recorded in Issues table
 - **Branch creation:**
-  - Create `feat/{feature-slug}` from current HEAD (which now includes the pushed planning commit)
+  - Create `feat/{feature-slug}` from current HEAD
   - If branch already exists and belongs to this feature (per state file): check it out
   - If branch exists but is unrecognized: error, ask user to resolve
 - **Handoff:** Load plan file. Dispatch one subagent per issue following `subagent-development` methodology, each invoking `tdd`. Code review between each dispatch.
@@ -58,17 +52,17 @@ See the 7-Phase Pipeline table in SKILL.md for delegation targets. This document
 - **Gate:** If blocking issues → fix, re-run review. Loop until clean.
 - **Failure:** If code review finds architectural issues requiring plan rework, trigger backwards transition to `plan` (see Backwards Transitions below)
 
-## Code Review → MR
+## Code Review → PR
 
 - **Validate:** Code review passed with no blocking issues
-- **Conflict check:** Before MR creation:
-  - Check for conflicts with default branch (via `glab repo view --output json`)
+- **Conflict check:** Before PR creation:
+  - Check for conflicts with default branch (via `gh repo view --json defaultBranchRef`)
   - If conflicts exist: rebase or merge default branch, resolve conflicts
-  - If an MR already exists for this branch: update it instead of creating duplicate
-- **Handoff:** Invoke `commit` for conventional commit, then `gitlab-cli` to open MR
-- **Record:** MR URL in artifacts table, set feature `status: completed`
+  - If a PR already exists for this branch: update it instead of creating duplicate
+- **Handoff:** Invoke `commit` for conventional commit, then `github-cli` to open PR
+- **Record:** PR URL in artifacts table, set feature `status: completed`
 - **Archive:** Run archival step — `mkdir -p docs/archive/dev-cycle docs/archive/plans`, then `git mv` the state file to `docs/archive/dev-cycle/` and the plan file (read path from artifacts table) to `docs/archive/plans/`. Commit with `chore(dev-cycle): archive {slug}`.
-- **Failure:** If MR creation fails (no remote, auth error), set phase to `blocked`
+- **Failure:** If PR creation fails (no remote, auth error), set phase to `blocked`
 
 ---
 

@@ -149,6 +149,7 @@ See [fix-workflow.md](references/fix-workflow.md) for detailed workflow.
 - [markdown-checks.md](references/markdown-checks.md) - Markdown rule details
 - [mermaid-checks.md](references/mermaid-checks.md) - Mermaid validation guide
 - [fix-workflow.md](references/fix-workflow.md) - Fix approval workflow
+- [authoring-conventions.md](references/authoring-conventions.md) - Conventions for modifying the analyzer scripts (URI detection, frontmatter parsing)
 
 ## Example Usage Patterns
 

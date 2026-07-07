@@ -24,14 +24,25 @@ from models import (
 # Regex patterns for Markdown analysis
 HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
 LINK_PATTERN = re.compile(r"\[([^\]]*)\]\(([^)]*)\)")
+LINK_TITLE_PATTERN = re.compile(r"""\s+(?:"[^"]*"|'[^']*')\s*$""")
+URI_SCHEME_PATTERN = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
 IMAGE_PATTERN = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
 REFERENCE_LINK_PATTERN = re.compile(r"\[([^\]]+)\]\[([^\]]*)\]")
 REFERENCE_DEF_PATTERN = re.compile(r"^\[([^\]]+)\]:\s*(.+)$", re.MULTILINE)
-CODE_BLOCK_PATTERN = re.compile(r"```(\w*)\n(.*?)```", re.DOTALL)
-INLINE_CODE_PATTERN = re.compile(r"`([^`]+)`")
+# Language token allows any non-newline/non-backtick run (c++, f#, objective-c),
+# and \r?\n tolerates CRLF (Windows) files so those fences are matched/masked too.
+CODE_BLOCK_PATTERN = re.compile(r"```([^\r\n`]*)\r?\n(.*?)```", re.DOTALL)
+# For MASKING (heading/reference checks): any fenced block, backtick OR tilde,
+# with matched delimiters — a ``` block closes on ```, a ~~~ block on ~~~. The
+# backreference makes nested mixed fences (e.g. a ``` block shown inside a ~~~
+# block) mask correctly. CODE_BLOCK_PATTERN stays the canonical backtick pattern
+# for MD040 language detection (group(1) = language).
+FENCED_BLOCK_PATTERN = re.compile(
+    r"(?P<fence>```|~~~)[^\r\n]*\r?\n.*?(?P=fence)", re.DOTALL
+)
+INLINE_CODE_PATTERN = re.compile(r"`[^`\n]+`")
 TRAILING_WHITESPACE_PATTERN = re.compile(r"[ \t]+$", re.MULTILINE)
 MULTIPLE_BLANK_LINES_PATTERN = re.compile(r"\n{3,}")
-DUPLICATE_HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
 
 
 # UTF-8 encoding corruption patterns
@@ -119,6 +130,15 @@ _sorted_corruptions = sorted(ENCODING_CORRUPTION_MAP.keys(), key=len, reverse=Tr
 ENCODING_CORRUPTION_PATTERN = re.compile(
     "|".join(re.escape(seq) for seq in _sorted_corruptions)
 )
+
+
+def _blank_match(match: "re.Match") -> str:
+    """Replace a regex match with spaces, preserving newlines.
+
+    Keeps character offsets (and therefore line numbers) aligned with the
+    original content, so masked copies remain positionally faithful.
+    """
+    return "".join(c if c == "\n" else " " for c in match.group(0))
 
 
 class MarkdownAnalyzer:
@@ -210,6 +230,69 @@ class MarkdownAnalyzer:
         """
         return content[:match_start].count("\n") + 1
 
+    def _mask_fenced_code(self, content: str) -> str:
+        """Blank out fenced code blocks (``` or ~~~) only, preserving offsets.
+
+        A ``#`` line inside a fence must not be read as a heading. Blanking the
+        fenced region (newlines kept) removes it while keeping character offsets
+        and line numbers aligned with the original content. Both backtick and
+        tilde fences are covered, with matched delimiters (#248). Inline code is
+        deliberately left intact — see ``_heading_matches``. (Indented code
+        blocks need no masking here: a heading must start at column 0, so a
+        ``#`` indented four spaces is never matched as a heading.)
+
+        Parameters
+        ----------
+        content : str
+            The Markdown content.
+
+        Returns
+        -------
+        str
+            Content with fenced-code characters replaced by spaces.
+        """
+        return FENCED_BLOCK_PATTERN.sub(_blank_match, content)
+
+    def _mask_code_regions(self, content: str) -> str:
+        """Blank out fenced and inline code spans, preserving offsets.
+
+        Parameters
+        ----------
+        content : str
+            The Markdown content.
+
+        Returns
+        -------
+        str
+            Content with code block/span characters replaced by spaces
+            (newlines preserved), so character offsets and line numbers
+            still resolve correctly against the masked copy.
+        """
+        return INLINE_CODE_PATTERN.sub(_blank_match, self._mask_fenced_code(content))
+
+    def _heading_matches(self, content: str) -> list[re.Match]:
+        """Return heading matches that lie outside fenced code blocks.
+
+        Only *fenced* code is masked — never inline code. A heading starts with
+        ``#`` at the start of a line, which inline code (mid-line, backtick
+        delimited) never produces; and blanking inline code would corrupt the
+        text of a real heading that legitimately contains ``code`` (e.g. turning
+        distinct headings into false MD024 duplicates, or mangling suggested
+        fixes). Match offsets, ``group(1)`` and ``group(2)`` still resolve
+        correctly because fenced regions never contain real headings.
+
+        Parameters
+        ----------
+        content : str
+            The Markdown content.
+
+        Returns
+        -------
+        list[re.Match]
+            Heading matches outside fenced code, in document order.
+        """
+        return list(HEADING_PATTERN.finditer(self._mask_fenced_code(content)))
+
     def _check_heading_structure(
         self,
         content: str,
@@ -233,7 +316,7 @@ class MarkdownAnalyzer:
             List of heading structure issues.
         """
         issues: list[Issue] = []
-        headings = list(HEADING_PATTERN.finditer(content))
+        headings = self._heading_matches(content)
 
         if not headings:
             return issues
@@ -308,7 +391,7 @@ class MarkdownAnalyzer:
             List of heading level issues.
         """
         issues: list[Issue] = []
-        headings = list(HEADING_PATTERN.finditer(content))
+        headings = self._heading_matches(content)
 
         prev_level = 0
         for heading in headings:
@@ -342,7 +425,11 @@ class MarkdownAnalyzer:
         lines: list[str],
         file_path: Optional[Path],
     ) -> list[Issue]:
-        """Check for duplicate headings at the same level.
+        """Check for duplicate heading text anywhere in the document.
+
+        Headings are compared by their normalized text alone, regardless of
+        heading level, matching markdownlint's MD024 default behavior. For
+        example, ``## Setup`` and ``### Setup`` are reported as duplicates.
 
         Parameters
         ----------
@@ -359,7 +446,7 @@ class MarkdownAnalyzer:
             List of duplicate heading issues.
         """
         issues: list[Issue] = []
-        headings = list(HEADING_PATTERN.finditer(content))
+        headings = self._heading_matches(content)
 
         seen_headings: dict[str, int] = {}
         for heading in headings:
@@ -408,10 +495,20 @@ class MarkdownAnalyzer:
         """
         issues: list[Issue] = []
 
-        for match in LINK_PATTERN.finditer(content):
+        # Mask code blocks/spans so example links shown inside fenced code
+        # aren't parsed as live document links.
+        masked_content = self._mask_code_regions(content)
+
+        for match in LINK_PATTERN.finditer(masked_content):
+            # Image syntax `![alt](url)` also matches LINK_PATTERN on its
+            # `[alt](url)` suffix; skip those so _check_images is the sole
+            # source of image findings.
+            if match.start() > 0 and masked_content[match.start() - 1] == "!":
+                continue
+
             link_text = match.group(1)
             link_url = match.group(2)
-            line_num = self._find_line_number(content, match.start())
+            line_num = self._find_line_number(masked_content, match.start())
 
             # Check for empty link text
             if not link_text.strip():
@@ -421,7 +518,7 @@ class MarkdownAnalyzer:
                         category=IssueCategory.MARKDOWN,
                         message="Link has empty text",
                         location=Location(file_path=file_path, line_start=line_num),
-                        rule_id="MD045",
+                        rule_id="MD054",
                         source="markdown-analyzer",
                         context=match.group(0),
                     )
@@ -444,11 +541,13 @@ class MarkdownAnalyzer:
             # Check for relative file links that might be broken
             if (
                 self.base_path
-                and not link_url.startswith(("http://", "https://", "#", "mailto:"))
+                and not URI_SCHEME_PATTERN.match(link_url)
+                and not link_url.startswith("#")
                 and not link_url.startswith("/")
             ):
-                # Remove anchor from URL for file check
-                file_url = link_url.split("#")[0]
+                # Strip optional title, query string, and anchor for file check
+                file_url = LINK_TITLE_PATTERN.sub("", link_url)
+                file_url = file_url.split("#")[0].split("?")[0].strip()
                 if file_url:
                     target_path = self.base_path / file_url
                     if not target_path.exists():
@@ -460,7 +559,7 @@ class MarkdownAnalyzer:
                                 location=Location(
                                     file_path=file_path, line_start=line_num
                                 ),
-                                rule_id="MD052",
+                                rule_id="MD055",
                                 source="markdown-analyzer",
                                 context=match.group(0),
                             )
@@ -492,10 +591,14 @@ class MarkdownAnalyzer:
         """
         issues: list[Issue] = []
 
-        for match in IMAGE_PATTERN.finditer(content):
+        # Mask code blocks/spans so example images shown inside fenced code
+        # aren't parsed as live document images.
+        masked_content = self._mask_code_regions(content)
+
+        for match in IMAGE_PATTERN.finditer(masked_content):
             alt_text = match.group(1)
             image_url = match.group(2)
-            line_num = self._find_line_number(content, match.start())
+            line_num = self._find_line_number(masked_content, match.start())
 
             # Check for missing alt text
             if not alt_text.strip():
@@ -515,6 +618,7 @@ class MarkdownAnalyzer:
             if (
                 self.base_path
                 and not image_url.startswith(("http://", "https://", "data:"))
+                and not image_url.startswith("/")
             ):
                 target_path = self.base_path / image_url
                 if not target_path.exists():
@@ -523,10 +627,8 @@ class MarkdownAnalyzer:
                             severity=Severity.ERROR,
                             category=IssueCategory.MARKDOWN,
                             message=f"Broken image: file '{image_url}' not found",
-                            location=Location(
-                                file_path=file_path, line_start=line_num
-                            ),
-                            rule_id="MD053",
+                            location=Location(file_path=file_path, line_start=line_num),
+                            rule_id="MD056",
                             source="markdown-analyzer",
                             context=match.group(0),
                         )
@@ -563,11 +665,15 @@ class MarkdownAnalyzer:
             m.group(1).lower() for m in REFERENCE_DEF_PATTERN.finditer(content)
         }
 
+        # Mask code blocks/spans so code like matrix[0][1] isn't parsed as a
+        # reference link.
+        masked_content = self._mask_code_regions(content)
+
         # Check all reference links
-        for match in REFERENCE_LINK_PATTERN.finditer(content):
+        for match in REFERENCE_LINK_PATTERN.finditer(masked_content):
             ref_id = match.group(2) if match.group(2) else match.group(1)
             if ref_id.lower() not in defined_refs:
-                line_num = self._find_line_number(content, match.start())
+                line_num = self._find_line_number(masked_content, match.start())
                 issues.append(
                     Issue(
                         severity=Severity.ERROR,
@@ -609,8 +715,8 @@ class MarkdownAnalyzer:
         # Check for trailing whitespace
         for match in TRAILING_WHITESPACE_PATTERN.finditer(content):
             line_num = self._find_line_number(content, match.start())
-            # Skip if it's an intentional line break (2 spaces)
-            if len(match.group(0)) != 2:
+            # Skip if it's an intentional line break (exactly 2 spaces, not tabs)
+            if match.group(0) != "  ":
                 issues.append(
                     Issue(
                         severity=Severity.INFO,
@@ -648,9 +754,12 @@ class MarkdownAnalyzer:
                 )
             )
 
-        # Check for missing blank line after heading
-        for i, line in enumerate(lines):
-            if HEADING_PATTERN.match(line):
+        # Check for missing blank line after heading. Match against masked lines
+        # so '#' lines inside fenced code blocks aren't treated as headings; the
+        # next-line-blank test and reported context use the original lines.
+        masked_lines = self._mask_fenced_code(content).splitlines()
+        for i, masked_line in enumerate(masked_lines):
+            if HEADING_PATTERN.match(masked_line):
                 if i + 1 < len(lines) and lines[i + 1].strip():
                     issues.append(
                         Issue(
@@ -660,7 +769,7 @@ class MarkdownAnalyzer:
                             location=Location(file_path=file_path, line_start=i + 1),
                             rule_id="MD022",
                             source="markdown-analyzer",
-                            context=line,
+                            context=lines[i] if i < len(lines) else masked_line,
                         )
                     )
 

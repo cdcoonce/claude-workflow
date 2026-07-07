@@ -1,0 +1,33 @@
+---
+status: completed
+slug: improve-skill
+skill_path: core/skills/improve-skill/SKILL.md
+tests_path: core/skills/improve-skill/tests.md
+current_phase: finalize
+best_score: 95
+best_iteration: 1
+baseline_score: 76
+stall_count: 0
+target_pass_rate: 90
+max_iterations: 5
+---
+
+# Improve-Skill: improve-skill
+
+## Log
+
+- 2026-04-02 — State file created. Skill path: core/skills/improve-skill/SKILL.md
+- 2026-04-02 — Challenge complete. Accepted: 11/11 findings. User added: 0.
+- 2026-04-02 — Grill complete. Suite: 37 tests. Target: 90%. Max: 5 iterations.
+- 2026-04-02 — Baseline score: 76%. 28/37 tests passed.
+- 2026-04-02 — Iteration 1: 95%. Previous best: 76%.
+- 2026-04-02 — Loop exited: target reached. Final score: 95%.
+- 2026-04-02 — Phase 5 started.
+- 2026-04-02 — Run complete. Final: 95%. PR opened.
+
+## Scores
+
+| Iteration | Score | Notes    |
+| --------- | ----- | -------- |
+| 0         | 76%   | Baseline |
+| 1         | 95%   |          |

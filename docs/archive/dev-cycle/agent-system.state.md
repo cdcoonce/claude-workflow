@@ -1,8 +1,8 @@
 ---
 schema_version: 1
 feature: agent-system
-status: completed
-current_phase: pr
+status: abandoned
+current_phase: implement
 created: 2026-03-22
 updated: 2026-03-22
 branch: feat/agent-system
@@ -10,15 +10,15 @@ branch: feat/agent-system
 
 ## Artifacts
 
-| Phase       | Status    | Artifact                                              |
-| ----------- | --------- | ----------------------------------------------------- |
-| brainstorm  | completed | https://github.com/cdcoonce/claude-workflow/issues/34 |
-| plan        | completed | docs/plans/agent-system.md                            |
-| ceo_review  | completed | 5 improvements incorporated into plan                 |
-| issues      | completed | 6 issues created (#35-#40)                            |
-| implement   | completed | branch: feat/agent-system                             |
-| code_review | completed | clean after 1 fix (docstring update)                  |
-| pr          | completed | https://github.com/cdcoonce/claude-workflow/pull/41   |
+| Phase       | Status      | Artifact                                              |
+| ----------- | ----------- | ----------------------------------------------------- |
+| brainstorm  | completed   | https://github.com/cdcoonce/claude-workflow/issues/34 |
+| plan        | completed   | docs/plans/agent-system.md                            |
+| ceo_review  | completed   | 5 improvements incorporated into plan                 |
+| issues      | completed   | 6 issues created (#35-#40)                            |
+| implement   | in_progress | branch: feat/agent-system                             |
+| code_review | pending     | —                                                     |
+| pr          | pending     | —                                                     |
 
 ## Issues
 
@@ -36,6 +36,4 @@ branch: feat/agent-system
 - 2026-03-22: Phase 2 (plan) — Plan written to docs/plans/agent-system.md
 - 2026-03-22: Phase 3 (ceo_review) — HOLD SCOPE review, 5 improvements incorporated
 - 2026-03-22: Phase 4 (issues) — 6 issues created (#35-#40)
-- 2026-03-22: Phase 5 (implement) — All 6 issues implemented, 66 tests passing
-- 2026-03-22: Phase 6 (code_review) — Clean after docstring update fix
-- 2026-03-22: Phase 7 (pr) — Creating PR
+- 2026-03-26: Abandoned — structure moved to plugin-based system, CLAUDE.md no longer used for methodology. All issues already closed, work merged via plugin-conversion.

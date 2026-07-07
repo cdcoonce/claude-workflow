@@ -7,6 +7,7 @@ from code review analysis results.
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, TextIO
+import os
 import sys
 
 from models import (
@@ -30,12 +31,6 @@ class Colors:
     YELLOW = "\033[93m"
     BLUE = "\033[94m"
     GREEN = "\033[92m"
-    CYAN = "\033[96m"
-    MAGENTA = "\033[95m"
-
-    BG_RED = "\033[41m"
-    BG_YELLOW = "\033[43m"
-    BG_BLUE = "\033[44m"
 
 
 def supports_color() -> bool:
@@ -46,6 +41,9 @@ def supports_color() -> bool:
     bool
         True if color is supported, False otherwise.
     """
+    # NO_COLOR (https://no-color.org): set to ANY value (incl. empty) disables color.
+    if os.environ.get("NO_COLOR") is not None:
+        return False
     if not hasattr(sys.stdout, "isatty"):
         return False
     if not sys.stdout.isatty():
@@ -152,7 +150,7 @@ class ConsoleReporter:
     def __init__(
         self,
         use_color: Optional[bool] = None,
-        output: TextIO = sys.stdout,
+        output: Optional[TextIO] = None,
     ) -> None:
         """Initialize the console reporter.
 
@@ -160,11 +158,12 @@ class ConsoleReporter:
         ----------
         use_color : Optional[bool]
             Whether to use colors. Auto-detected if None.
-        output : TextIO
-            Output stream to write to.
+        output : Optional[TextIO]
+            Output stream to write to. Defaults to `sys.stdout` at call
+            time if None.
         """
         self.use_color = use_color if use_color is not None else supports_color()
-        self.output = output
+        self.output = sys.stdout if output is None else output
 
     def _print(self, text: str = "") -> None:
         """Print text to the output stream.
@@ -357,7 +356,9 @@ class MarkdownReporter:
         self.include_context = include_context
         self.include_fixes = include_fixes
 
-    def generate_report(self, report: ReviewReport) -> str:
+    def generate_report(
+        self, report: ReviewReport, generated_at: Optional[datetime] = None
+    ) -> str:
         """Generate a complete Markdown report.
 
         Parameters
@@ -375,7 +376,8 @@ class MarkdownReporter:
         # Header
         lines.append(f"# {report.title}")
         lines.append("")
-        lines.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        ts = generated_at if generated_at is not None else datetime.now()
+        lines.append(f"Generated: {ts.strftime('%Y-%m-%d %H:%M:%S')}")
         lines.append("")
 
         # Summary
@@ -459,7 +461,7 @@ class MarkdownReporter:
             emoji = severity_emoji(issue.severity)
             line = issue.location.line_start
             rule = f"`{issue.rule_id}`"
-            message = issue.message.replace("|", "\\|")
+            message = issue.message.replace("|", "\\|").replace("\n", " ")
             lines.append(f"| {emoji} | {line} | {rule} | {message} |")
 
         lines.append("")
@@ -568,7 +570,7 @@ class MarkdownReporter:
 def generate_console_report(
     report: ReviewReport,
     use_color: Optional[bool] = None,
-    output: TextIO = sys.stdout,
+    output: Optional[TextIO] = None,
 ) -> None:
     """Generate and print a console report.
 
@@ -578,8 +580,9 @@ def generate_console_report(
         The review report to print.
     use_color : Optional[bool]
         Whether to use colors. Auto-detected if None.
-    output : TextIO
-        Output stream to write to.
+    output : Optional[TextIO]
+        Output stream to write to. Defaults to `sys.stdout` at call time
+        if None.
     """
     reporter = ConsoleReporter(use_color=use_color, output=output)
     reporter.print_report(report)
@@ -589,6 +592,7 @@ def generate_markdown_report(
     report: ReviewReport,
     include_context: bool = True,
     include_fixes: bool = True,
+    generated_at: Optional[datetime] = None,
 ) -> str:
     """Generate a Markdown report string.
 
@@ -610,7 +614,7 @@ def generate_markdown_report(
         include_context=include_context,
         include_fixes=include_fixes,
     )
-    return reporter.generate_report(report)
+    return reporter.generate_report(report, generated_at=generated_at)
 
 
 def save_markdown_report(
@@ -618,6 +622,7 @@ def save_markdown_report(
     output_path: Path,
     include_context: bool = True,
     include_fixes: bool = True,
+    generated_at: Optional[datetime] = None,
 ) -> None:
     """Generate and save a Markdown report to a file.
 
@@ -636,5 +641,6 @@ def save_markdown_report(
         report,
         include_context=include_context,
         include_fixes=include_fixes,
+        generated_at=generated_at,
     )
     output_path.write_text(markdown, encoding="utf-8")

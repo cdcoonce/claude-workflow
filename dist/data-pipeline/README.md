@@ -5,18 +5,17 @@ ETL/ELT pipelines, SQL transformations, scheduled data jobs
 ## Skills
 
 - commit
+- create-hook
 - daa-code-review
 - dagster-expert
 - dbt-expert
 - design-an-interface
 - dev-cycle
 - dignified-python
-- generate-claude-md
-- generate-wiki
-- gitlab-cli
+- github-cli
 - grill-me
 - improve-codebase-architecture
-- init-project
+- improve-skill
 - plan-ceo-review
 - prd-to-issues
 - prd-to-plan
@@ -24,7 +23,6 @@ ETL/ELT pipelines, SQL transformations, scheduled data jobs
 - readme-generator
 - request-refactor-plan
 - security-review
-- setup-hooks
 - setup-pre-commit
 - tdd
 - triage-issue
@@ -36,6 +34,10 @@ ETL/ELT pipelines, SQL transformations, scheduled data jobs
 - code-reviewer
 - data-quality-reviewer
 - pipeline-builder
+- qa-tester
+- skill-analyst
+- skill-writer
+- strategy
 - tdd-implementer
 
 ## CLAUDE.md Template
