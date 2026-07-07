@@ -18,9 +18,6 @@ __pycache__/
 scripts/installer/presets/*
 !scripts/installer/presets/.gitkeep
 
-# Build artifacts
-dist/
-
 # afk runtime state (machine-local). config.toml is the tracked repo-level afk
 # policy; transcripts/, conductor/, and worktrees/ are per-run local state.
 # Mirrors afk-agent-system's root .gitignore convention.
