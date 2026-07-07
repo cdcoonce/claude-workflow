@@ -4,20 +4,16 @@ Developing Claude skills, hooks, agents, and template configurations
 
 ## Skills
 
-- clearway-glossary
 - commit
+- create-hook
 - daa-code-review
-- deep-code-review
 - design-an-interface
 - dev-cycle
-- diagram
 - dignified-python
-- generate-claude-md
-- generate-wiki
-- gitlab-cli
+- github-cli
 - grill-me
 - improve-codebase-architecture
-- init-project
+- improve-skill
 - plan-ceo-review
 - prd-to-issues
 - prd-to-plan
@@ -25,7 +21,6 @@ Developing Claude skills, hooks, agents, and template configurations
 - readme-generator
 - request-refactor-plan
 - security-review
-- setup-hooks
 - setup-pre-commit
 - tdd
 - triage-issue
@@ -35,8 +30,12 @@ Developing Claude skills, hooks, agents, and template configurations
 ## Agents
 
 - code-reviewer
+- qa-tester
+- skill-analyst
 - skill-builder
 - skill-reviewer
+- skill-writer
+- strategy
 - tdd-implementer
 
 ## CLAUDE.md Template

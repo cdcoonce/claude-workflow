@@ -8,9 +8,8 @@ import tempfile
 
 import pytest
 
-from models import FileType, IssueCategory, Severity
+from models import FileType, Severity
 from markdown_analyzer import (
-    MarkdownAnalyzer,
     analyze_markdown,
     analyze_markdown_file,
 )
@@ -70,6 +69,187 @@ class TestMarkdownAnalyzerHeadings:
         assert len(md024_issues) == 1
         assert md024_issues[0].severity == Severity.INFO
 
+    def test_duplicate_headings_across_levels(self):
+        """Test that duplicate heading text is flagged regardless of level."""
+        content = "# Title\n\n## Setup\n\n### Setup\n\nContent"
+        result = analyze_markdown(content)
+
+        md024_issues = [i for i in result.issues if i.rule_id == "MD024"]
+        assert len(md024_issues) == 1
+        assert md024_issues[0].severity == Severity.INFO
+
+
+class TestMarkdownAnalyzerHeadingsInCodeBlocks:
+    """Heading checks must ignore '#' lines inside fenced code blocks."""
+
+    _HEADING_RULES = ("MD041", "MD025", "MD001", "MD024", "MD022")
+
+    def test_headings_only_inside_code_fence_produce_no_findings(self):
+        """A doc whose only '#' lines live in a ``` fence yields no heading findings."""
+        content = (
+            "Intro text with no real headings.\n"
+            "\n"
+            "```python\n"
+            "# config section\n"
+            "# another comment\n"
+            "## nested comment\n"
+            "```\n"
+            "\n"
+            "Outro text.\n"
+        )
+        result = analyze_markdown(content)
+
+        heading_issues = [
+            i for i in result.issues if i.rule_id in self._HEADING_RULES
+        ]
+        assert heading_issues == [], (
+            f"expected no heading findings, got "
+            f"{[(i.rule_id, i.message) for i in heading_issues]}"
+        )
+
+    def test_real_headings_still_detected_with_adjacent_code_fence(self):
+        """Real headings are still analyzed; an in-fence '#' does not add a phantom h1."""
+        content = (
+            "# Title\n"
+            "\n"
+            "```python\n"
+            "# a comment, not a heading\n"
+            "```\n"
+            "\n"
+            "### Skipped\n"
+            "\n"
+            "Body.\n"
+        )
+        result = analyze_markdown(content)
+
+        # The real h1->h3 jump is still flagged (real headings ARE processed)...
+        md001 = [i for i in result.issues if i.rule_id == "MD001"]
+        assert len(md001) == 1
+        # ...but the in-fence '# a comment' must not count as a second h1.
+        md025 = [i for i in result.issues if i.rule_id == "MD025"]
+        assert md025 == []
+
+    def test_missing_blank_line_after_heading_ignores_in_fence(self):
+        """MD022 fires for a real heading but not for a '#' line inside a fence."""
+        content = (
+            "# Title\n"
+            "\n"
+            "```python\n"
+            "# not a heading\n"
+            "x = 1\n"
+            "```\n"
+            "\n"
+            "## Real Heading\n"
+            "immediately followed text\n"
+        )
+        result = analyze_markdown(content)
+
+        md022 = [i for i in result.issues if i.rule_id == "MD022"]
+        # Exactly one: the real "## Real Heading" with no blank line after it.
+        assert len(md022) == 1
+        assert md022[0].location.line_start == 8
+
+    def test_heading_inline_code_is_preserved_not_masked(self):
+        """Inline code in a real heading must survive: distinct headings that
+        differ only inside `backticks` are not false MD024 duplicates."""
+        content = "# Use `foo()`\n\n## Use `bar()`\n\nBody.\n"
+        result = analyze_markdown(content)
+
+        # If inline code were blanked, both would normalize to "use" -> duplicate.
+        md024 = [i for i in result.issues if i.rule_id == "MD024"]
+        assert md024 == []
+
+    def test_crlf_fenced_code_is_masked(self):
+        """Fences in CRLF (Windows) files are masked too — '#' lines inside them
+        must not become phantom headings."""
+        content = (
+            "# Title\r\n"
+            "\r\n"
+            "```py\r\n"
+            "# comment\r\n"
+            "```\r\n"
+            "\r\n"
+            "## After\r\n"
+            "text\r\n"
+        )
+        result = analyze_markdown(content)
+
+        # '# comment' inside the fence must not register as a second h1.
+        md025 = [i for i in result.issues if i.rule_id == "MD025"]
+        assert md025 == []
+
+    def test_non_word_language_token_fence_is_masked(self):
+        """A fence whose language tag has non-word chars (c++, f#, objective-c)
+        is still masked."""
+        content = "# T\n\n```c++\n# not a heading\n```\n\n## After\ntext\n"
+        result = analyze_markdown(content)
+
+        md025 = [i for i in result.issues if i.rule_id == "MD025"]
+        assert md025 == []
+
+    def test_tilde_fence_is_masked(self):
+        """~~~ tilde fences are masked like ``` fences (#248)."""
+        content = (
+            "# Title\n"
+            "\n"
+            "~~~python\n"
+            "# not a heading\n"
+            "# another\n"
+            "~~~\n"
+            "\n"
+            "## After\n"
+            "text\n"
+        )
+        result = analyze_markdown(content)
+
+        md025 = [i for i in result.issues if i.rule_id == "MD025"]
+        assert md025 == []
+        # in-fence '#' lines must not trip MD022 either; only the real
+        # '## After' (line 8, followed by non-blank 'text') should fire.
+        md022 = [i for i in result.issues if i.rule_id == "MD022"]
+        assert len(md022) == 1
+        assert md022[0].location.line_start == 8
+
+    def test_tilde_fence_crlf_is_masked(self):
+        """~~~ fences are masked on CRLF files too (#248)."""
+        content = (
+            "# Title\r\n\r\n~~~py\r\n# not a heading\r\n~~~\r\n\r\n## After\r\ntext\r\n"
+        )
+        result = analyze_markdown(content)
+
+        assert [i for i in result.issues if i.rule_id == "MD025"] == []
+
+    def test_backtick_fence_inside_tilde_fence_is_masked(self):
+        """A ``` fence shown inside a ~~~ fence: the inner '#' is still masked
+        (matched-delimiter handling, not a naive alternation) (#248)."""
+        content = (
+            "# Title\n"
+            "\n"
+            "~~~markdown\n"
+            "```python\n"
+            "# inner comment\n"
+            "```\n"
+            "~~~\n"
+            "\n"
+            "## After\n"
+            "text\n"
+        )
+        result = analyze_markdown(content)
+
+        assert [i for i in result.issues if i.rule_id == "MD025"] == []
+
+    def test_indented_code_block_is_never_a_heading_source(self):
+        """Indented code ('#' at column >=4) is already never a heading —
+        HEADING_PATTERN requires column 0 — so no phantom-heading findings
+        arise. Regression lock documenting the non-issue (#248)."""
+        content = (
+            "# Title\n\nintro\n\n    # indented comment\n    # more\n\n## After\ntext\n"
+        )
+        result = analyze_markdown(content)
+
+        assert [i for i in result.issues if i.rule_id == "MD025"] == []
+        assert [i for i in result.issues if i.rule_id == "MD041"] == []
+
 
 class TestMarkdownAnalyzerLinks:
     """Tests for link analysis."""
@@ -79,8 +259,8 @@ class TestMarkdownAnalyzerLinks:
         content = "# Title\n\n[](https://example.com)"
         result = analyze_markdown(content)
 
-        md045_issues = [i for i in result.issues if i.rule_id == "MD045"]
-        assert len(md045_issues) >= 1
+        md054_issues = [i for i in result.issues if i.rule_id == "MD054"]
+        assert len(md054_issues) >= 1
 
     def test_empty_link_url(self):
         """Test detection of empty link URL."""
@@ -97,7 +277,7 @@ class TestMarkdownAnalyzerLinks:
         result = analyze_markdown(content)
 
         link_issues = [
-            i for i in result.issues if i.rule_id in ("MD042", "MD045", "MD052")
+            i for i in result.issues if i.rule_id in ("MD042", "MD054", "MD055")
         ]
         assert len(link_issues) == 0
 
@@ -110,9 +290,95 @@ class TestMarkdownAnalyzerLinks:
 
             result = analyze_markdown_file(md_file)
 
-            md052_issues = [i for i in result.issues if i.rule_id == "MD052"]
-            assert len(md052_issues) == 1
-            assert "not found" in md052_issues[0].message.lower()
+            md055_issues = [i for i in result.issues if i.rule_id == "MD055"]
+            assert len(md055_issues) == 1
+            assert "not found" in md055_issues[0].message.lower()
+
+    def test_titled_link_to_existing_file_is_not_broken(self):
+        """Test that a link title suffix doesn't cause a false-positive broken link."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            (tmppath / "guide.md").write_text("# Guide")
+            md_file = tmppath / "test.md"
+            md_file.write_text('# Title\n\n[docs](guide.md "My Title")')
+
+            result = analyze_markdown_file(md_file)
+
+            md055_issues = [i for i in result.issues if i.rule_id == "MD055"]
+            assert md055_issues == []
+
+    def test_query_string_link_to_existing_file_is_not_broken(self):
+        """Test that a query string suffix doesn't cause a false-positive broken link."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            (tmppath / "guide.md").write_text("# Guide")
+            md_file = tmppath / "test.md"
+            md_file.write_text("# Title\n\n[docs](guide.md?v=2)")
+
+            result = analyze_markdown_file(md_file)
+
+            md055_issues = [i for i in result.issues if i.rule_id == "MD055"]
+            assert md055_issues == []
+
+    def test_uri_scheme_links_are_not_broken_relative_links(self):
+        """Test that URI scheme links are not checked as local files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            md_file = tmppath / "test.md"
+            md_file.write_text(
+                "# Title\n\n"
+                "[Phone](tel:+15551234)\n"
+                "[FTP](ftp://example.com/file.txt)\n"
+                "[Mail](mailto:test@example.com)\n"
+                "[Anchor](#section)\n"
+                "[Root](/docs/page.md)\n"
+                "[Missing](missing.md)\n"
+            )
+
+            result = analyze_markdown_file(md_file)
+
+            md055_issues = [i for i in result.issues if i.rule_id == "MD055"]
+            assert len(md055_issues) == 1
+            assert "missing.md" in md055_issues[0].message
+
+    def test_empty_link_url_in_fenced_code_not_flagged(self):
+        """Test that an example empty-URL link inside a fenced code block isn't flagged (#265)."""
+        content = "# Title\n\n```markdown\n[Broken Example]()\n```\n"
+        result = analyze_markdown(content)
+
+        md042_issues = [i for i in result.issues if i.rule_id == "MD042"]
+        assert md042_issues == []
+
+    def test_broken_relative_link_in_fenced_code_not_flagged(self):
+        """Test that an example broken relative link inside a fenced code block isn't flagged (#265)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            md_file = tmppath / "test.md"
+            md_file.write_text(
+                "# Title\n\n```markdown\n[Link](nonexistent.md)\n```\n"
+            )
+
+            result = analyze_markdown_file(md_file)
+
+            md055_issues = [i for i in result.issues if i.rule_id == "MD055"]
+            assert md055_issues == []
+
+    def test_broken_link_adjacent_to_fence_still_flagged(self):
+        """Test that a real broken link next to a fenced example is still flagged (#265)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            md_file = tmppath / "test.md"
+            md_file.write_text(
+                "# Title\n\n"
+                "```markdown\n[Link](nonexistent.md)\n```\n\n"
+                "[Real Link](also-nonexistent.md)\n"
+            )
+
+            result = analyze_markdown_file(md_file)
+
+            md055_issues = [i for i in result.issues if i.rule_id == "MD055"]
+            assert len(md055_issues) == 1
+            assert "also-nonexistent.md" in md055_issues[0].message
 
 
 class TestMarkdownAnalyzerImages:
@@ -123,10 +389,7 @@ class TestMarkdownAnalyzerImages:
         content = "# Title\n\n![](image.png)"
         result = analyze_markdown(content)
 
-        md045_issues = [
-            i for i in result.issues
-            if i.rule_id == "MD045" and "alt text" in i.message.lower()
-        ]
+        md045_issues = [i for i in result.issues if i.rule_id == "MD045"]
         assert len(md045_issues) == 1
         assert md045_issues[0].severity == Severity.WARNING
 
@@ -135,11 +398,57 @@ class TestMarkdownAnalyzerImages:
         content = "# Title\n\n![Alt description](image.png)"
         result = analyze_markdown(content)
 
-        alt_issues = [
-            i for i in result.issues
-            if i.rule_id == "MD045" and "alt text" in i.message.lower()
-        ]
+        alt_issues = [i for i in result.issues if i.rule_id == "MD045"]
         assert len(alt_issues) == 0
+
+    def test_image_only_document_has_no_link_findings(self):
+        """Test that image syntax isn't re-flagged by the link checker."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            md_file = tmppath / "test.md"
+            md_file.write_text("# Title\n\n![](missing.png)")
+
+            result = analyze_markdown_file(md_file)
+
+            md055_issues = [i for i in result.issues if i.rule_id == "MD055"]
+            assert md055_issues == []
+
+            md045_issues = [i for i in result.issues if i.rule_id == "MD045"]
+            assert len(md045_issues) == 1
+
+            md056_issues = [i for i in result.issues if i.rule_id == "MD056"]
+            assert len(md056_issues) == 1
+
+    def test_root_relative_image_is_not_broken_image(self):
+        """Test that root-relative image paths are not checked as local files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            md_file = tmppath / "test.md"
+            md_file.write_text(
+                "# Title\n\n![Logo](/assets/logo.png)\n![Missing](missing.png)\n"
+            )
+
+            result = analyze_markdown_file(md_file)
+
+            md056_issues = [i for i in result.issues if i.rule_id == "MD056"]
+            assert len(md056_issues) == 1
+            assert "missing.png" in md056_issues[0].message
+
+    def test_missing_alt_text_in_fenced_code_not_flagged(self):
+        """Test that an example missing-alt-text image inside a fenced code block isn't flagged (#265)."""
+        content = "# Title\n\n```markdown\n![](missing.png)\n```\n"
+        result = analyze_markdown(content)
+
+        md045_issues = [i for i in result.issues if i.rule_id == "MD045"]
+        assert md045_issues == []
+
+    def test_missing_alt_text_adjacent_to_fence_still_flagged(self):
+        """Test that a real missing-alt-text image next to a fenced example is still flagged (#265)."""
+        content = "# Title\n\n```markdown\n![](missing.png)\n```\n\n![](also-missing.png)\n"
+        result = analyze_markdown(content)
+
+        md045_issues = [i for i in result.issues if i.rule_id == "MD045"]
+        assert len(md045_issues) == 1
 
 
 class TestMarkdownAnalyzerReferenceLinks:
@@ -150,10 +459,7 @@ class TestMarkdownAnalyzerReferenceLinks:
         content = "# Title\n\n[Link][undefined]"
         result = analyze_markdown(content)
 
-        md052_issues = [
-            i for i in result.issues
-            if i.rule_id == "MD052" and "undefined reference" in i.message.lower()
-        ]
+        md052_issues = [i for i in result.issues if i.rule_id == "MD052"]
         assert len(md052_issues) == 1
 
     def test_defined_reference_link(self):
@@ -161,11 +467,33 @@ class TestMarkdownAnalyzerReferenceLinks:
         content = "# Title\n\n[Link][ref]\n\n[ref]: https://example.com"
         result = analyze_markdown(content)
 
-        ref_issues = [
-            i for i in result.issues
-            if i.rule_id == "MD052" and "undefined reference" in i.message.lower()
-        ]
+        ref_issues = [i for i in result.issues if i.rule_id == "MD052"]
         assert len(ref_issues) == 0
+
+    def test_code_subscript_in_fenced_block_not_flagged(self):
+        """Test that double-subscript code in a fenced block isn't flagged."""
+        content = "# Title\n\n```py\nmatrix[0][1]\n```\n"
+        result = analyze_markdown(content)
+
+        md052_issues = [i for i in result.issues if i.rule_id == "MD052"]
+        assert len(md052_issues) == 0
+
+    def test_code_subscript_in_inline_code_not_flagged(self):
+        """Test that double-subscript code in an inline code span isn't flagged."""
+        content = "# Title\n\nUse `grid[i][j]` to access the cell."
+        result = analyze_markdown(content)
+
+        md052_issues = [i for i in result.issues if i.rule_id == "MD052"]
+        assert len(md052_issues) == 0
+
+    def test_undefined_reference_link_line_number_after_code_block(self):
+        """Test that line numbers stay correct when a code block precedes a real link."""
+        content = "# Title\n\n```py\nmatrix[0][1]\n```\n\n[Link][undefined]\n"
+        result = analyze_markdown(content)
+
+        md052_issues = [i for i in result.issues if i.rule_id == "MD052"]
+        assert len(md052_issues) == 1
+        assert md052_issues[0].location.line_start == 7
 
 
 class TestMarkdownAnalyzerFormatting:
@@ -179,6 +507,22 @@ class TestMarkdownAnalyzerFormatting:
         md009_issues = [i for i in result.issues if i.rule_id == "MD009"]
         assert len(md009_issues) >= 1
         assert md009_issues[0].severity == Severity.INFO
+
+    def test_trailing_two_spaces_is_intentional_line_break(self):
+        """Test that exactly two trailing spaces are not flagged."""
+        content = "# Title\n\nSome text with a line break  \nMore text"
+        result = analyze_markdown(content)
+
+        md009_issues = [i for i in result.issues if i.rule_id == "MD009"]
+        assert len(md009_issues) == 0
+
+    def test_trailing_tab_combination_is_flagged(self):
+        """Test that a tab-containing two-char trailing run is not treated as a line break."""
+        content = "# Title\n\nSome text with trailing\t\t\nMore text"
+        result = analyze_markdown(content)
+
+        md009_issues = [i for i in result.issues if i.rule_id == "MD009"]
+        assert len(md009_issues) >= 1
 
     def test_multiple_blank_lines(self):
         """Test detection of multiple consecutive blank lines."""
@@ -252,9 +596,7 @@ class TestMarkdownAnalyzeFile:
 
     def test_analyze_existing_file(self):
         """Test analyzing an existing Markdown file."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as tmp:
             tmp.write("## No h1\n\nContent")
             tmp.flush()
             tmp_path = Path(tmp.name)

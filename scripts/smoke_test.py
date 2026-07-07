@@ -5,7 +5,7 @@ Checks:
 - Every directory in skills/ has a SKILL.md
 - Every directory in agents/ has a valid AGENT.md (frontmatter with name, description, role)
 - Agent names match their directory names
-- Agent roles are 'implementer' or 'reviewer'
+- Agent roles are one of the documented roles (see VALID_ROLES)
 - Agent skills.add references resolve to existing skills in skills/
 - hooks/hooks.json references scripts that exist in hooks/scripts/
 - Every relative link in SKILL.md files resolves within the skill directory
@@ -19,6 +19,101 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+
+# Valid agent roles, matching the documented vocabulary in CLAUDE.md.
+VALID_ROLES = (
+    "implementer",
+    "reviewer",
+    "analyst",
+    "qa-tester",
+    "skill-writer",
+    "strategy",
+)
+
+# Link prefixes that are not intra-doc relative paths and should be skipped
+# during link resolution (anchors, project-root-relative paths).
+_LINK_SKIP_PREFIXES = ("#", ".claude/")
+
+# Matches any URI scheme prefix (e.g. "http:", "mailto:", "tel:") so such
+# links aren't mistaken for relative file paths.
+_URI_SCHEME_PATTERN = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
+
+_LINK_PATTERN = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+
+
+def _validate_doc_links(docs_dir: Path, doc_filename: str, label: str) -> list[str]:
+    """Validate that relative links in doc files resolve to existing files.
+
+    Parameters
+    ----------
+    docs_dir
+        Root directory to search recursively for doc files (e.g., skills/).
+    doc_filename
+        Name of the doc file to look for (e.g., "SKILL.md").
+    label
+        Human-readable label used in error messages (e.g., "Skill").
+
+    Returns
+    -------
+    list[str]
+        Error strings for any links that fail to resolve.
+    """
+    errors: list[str] = []
+    for doc_md in docs_dir.rglob(doc_filename):
+        doc_content = doc_md.read_text(encoding="utf-8")
+        in_fence = False
+        fenced_lines: set[int] = set()
+        for line_num, line in enumerate(doc_content.split("\n")):
+            if line.strip().startswith("```"):
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                fenced_lines.add(line_num)
+
+        for match in _LINK_PATTERN.finditer(doc_content):
+            line_num = doc_content.count("\n", 0, match.start())
+            if line_num in fenced_lines:
+                continue
+            link_target = match.group(2).strip()
+            # Strip an optional markdown link title — [text](path "Title") — keeping
+            # only the path token. Skip when the path is quote-wrapped, since such a
+            # path may legitimately contain spaces.
+            if link_target and not link_target.startswith(("'", '"')):
+                link_target = link_target.split(None, 1)[0]
+            if link_target.startswith(_LINK_SKIP_PREFIXES) or _URI_SCHEME_PATTERN.match(
+                link_target
+            ):
+                continue
+            file_part = re.split(r"[#?]", link_target, maxsplit=1)[0]
+            if not file_part:
+                continue
+            resolved = (doc_md.parent / file_part).resolve()
+            if not resolved.exists():
+                doc_name = doc_md.parent.name
+                errors.append(
+                    f"{label} '{doc_name}/{doc_filename}' links to "
+                    f"'{link_target}' but file not found"
+                )
+    return errors
+
+
+def _strip_quotes(value: str) -> str:
+    """Strip a single matching pair of surrounding quotes from a scalar.
+
+    Parameters
+    ----------
+    value
+        Raw scalar text, possibly wrapped in matching ``'`` or ``"`` quotes.
+
+    Returns
+    -------
+    str
+        ``value`` with one surrounding pair of quotes removed, or ``value``
+        unchanged if it isn't quoted.
+    """
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+        return value[1:-1]
+    return value
 
 
 @dataclass
@@ -55,32 +150,62 @@ def _parse_frontmatter(text: str) -> dict | None:
         return None
     result: dict = {}
     current_key: str | None = None
+    block_scalar = False
     for line in frontmatter_text.split("\n"):
         stripped = line.strip()
         if not stripped:
+            continue
+        if stripped.startswith("#"):
             continue
         is_indented = line != line.lstrip()
         if ":" in stripped and not stripped.startswith("-") and not is_indented:
             key, _, value = stripped.partition(":")
             key = key.strip()
-            value = value.strip()
+            value = re.sub(r"\s+#.*$", "", value.strip())
             if value.startswith("[") and value.endswith("]"):
-                result[key] = [v.strip() for v in value[1:-1].split(",") if v.strip()]
+                result[key] = [
+                    _strip_quotes(v.strip())
+                    for v in value[1:-1].split(",")
+                    if v.strip()
+                ]
+                current_key = None
+                block_scalar = False
+            elif value and value[0] in ("|", ">"):
+                # YAML block scalar (|, >, with optional chomping/indent indicator):
+                # the value continues on the following indented lines.
+                result[key] = ""
+                current_key = key
+                block_scalar = True
             elif value:
-                result[key] = value
+                result[key] = _strip_quotes(value)
+                current_key = None
+                block_scalar = False
             else:
                 result[key] = {}
                 current_key = key
-        elif current_key and ":" in stripped and is_indented:
-            sub_key, _, sub_value = stripped.partition(":")
-            sub_key = sub_key.strip()
-            sub_value = sub_value.strip()
-            if sub_value.startswith("[") and sub_value.endswith("]"):
-                result[current_key][sub_key] = [
-                    v.strip() for v in sub_value[1:-1].split(",") if v.strip()
-                ]
-            else:
-                result[current_key][sub_key] = sub_value
+                block_scalar = False
+        elif current_key and is_indented:
+            if block_scalar:
+                # Fold every indented line into the value, colons and all.
+                result[current_key] = f"{result[current_key]} {stripped}".strip()
+            elif ":" in stripped:
+                if not isinstance(result[current_key], dict):
+                    result[current_key] = {}
+                sub_key, _, sub_value = stripped.partition(":")
+                sub_key = sub_key.strip()
+                sub_value = sub_value.strip()
+                if sub_value.startswith("[") and sub_value.endswith("]"):
+                    result[current_key][sub_key] = [
+                        _strip_quotes(v.strip())
+                        for v in sub_value[1:-1].split(",")
+                        if v.strip()
+                    ]
+                else:
+                    result[current_key][sub_key] = _strip_quotes(sub_value)
+            elif result[current_key] == {}:
+                result[current_key] = stripped
+            elif isinstance(result[current_key], str):
+                result[current_key] = f"{result[current_key]} {stripped}"
     return result if result else None
 
 
@@ -117,16 +242,32 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
                 f"plugin.json missing required field '{required_field}'"
             )
 
-    # 2. Validate skills: every directory in skills/ has a SKILL.md
+    # 2. Validate skills: every directory in skills/ has a valid SKILL.md
     skills_dir = dist_path / "skills"
     if skills_dir.exists():
         for skill_dir in sorted(skills_dir.iterdir()):
             if not skill_dir.is_dir():
                 continue
-            if not (skill_dir / "SKILL.md").exists():
+            skill_md = skill_dir / "SKILL.md"
+            if not skill_md.exists():
                 result.errors.append(
                     f"Skill '{skill_dir.name}' directory has no SKILL.md"
                 )
+                continue
+
+            frontmatter = _parse_frontmatter(skill_md.read_text(encoding="utf-8"))
+            if frontmatter is None:
+                result.errors.append(
+                    f"Skill '{skill_dir.name}/SKILL.md' has no valid frontmatter"
+                )
+                continue
+
+            for req_field in ["name", "description"]:
+                if req_field not in frontmatter or not frontmatter.get(req_field):
+                    result.errors.append(
+                        f"Skill '{skill_dir.name}/SKILL.md' missing required "
+                        f"field '{req_field}'"
+                    )
 
     # 3. Validate agents: every directory in agents/ has a valid AGENT.md
     agents_dir = dist_path / "agents"
@@ -158,10 +299,11 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
 
             # Validate role
             role = frontmatter.get("role", "")
-            if role and role not in ("implementer", "reviewer"):
+            if role and role not in VALID_ROLES:
+                valid = ", ".join(repr(r) for r in VALID_ROLES)
                 result.errors.append(
                     f"Agent '{agent_dir.name}/AGENT.md' has invalid role "
-                    f"'{role}' (must be 'implementer' or 'reviewer')"
+                    f"'{role}' (must be one of {valid})"
                 )
 
             # Validate name matches directory
@@ -198,9 +340,7 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
                 for hook in entry.get("hooks", []):
                     command = hook.get("command", "")
                     # Extract script filename from $CLAUDE_PLUGIN_ROOT/hooks/scripts/<file>
-                    hook_match = re.search(
-                        r'hooks/scripts/([^\s"]+)', command
-                    )
+                    hook_match = re.search(r'hooks/scripts/([^\s"]+)', command)
                     if hook_match:
                         script_name = hook_match.group(1)
                         if not (hooks_scripts_dir / script_name).exists():
@@ -210,25 +350,12 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
                             )
 
     # 5. Validate intra-skill reference links in SKILL.md files
-    link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
-    code_span_pattern = re.compile(r"`[^`]+`")
     if skills_dir.exists():
-        for skill_md in skills_dir.rglob("SKILL.md"):
-            skill_content = skill_md.read_text(encoding="utf-8")
-            # Strip inline code spans to avoid matching example links
-            stripped_content = code_span_pattern.sub("", skill_content)
-            for match in link_pattern.finditer(stripped_content):
-                link_target = match.group(2)
-                # Skip external URLs, anchors, and project-root-relative paths
-                if link_target.startswith(("http://", "https://", "#", ".claude/")):
-                    continue
-                resolved = (skill_md.parent / link_target).resolve()
-                if not resolved.exists():
-                    skill_name = skill_md.parent.name
-                    result.errors.append(
-                        f"Skill '{skill_name}/SKILL.md' links to "
-                        f"'{link_target}' but file not found"
-                    )
+        result.errors.extend(_validate_doc_links(skills_dir, "SKILL.md", "Skill"))
+
+    # 5b. Validate intra-agent reference links in AGENT.md files
+    if agents_dir.exists():
+        result.errors.extend(_validate_doc_links(agents_dir, "AGENT.md", "Agent"))
 
     # 6. Validate settings.json is valid JSON
     settings_path = dist_path / "settings.json"

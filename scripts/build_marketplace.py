@@ -7,39 +7,7 @@ Scans presets/ for manifest.json files and produces marketplace indexes at
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
-
-
-def _scan_presets(presets_dir: Path) -> list[dict[str, str]]:
-    """Scan *presets_dir* and return one entry per preset that has a manifest.
-
-    Parameters
-    ----------
-    presets_dir
-        Directory containing one sub-directory per preset.
-
-    Returns
-    -------
-    list[dict[str, str]]
-        Unsorted list of plugin descriptor dicts with keys
-        ``name``, ``version``, ``description``, and ``source``.
-    """
-    plugins: list[dict[str, str]] = []
-    for preset_dir in sorted(presets_dir.iterdir()):
-        if not preset_dir.is_dir():
-            continue
-        manifest_path = preset_dir / "manifest.json"
-        if not manifest_path.exists():
-            continue
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        plugins.append({
-            "name": manifest["name"],
-            "version": manifest.get("version", "0.0.0"),
-            "description": manifest.get("description", ""),
-            "source": f"./dist/{manifest['name']}",
-        })
-    return plugins
 
 
 def _to_codex_plugin_entry(plugin: dict[str, str]) -> dict[str, object]:
@@ -74,7 +42,45 @@ def build_marketplace(repo_root: Path | None = None) -> Path:
     root = repo_root or Path.cwd()
     presets_dir = root / "presets"
 
-    plugins = _scan_presets(presets_dir)
+    plugins: list[dict[str, str]] = []
+    seen_names: dict[str, str] = {}
+    for preset_dir in sorted(presets_dir.iterdir()):
+        if not preset_dir.is_dir():
+            continue
+        manifest_path = preset_dir / "manifest.json"
+        if not manifest_path.exists():
+            continue
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                f"Preset manifest is not valid JSON: {preset_dir.name} "
+                f"({manifest_path}): {exc}"
+            ) from exc
+        name = manifest.get("name")
+        if name is None:
+            raise ValueError(
+                f"Preset manifest missing required 'name' field: {preset_dir.name} "
+                f"({manifest_path})"
+            )
+        if name in seen_names:
+            raise ValueError(
+                f"Duplicate plugin name '{name}' in presets "
+                f"'{seen_names[name]}' and '{preset_dir.name}'"
+            )
+        seen_names[name] = preset_dir.name
+        plugins.append(
+            {
+                "name": name,
+                "version": manifest.get("version", "0.0.0"),
+                "description": manifest.get("description", ""),
+                # Derive source from the directory name -- build_preset writes
+                # output to dist/<directory name>, so keying off the manifest
+                # 'name' would let the advertised path drift from what is built.
+                "source": f"./dist/{preset_dir.name}",
+            }
+        )
+
     plugins.sort(key=lambda p: p["name"])
 
     claude_marketplace_dir = root / ".claude-plugin"

@@ -4,28 +4,24 @@ React/Next.js frontend + Python backend
 
 ## Skills
 
-- clearway-glossary
 - commit
+- create-hook
 - daa-code-review
-- deep-code-review
 - design-an-interface
 - dev-cycle
-- diagram
 - dignified-python
-- generate-claude-md
-- generate-wiki
-- gitlab-cli
+- github-cli
 - grill-me
 - improve-codebase-architecture
-- init-project
+- improve-skill
 - plan-ceo-review
 - prd-to-issues
 - prd-to-plan
 - project-context
+- react-ui-ux
 - readme-generator
 - request-refactor-plan
 - security-review
-- setup-hooks
 - setup-pre-commit
 - tdd
 - triage-issue
@@ -37,6 +33,10 @@ React/Next.js frontend + Python backend
 - backend-builder
 - code-reviewer
 - frontend-builder
+- qa-tester
+- skill-analyst
+- skill-writer
+- strategy
 - tdd-implementer
 - ux-reviewer
 

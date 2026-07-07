@@ -1,0 +1,12 @@
+{
+  "name": "data-viz",
+  "description": "Intuitive, context-forward chart design in React (Recharts/Nivo) — right chart type for the data, guided insight over decoration",
+  "version": "1.0.0",
+  "core": {
+    "skills": "all"
+  },
+  "exclude": [],
+  "preset_skills": ["chart-taste"],
+  "preset_hooks": [],
+  "preset_agents": []
+}

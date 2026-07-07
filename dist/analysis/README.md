@@ -4,20 +4,16 @@ Notebooks, R/Python scripts, statistical analysis, exploratory work
 
 ## Skills
 
-- clearway-glossary
 - commit
+- create-hook
 - daa-code-review
-- deep-code-review
 - design-an-interface
 - dev-cycle
-- diagram
 - dignified-python
-- generate-claude-md
-- generate-wiki
-- gitlab-cli
+- github-cli
 - grill-me
 - improve-codebase-architecture
-- init-project
+- improve-skill
 - plan-ceo-review
 - prd-to-issues
 - prd-to-plan
@@ -25,7 +21,6 @@ Notebooks, R/Python scripts, statistical analysis, exploratory work
 - readme-generator
 - request-refactor-plan
 - security-review
-- setup-hooks
 - setup-pre-commit
 - tdd
 - triage-issue
@@ -36,6 +31,10 @@ Notebooks, R/Python scripts, statistical analysis, exploratory work
 
 - analysis-builder
 - code-reviewer
+- qa-tester
+- skill-analyst
+- skill-writer
+- strategy
 - tdd-implementer
 
 ## CLAUDE.md Template

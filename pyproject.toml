@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "Template system for Claude Code configurations"
 requires-python = ">=3.12"
 
+[project.scripts]
+claude-workflow = "scripts.installer.cli:main"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 

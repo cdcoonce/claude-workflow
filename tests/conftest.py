@@ -17,7 +17,10 @@ def tmp_repo(tmp_path: Path) -> Path:
     for skill_name in ["commit", "daa-code-review", "tdd"]:
         skill_dir = skills / skill_name
         skill_dir.mkdir()
-        (skill_dir / "SKILL.md").write_text(f"# {skill_name} skill")
+        (skill_dir / "SKILL.md").write_text(
+            f"---\nname: {skill_name}\ndescription: {skill_name} skill\n---\n\n"
+            f"# {skill_name} skill\n"
+        )
 
     hooks = core / "hooks"
     hooks.mkdir()
@@ -31,6 +34,23 @@ def tmp_repo(tmp_path: Path) -> Path:
         (agent_dir / "AGENT.md").write_text(
             f"---\nname: {agent_name}\ndescription: {agent_name} agent\nrole: {role}\n---\n\n# {agent_name}\n"
         )
+
+    docs = core / "docs"
+    docs.mkdir()
+    (docs / "agent-matching.md").write_text(
+        "# Agent-Matching Algorithm\n\nCanonical matching spec for tests.\n"
+    )
+    # Methodology docs bundled into every preset (#97); project.md must NOT ship.
+    for _doc in [
+        "tdd.md",
+        "root-cause-tracing.md",
+        "subagent-development.md",
+        "parallel-agents.md",
+    ]:
+        (docs / _doc).write_text(f"# {_doc}\n\nMethodology doc for tests.\n")
+    (docs / "project.md").write_text(
+        "# Project\n\nProject-specific — must not ship in a preset.\n"
+    )
 
     (core / "settings-base.json").write_text(json.dumps({
         "hooks": {
@@ -66,7 +86,9 @@ def tmp_repo(tmp_path: Path) -> Path:
     preset_skills.mkdir()
     deploy_skill = preset_skills / "deploy"
     deploy_skill.mkdir()
-    (deploy_skill / "SKILL.md").write_text("# deploy skill")
+    (deploy_skill / "SKILL.md").write_text(
+        "---\nname: deploy\ndescription: deploy skill\n---\n\n# deploy skill\n"
+    )
 
     preset_hooks = preset / "hooks"
     preset_hooks.mkdir()

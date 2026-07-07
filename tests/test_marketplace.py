@@ -3,7 +3,9 @@
 import json
 from pathlib import Path
 
-from scripts.build_marketplace import _scan_presets, build_marketplace
+import pytest
+
+from scripts.build_marketplace import build_marketplace
 
 
 class TestBuildMarketplace:
@@ -90,15 +92,19 @@ class TestBuildMarketplace:
         # Add a second preset so we can verify sorting
         second_preset = tmp_repo / "presets" / "alpha-preset"
         second_preset.mkdir()
-        (second_preset / "manifest.json").write_text(json.dumps({
-            "name": "alpha-preset",
-            "description": "Alpha preset for testing sort order",
-            "version": "1.0.0",
-            "core": {"skills": "all", "hooks": ["protect-files.py"]},
-            "exclude": [],
-            "preset_skills": [],
-            "preset_hooks": [],
-        }))
+        (second_preset / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "name": "alpha-preset",
+                    "description": "Alpha preset for testing sort order",
+                    "version": "1.0.0",
+                    "core": {"skills": "all", "hooks": ["protect-files.py"]},
+                    "exclude": [],
+                    "preset_skills": [],
+                    "preset_hooks": [],
+                }
+            )
+        )
 
         build_marketplace(tmp_repo)
         marketplace_path = tmp_repo / ".claude-plugin" / "marketplace.json"
@@ -113,7 +119,9 @@ class TestBuildMarketplace:
         build_marketplace(tmp_repo)
         assert claude_plugin_dir.exists()
 
-    def test_marketplace_skips_preset_dir_without_manifest(self, tmp_repo: Path) -> None:
+    def test_marketplace_skips_preset_dir_without_manifest(
+        self, tmp_repo: Path
+    ) -> None:
         """Preset directories without manifest.json are silently skipped."""
         (tmp_repo / "presets" / "no-manifest-preset").mkdir()
         build_marketplace(tmp_repo)
@@ -132,41 +140,91 @@ class TestBuildMarketplace:
         names = [p["name"] for p in data["plugins"]]
         assert "python-api" in names
 
+    def test_marketplace_source_uses_directory_name_not_manifest_name(
+        self, tmp_repo: Path
+    ) -> None:
+        """source is derived from the preset directory name, matching build_preset.
 
-class TestScanPresets:
-    """Unit tests for _scan_presets helper."""
+        build_preset writes output to dist/<directory name>, so the marketplace
+        source must key off the directory name too -- never the manifest 'name',
+        which can diverge from its directory.
+        """
+        diverging = tmp_repo / "presets" / "dir-name"
+        diverging.mkdir()
+        (diverging / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "name": "manifest-name",
+                    "description": "Manifest name differs from directory name",
+                    "version": "1.0.0",
+                    "core": {"skills": "all", "hooks": ["protect-files.py"]},
+                    "exclude": [],
+                    "preset_skills": [],
+                    "preset_hooks": [],
+                }
+            )
+        )
 
-    def test_returns_list_of_dicts(self, tmp_repo: Path) -> None:
-        result = _scan_presets(tmp_repo / "presets")
-        assert isinstance(result, list)
-        assert all(isinstance(item, dict) for item in result)
+        build_marketplace(tmp_repo)
+        marketplace_path = tmp_repo / ".claude-plugin" / "marketplace.json"
+        data = json.loads(marketplace_path.read_text())
+        plugin = [p for p in data["plugins"] if p["name"] == "manifest-name"][0]
+        # source matches the dir build_preset builds into, not the manifest name.
+        assert plugin["source"] == "./dist/dir-name"
+        # name/version/description still come from the manifest.
+        assert plugin["version"] == "1.0.0"
+        assert plugin["description"] == "Manifest name differs from directory name"
 
-    def test_includes_preset_with_manifest(self, tmp_repo: Path) -> None:
-        result = _scan_presets(tmp_repo / "presets")
-        names = [p["name"] for p in result]
-        assert "python-api" in names
+    def test_marketplace_manifest_missing_name_raises_clear_error(
+        self, tmp_repo: Path
+    ) -> None:
+        """A manifest missing 'name' raises an error naming the offending preset."""
+        broken = tmp_repo / "presets" / "nameless-preset"
+        broken.mkdir()
+        (broken / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "description": "Manifest with no name field",
+                    "version": "1.0.0",
+                }
+            )
+        )
 
-    def test_entry_has_required_fields(self, tmp_repo: Path) -> None:
-        result = _scan_presets(tmp_repo / "presets")
-        for entry in result:
-            assert "name" in entry
-            assert "version" in entry
-            assert "description" in entry
-            assert "source" in entry
+        with pytest.raises(ValueError, match="nameless-preset"):
+            build_marketplace(tmp_repo)
 
-    def test_source_uses_dist_prefix(self, tmp_repo: Path) -> None:
-        result = _scan_presets(tmp_repo / "presets")
-        for entry in result:
-            assert entry["source"].startswith("./dist/")
+    def test_marketplace_malformed_manifest_raises_clear_error(
+        self, tmp_repo: Path
+    ) -> None:
+        """A manifest with invalid JSON raises an error naming the offending preset."""
+        broken = tmp_repo / "presets" / "broken-json-preset"
+        broken.mkdir()
+        manifest_path = broken / "manifest.json"
+        manifest_path.write_text("{not valid json")
 
-    def test_skips_dir_without_manifest(self, tmp_repo: Path) -> None:
-        (tmp_repo / "presets" / "bare-dir").mkdir()
-        result = _scan_presets(tmp_repo / "presets")
-        names = [p["name"] for p in result]
-        assert "bare-dir" not in names
+        with pytest.raises(ValueError, match="broken-json-preset") as exc_info:
+            build_marketplace(tmp_repo)
+        assert str(manifest_path) in str(exc_info.value)
 
-    def test_skips_non_directory_entries(self, tmp_repo: Path) -> None:
-        (tmp_repo / "presets" / "README.md").write_text("# hi")
-        result = _scan_presets(tmp_repo / "presets")
-        names = [p["name"] for p in result]
-        assert "README.md" not in names
+    def test_marketplace_duplicate_name_raises_clear_error(
+        self, tmp_repo: Path
+    ) -> None:
+        """Two presets resolving to the same plugin name raise a naming error."""
+        duplicate = tmp_repo / "presets" / "python-api-copy"
+        duplicate.mkdir()
+        (duplicate / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "name": "python-api",
+                    "description": "Duplicate of python-api",
+                    "version": "1.0.0",
+                    "core": {"skills": "all", "hooks": ["protect-files.py"]},
+                    "exclude": [],
+                    "preset_skills": [],
+                    "preset_hooks": [],
+                }
+            )
+        )
+
+        with pytest.raises(ValueError, match="python-api-copy"):
+            build_marketplace(tmp_repo)

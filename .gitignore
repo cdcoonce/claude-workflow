@@ -12,6 +12,15 @@ __pycache__/
 * 2.*
 * 3.*
 
-# Local tooling state (machine-local, not repo content)
-.afk/
-.snowflake/
+# Generated preset bundles (populated by the pre-build step before uv build).
+# Keep the directory tracked via .gitkeep so fresh checkouts have the dir the
+# wheel force-include expects; ignore only its generated contents.
+scripts/installer/presets/*
+!scripts/installer/presets/.gitkeep
+
+# afk runtime state (machine-local). config.toml is the tracked repo-level afk
+# policy; transcripts/, conductor/, and worktrees/ are per-run local state.
+# Mirrors afk-agent-system's root .gitignore convention.
+.afk/worktrees/
+.afk/transcripts/
+.afk/conductor/

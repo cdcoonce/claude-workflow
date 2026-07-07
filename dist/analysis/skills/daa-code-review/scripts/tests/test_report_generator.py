@@ -3,6 +3,7 @@
 This module contains pytest tests for the report generation functionality.
 """
 
+import contextlib
 from io import StringIO
 from pathlib import Path
 import tempfile
@@ -22,9 +23,6 @@ from models import (
 from report_generator import (
     Colors,
     ConsoleReporter,
-    MarkdownReporter,
-    SeverityStyle,
-    _SEVERITY_STYLE,
     colorize,
     generate_console_report,
     generate_markdown_report,
@@ -32,7 +30,39 @@ from report_generator import (
     severity_color,
     severity_emoji,
     severity_symbol,
+    supports_color,
 )
+
+
+class _FakeTTY:
+    def isatty(self) -> bool:
+        return True
+
+
+class TestSupportsColor:
+    """supports_color honors NO_COLOR (#128, https://no-color.org)."""
+
+    def test_no_color_env_disables_color_even_on_tty(self, monkeypatch):
+        import report_generator
+
+        monkeypatch.setattr(report_generator.sys, "stdout", _FakeTTY())
+        monkeypatch.setenv("NO_COLOR", "1")
+        assert supports_color() is False
+
+    def test_no_color_empty_value_still_disables(self, monkeypatch):
+        # The spec: NO_COLOR set to ANY value (including empty) disables color.
+        import report_generator
+
+        monkeypatch.setattr(report_generator.sys, "stdout", _FakeTTY())
+        monkeypatch.setenv("NO_COLOR", "")
+        assert supports_color() is False
+
+    def test_tty_without_no_color_keeps_color(self, monkeypatch):
+        import report_generator
+
+        monkeypatch.setattr(report_generator.sys, "stdout", _FakeTTY())
+        monkeypatch.delenv("NO_COLOR", raising=False)
+        assert supports_color() is True
 
 
 class TestColorHelpers:
@@ -86,15 +116,6 @@ class TestColorHelpers:
     def test_severity_emoji_info(self):
         """Test info severity emoji."""
         assert severity_emoji(Severity.INFO) == "🔵"
-
-    def test_severity_style_unified_mapping_exists(self):
-        """_SEVERITY_STYLE consolidates all three per-severity dicts."""
-        for sev in (Severity.ERROR, Severity.WARNING, Severity.INFO):
-            style = _SEVERITY_STYLE[sev]
-            assert isinstance(style, SeverityStyle)
-            assert style.color == severity_color(sev)
-            assert style.symbol == severity_symbol(sev)
-            assert style.emoji == severity_emoji(sev)
 
 
 class TestConsoleReporter:
@@ -257,6 +278,14 @@ class TestMarkdownReporter:
         markdown = generate_markdown_report(sample_report)
         assert "# Test Report" in markdown
 
+    def test_markdown_uses_injected_timestamp(self, sample_report: ReviewReport):
+        """An injected generated_at renders verbatim for deterministic output (#148)."""
+        from datetime import datetime
+
+        fixed = datetime(2026, 1, 2, 3, 4, 5)
+        markdown = generate_markdown_report(sample_report, generated_at=fixed)
+        assert "Generated: 2026-01-02 03:04:05" in markdown
+
     def test_generate_report_has_summary(self, sample_report: ReviewReport):
         """Test that generated report has summary section."""
         markdown = generate_markdown_report(sample_report)
@@ -269,6 +298,33 @@ class TestMarkdownReporter:
         markdown = generate_markdown_report(sample_report)
         assert "| Severity | Line | Rule | Message |" in markdown
         assert "`F821`" in markdown
+
+    def test_generate_report_escapes_newlines_in_table(self):
+        """Test that a multi-line issue message doesn't break the table row."""
+        issue = Issue(
+            severity=Severity.ERROR,
+            category=IssueCategory.RUNTIME_ERROR,
+            message="Traceback:\nFile 'test.py', line 1\nValueError: bad",
+            location=Location(file_path=Path("test.py"), line_start=10),
+            rule_id="E001",
+            source="pyright",
+        )
+        result = AnalysisResult(
+            file_type=FileType.PYTHON,
+            source_path=Path("test.py"),
+            issues=[issue],
+        )
+        report = ReviewReport(results=[result], title="Test Report")
+
+        markdown = generate_markdown_report(report)
+
+        table_start = markdown.index("|----------|------|------|---------|")
+        table_block = markdown[table_start:].split("\n\n", 1)[0]
+        row_lines = [line for line in table_block.split("\n") if line.startswith("| ")]
+
+        assert len(row_lines) == 1
+        assert "Traceback:" in row_lines[0]
+        assert "ValueError: bad" in row_lines[0]
 
     def test_generate_report_has_status(self, sample_report: ReviewReport):
         """Test that generated report shows status."""
@@ -400,6 +456,21 @@ class TestGenerateConsoleReport:
         generate_console_report(report, use_color=False, output=output)
 
         assert len(output.getvalue()) > 0
+
+    def test_writes_to_redirected_stdout_when_output_omitted(self):
+        """Test that omitting output writes into a redirected stdout."""
+        result = AnalysisResult(
+            file_type=FileType.PYTHON,
+            source_path=Path("test.py"),
+            issues=[],
+        )
+        report = ReviewReport(results=[result])
+
+        buffer = StringIO()
+        with contextlib.redirect_stdout(buffer):
+            generate_console_report(report, use_color=False)
+
+        assert len(buffer.getvalue()) > 0
 
 
 class TestEmptyReport:

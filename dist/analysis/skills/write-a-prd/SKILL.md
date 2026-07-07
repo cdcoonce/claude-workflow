@@ -1,6 +1,6 @@
 ---
 name: write-a-prd
-description: Create a PRD through user interview, codebase exploration, and module design, then submit as a GitLab issue. Use when user wants to write a PRD, create a product requirements document, or plan a new feature.
+description: Create a PRD through user interview, codebase exploration, and module design, then submit as a GitHub issue. Use when user wants to write a PRD, create a product requirements document, or plan a new feature.
 ---
 
 This skill will be invoked when the user wants to create a PRD. You may skip steps if you don't consider them necessary.
@@ -31,7 +31,7 @@ Use `AskUserQuestion` to confirm module design:
 - Present the proposed modules and ask if they match expectations (header: "Modules").
 - Ask which modules need tests using `multiSelect: true` (header: "Testing"), listing each module as an option with a description of what would be tested.
 
-5. Once you have a complete understanding of the problem and solution, use the template below to write the PRD. The PRD should be submitted as a GitLab issue.
+5. Once you have a complete understanding of the problem and solution, use the template below to write the PRD. The PRD should be submitted as a GitHub issue.
 
 <prd-template>
 
