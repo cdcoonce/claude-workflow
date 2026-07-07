@@ -65,7 +65,7 @@ flowchart LR
     style D fill:#e8f5e9,stroke:#2e7d32
 ```
 
-**Available presets:** `python-api` | `data-pipeline` | `full-stack` | `claude-tooling` | `analysis`
+**Available presets:** `python-api` | `data-pipeline` | `full-stack` | `claude-tooling` | `analysis` | `vault-ops`
 
 See [Presets](#presets) for details on what each one includes.
 
@@ -136,7 +136,8 @@ claude-workflow/
 │   ├── data-pipeline/       # ETL/ELT pipelines (+ pipeline-builder, data-quality-reviewer)
 │   ├── full-stack/          # React/Next.js + Python (+ frontend/backend-builder, ux-reviewer)
 │   ├── claude-tooling/      # Claude skill/hook development (+ skill-builder, skill-reviewer)
-│   └── analysis/            # Notebooks, statistical analysis (+ analysis-builder)
+│   ├── analysis/            # Notebooks, statistical analysis (+ analysis-builder)
+│   └── vault-ops/           # My Brain vault lifecycle and graph workflows
 ├── scripts/                 # Build, marketplace, smoke-test, validation tooling
 ├── tests/                   # 93 pytest tests
 ├── dist/                    # Build output (gitignored)
@@ -254,8 +255,9 @@ Validates YAML frontmatter, phase transitions, artifact completeness, and slug u
 | **`full-stack`**     | React/Next.js + Python backend          | `setup-pre-commit`           | `frontend-builder`, `backend-builder`, `ux-reviewer` | Dual test runners, fixture patterns        |
 | **`claude-tooling`** | Claude skills, hooks, agents            | —                            | `skill-builder`, `skill-reviewer`                    | Skill structure requirements               |
 | **`analysis`**       | Notebooks, R/Python scripts             | —                            | `analysis-builder`                                   | Reproducible seeds, documented assumptions |
+| **`vault-ops`**     | My Brain vault sessions                 | `vault-*`                    | —                                                    | Frontmatter, wikilinks, handoff, sync      |
 
-Each preset's `manifest.json` controls which core components to include, which to exclude, and what preset-specific overrides to layer on top. All presets inherit the full set of 19 core skills, 2 core agents, 4 methodology docs, and the file-protection hook.
+Each preset's `manifest.json` controls which core components to include, which to exclude, and what preset-specific overrides to layer on top. Project presets inherit the core skills, agents, methodology docs, and file-protection hook; supplemental presets such as `vault-ops` can ship only their domain-specific skills.
 
 ---
 
@@ -291,6 +293,7 @@ These ship with every preset:
 | Preset       | Skill               | Description                       |
 | ------------ | ------------------- | --------------------------------- |
 | `python-api` | `/deploy`           | Lambda/service deployment         |
+| `vault-ops` | `/vault-*`          | My Brain vault command workflows  |
 
 ---
 
