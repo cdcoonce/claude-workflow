@@ -4,6 +4,7 @@ ETL/ELT pipelines, SQL transformations, scheduled data jobs
 
 ## Skills
 
+- add-claude-workflow-hook
 - commit
 - create-hook
 - daa-code-review

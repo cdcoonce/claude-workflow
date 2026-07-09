@@ -4,6 +4,7 @@ Developing Claude skills, hooks, agents, and template configurations
 
 ## Skills
 
+- add-claude-workflow-hook
 - commit
 - create-hook
 - daa-code-review

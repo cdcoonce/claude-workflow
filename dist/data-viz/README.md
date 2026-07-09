@@ -4,6 +4,7 @@ Intuitive, context-forward chart design in React (Recharts/Nivo) — right chart
 
 ## Skills
 
+- add-claude-workflow-hook
 - chart-taste
 - commit
 - create-hook

@@ -4,6 +4,7 @@ Python backend services — Lambda, FastAPI, Flask
 
 ## Skills
 
+- add-claude-workflow-hook
 - commit
 - create-hook
 - daa-code-review

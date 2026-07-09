@@ -4,6 +4,7 @@ Notebooks, R/Python scripts, statistical analysis, exploratory work
 
 ## Skills
 
+- add-claude-workflow-hook
 - commit
 - create-hook
 - daa-code-review

@@ -4,6 +4,7 @@ React/Next.js frontend + Python backend
 
 ## Skills
 
+- add-claude-workflow-hook
 - commit
 - create-hook
 - daa-code-review
