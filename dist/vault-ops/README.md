@@ -8,6 +8,7 @@ Charles Coonce's My Brain vault lifecycle, graph, capture, search, sync, and wri
 - vault-budget
 - vault-clickup-task-sync
 - vault-connect
+- vault-context-then-delegate
 - vault-dispatch
 - vault-dump
 - vault-find
