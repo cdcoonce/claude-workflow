@@ -77,6 +77,18 @@ Then read CLAUDE.md and any existing architecture docs or plan files in `docs/pl
 - What are the existing known pain points most relevant to this plan?
 - Are there any FIXME/TODO comments in files this plan touches?
 
+### Grounding Workflow (scale to the target)
+
+For a large plan, a multi-document set, or docs that may contradict each other, do not review from the prose alone — run an adversarial grounding pass before Step 0 so you enter the review already knowing what the docs got wrong. Where a subagent-orchestration tool is available (e.g. Claude Code's Workflow), fan these lenses out in parallel; otherwise run them as sequential sub-analyses. Each lens reads the REAL artifacts on disk — the actual repos, configs, base images, sibling skills — not the doc's description of them, which is how it resolves the doc's own open questions instead of forwarding them:
+
+- **Contradiction & currency** — with multiple docs, map where they agree vs. diverge and determine which is authoritative (mtime, `git log --follow`, which one actually ran the measurements, outward-facing framing). Flag inconsistent titles/links and stale decision registers.
+- **Premise challenge** — attack the core premise (feeds 0A): alternative framings, "what if we did nothing," is there a real forcing function.
+- **Existing-code leverage** — map every sub-problem to existing code/infra on disk (feeds 0B); reading the real repos often answers the doc's escalated open questions directly.
+- **Failure-mode hunt** — landmines the plan did NOT name, and places where its own proposed fix is the hazard. Exclude findings already in the doc.
+- **Verification skeptic** — the load-bearing claims that are asserted, not verified; for each, the cheapest test and what breaks if it is false. A recorded blocker is a claim, not a fact — verify the measurement before building on it.
+
+Synthesize the lenses into the Step 0 brief. If any lens finds the doc set self-contradictory or a load-bearing claim unverified, that is a Step 0 finding, not a mid-review surprise.
+
 ### Retrospective Check
 
 Check the git log for this branch. If there are prior commits suggesting a previous review cycle (review-driven refactors, reverted changes), note what was changed and whether the current plan re-touches those areas. Be MORE aggressive reviewing areas that were previously problematic. Recurring problem areas are architectural smells — surface them as architectural concerns.
