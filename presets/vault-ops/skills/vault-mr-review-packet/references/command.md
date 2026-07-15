@@ -1,6 +1,6 @@
 # /mr-review-packet — Self-Guided Reviewer Packet for a Large MR
 
-Turn an intimidating, large MR into a navigable map a reviewer can walk on their own. The packet is the connective tissue between the diff and the reviewer's understanding — not a summary of the code, a *guide* to reading it.
+Turn an intimidating, large MR into a navigable map a reviewer can walk on their own. The packet is the connective tissue between the diff and the reviewer's understanding — not a summary of the code, a _guide_ to reading it.
 
 ## When to run
 
@@ -12,7 +12,7 @@ Turn an intimidating, large MR into a navigable map a reviewer can walk on their
 
 1. **Scope it with the user first.** Run `/grill-me` (or equivalent) to settle: who's the audience, what's the spine (by feature/family vs pipeline stage vs review-priority), what format, where it lives. Don't assume — the spine decision drives the whole document structure.
 
-2. **Decide where it lives.** The packet is canonical **in the project repo**: `docs/review/<mr>-review-packet.md`, committed on the MR branch so it ships inside the MR's own file tree. The vault keeps only a thin **pointer note** (wikilinks + decision log + thinking) — execution-layer artifact goes to the repo, understanding goes to the vault graph.
+2. **Decide where it lives.** The packet is canonical **in the project repo**: `docs/mr-reviews/<mr>-review-packet.md`, committed on the MR branch so it ships inside the MR's own file tree. The vault keeps only a thin **pointer note** (wikilinks + decision log + thinking) — execution-layer artifact goes to the repo, understanding goes to the vault graph.
 
 3. **Build context before writing — and report what you find.** Read the real code, not the MR description. Verify claims against the source; don't take the MR's own summary at face value. A review packet that surfaces a real bug during its own construction is doing its job — flag it to the user immediately rather than silently working around it.
 
