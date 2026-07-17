@@ -6,12 +6,13 @@ Standards and checklists for validating a completed skill. Split into descriptio
 
 ## Description Requirements
 
-The description is **the only thing the agent sees** when deciding which skill to load. It must give the agent enough information to know what the skill does and when to trigger it.
+The description is **the only thing the agent sees** when deciding which skill to load — it is a retrieval index, not a spec. The skill's body is the behavior spec: its process, phases, and modes. An agent that reads a workflow-bearing description tends to execute the lossy summary in the description instead of the body's actual instructions. Documented failure: a description saying "code review between tasks" caused an agent to run ONE review when the body's flowchart required TWO.
 
 - Max 1024 chars
 - Write in third person
-- First sentence: what it does
-- Second sentence: "Use when [specific triggers]"
+- Content is trigger-only: symptoms, quoted user phrases, error strings, and scenario lists that tell the agent when to invoke this skill
+- Never describe the skill's process, workflow, phase count, or mode list — phase counts (e.g. "7-phase"), the word "pipeline", "→" step chains, and narrated sequences ("interviews... then iterates... then files") belong in the body, not the description
+- A short capability/domain clause is fine as long as it states _what_ the skill covers, not _how_ it executes internally
 
 **Good example:**
 
@@ -19,13 +20,21 @@ The description is **the only thing the agent sees** when deciding which skill t
 Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDF files or when user mentions PDFs, forms, or document extraction.
 ```
 
-**Bad example:**
+**Bad example (vague):**
 
 ```
 Helps with documents.
 ```
 
-The bad example gives the agent no way to distinguish this skill from any other document-related skill.
+The vague example gives the agent no way to distinguish this skill from any other document-related skill.
+
+**Bad example (workflow-bearing):**
+
+```
+Interviews the user to build a test suite, scores the original skill, iterates with a Skill Writer and QA Tester loop until the target pass rate is reached, then files a PR. Use when user says "improve skill".
+```
+
+This narrates the skill's internal loop instead of its triggers. An agent that reads only the description believes the loop runs once, or skips steps the body's actual instructions require — it should read only "Use when user says 'improve skill'..." and defer to the body for how the loop runs.
 
 ---
 

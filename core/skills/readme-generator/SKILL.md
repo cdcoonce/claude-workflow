@@ -1,6 +1,6 @@
 ---
 name: readme-generator
-description: Generate comprehensive, high-quality README.md files for code repositories. Use this skill whenever the user asks to create, write, generate, update, or improve a README for any project or repository. Also trigger when the user says things like "document this project", "write docs for this repo", "this repo needs a README", "help me onboard developers to this codebase", or asks for project documentation in markdown. Even if the user just says "README" or "readme" in the context of a codebase, use this skill.
+description: Use when the user asks to create, write, generate, update, or improve a README for any project or repository, or asks for project documentation in markdown. Also trigger when the user says things like "document this project", "write docs for this repo", "this repo needs a README", "help me onboard developers to this codebase". Even if the user just says "README" or "readme" in the context of a codebase, use this skill.
 ---
 
 # README Generator

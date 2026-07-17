@@ -5,6 +5,7 @@
 A **Claude Code plugin** that gives any project a fully configured AI development environment — skills, methodology docs, agents, and hooks — picked up in seconds by pasting a URL.
 
 <!-- BEGIN GENERATED: counts -->
+
 **23 universal skills · 6 core agents · 7 hooks · 7 project presets · 5 persona plugins**
 <!-- END GENERATED: counts -->
 
@@ -61,14 +62,14 @@ For teams using non-Claude agents (OpenAI, Cursor, etc.), the `dist/` output can
 
 Complete, always-current reference for every component — generated from source, so it can't drift:
 
-| Reference | What's in it |
-| --- | --- |
-| [Skills](docs/reference/skills.md) | Every universal and preset skill, with full descriptions |
-| [Agents](docs/reference/agents.md) | Subagent roles, their skill sets, and preset availability |
-| [Hooks](docs/reference/hooks.md) | Lifecycle hooks and the events they run on |
-| [Presets](docs/reference/presets.md) | What each preset ships, plus its conventions |
-| [Methodology](docs/reference/methodology.md) | The working-method docs bundled into every preset |
-| [Build & Wiring](docs/reference/build-and-wiring.md) | How the plugin is assembled and how hooks are wired |
+| Reference                                            | What's in it                                              |
+| ---------------------------------------------------- | --------------------------------------------------------- |
+| [Skills](docs/reference/skills.md)                   | Every universal and preset skill, with full descriptions  |
+| [Agents](docs/reference/agents.md)                   | Subagent roles, their skill sets, and preset availability |
+| [Hooks](docs/reference/hooks.md)                     | Lifecycle hooks and the events they run on                |
+| [Presets](docs/reference/presets.md)                 | What each preset ships, plus its conventions              |
+| [Methodology](docs/reference/methodology.md)         | The working-method docs bundled into every preset         |
+| [Build & Wiring](docs/reference/build-and-wiring.md) | How the plugin is assembled and how hooks are wired       |
 
 ---
 
@@ -122,20 +123,22 @@ The `dist/` directories are self-contained — each one is a complete Claude Cod
 Each preset targets a project type and ships a curated set of skills, agents, hooks, and conventions. Project presets inherit the full set of core skills, core agents, and methodology docs plus the base hooks; persona plugins are output-style-only (no skills). Supplemental presets such as `vault-ops` ship only their domain-specific skills.
 
 <!-- BEGIN GENERATED: presets-table -->
-| Preset | Kind | Skills | Agents | Conventions |
-| --- | --- | --- | --- | --- |
-| **`analysis`** | project | 23 | 7 | Reproducible random seeds; Documented assumptions and data sources; Deterministic, re-runnable notebooks |
-| **`claude-tooling`** | project | 23 | 8 | Skills follow the required SKILL.md structure; Progressive disclosure over monolithic instructions; Regenerate docs and dist after changing a component |
-| **`data-pipeline`** | project | 25 | 8 | SQL keywords lowercase; Idempotent, re-runnable pipeline stages; Data-quality checks on every stage |
-| **`data-viz`** | project | 24 | 6 | Chart type follows the data, not the default; Restrained, accessible color palettes; Annotate for insight over decoration |
-| **`full-stack`** | project | 24 | 9 | Separate frontend and backend test runners; Shared fixture patterns across the stack; Typed API contracts between layers |
-| **`python-api`** | project | 24 | 8 | Ruff for linting and formatting; Structured logging over print; Type hints on public functions |
-| **`vault-ops`** | project | 21 | 0 | Frontmatter on every note; Wikilinks over bare references; Rebase-before-push git sync, refreshed handoff |
-| **`persona-pair-programmer`** | persona | 0 | 0 | — |
-| **`persona-ship-it`** | persona | 0 | 0 | — |
-| **`persona-staff-eng-deep`** | persona | 0 | 0 | — |
-| **`persona-terse-staff-eng`** | persona | 0 | 0 | — |
-| **`persona-thinking-partner`** | persona | 0 | 0 | — |
+
+| Preset                         | Kind    | Skills | Agents | Conventions                                                                                                                                             |
+| ------------------------------ | ------- | ------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`analysis`**                 | project | 23     | 7      | Reproducible random seeds; Documented assumptions and data sources; Deterministic, re-runnable notebooks                                                |
+| **`claude-tooling`**           | project | 23     | 8      | Skills follow the required SKILL.md structure; Progressive disclosure over monolithic instructions; Regenerate docs and dist after changing a component |
+| **`data-pipeline`**            | project | 25     | 8      | SQL keywords lowercase; Idempotent, re-runnable pipeline stages; Data-quality checks on every stage                                                     |
+| **`data-viz`**                 | project | 24     | 6      | Chart type follows the data, not the default; Restrained, accessible color palettes; Annotate for insight over decoration                               |
+| **`full-stack`**               | project | 24     | 9      | Separate frontend and backend test runners; Shared fixture patterns across the stack; Typed API contracts between layers                                |
+| **`python-api`**               | project | 24     | 8      | Ruff for linting and formatting; Structured logging over print; Type hints on public functions                                                          |
+| **`vault-ops`**                | project | 21     | 0      | Frontmatter on every note; Wikilinks over bare references; Rebase-before-push git sync, refreshed handoff                                               |
+| **`persona-pair-programmer`**  | persona | 0      | 0      | —                                                                                                                                                       |
+| **`persona-ship-it`**          | persona | 0      | 0      | —                                                                                                                                                       |
+| **`persona-staff-eng-deep`**   | persona | 0      | 0      | —                                                                                                                                                       |
+| **`persona-terse-staff-eng`**  | persona | 0      | 0      | —                                                                                                                                                       |
+| **`persona-thinking-partner`** | persona | 0      | 0      | —                                                                                                                                                       |
+
 <!-- END GENERATED: presets-table -->
 
 Each preset's `manifest.json` controls which core components to include, which to exclude, what preset-specific overrides to layer on top, and the `conventions` shown above. See the [presets reference](docs/reference/presets.md) for the skills, agents, and hooks each one ships.
@@ -149,31 +152,33 @@ Each preset's `manifest.json` controls which core components to include, which t
 These ship with every preset:
 
 <!-- BEGIN GENERATED: skills-table -->
-| Skill | Summary | Presets |
-| --- | --- | --- |
-| `/add-claude-workflow-hook` | Design and ship a new core hook in this repo (claude-workflow) — fetch the exact event schema, write a stdlib-only fail-open script, TDD it against real subprocess+git behavior, wire it into every affected preset, and push to both GitHub and GitLab. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/commit` | Git commit workflow with enforced conventional commit style. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/create-hook` | Create and register Claude Code hooks (PreToolUse, PostToolUse) as Python scripts. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/daa-code-review` | AI-powered code quality analysis for Python, Markdown, and Mermaid diagrams. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/design-an-interface` | Generate multiple radically different interface designs for a module using parallel sub-agents. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/dev-cycle` | Orchestrate the full GitHub-issues-driven development lifecycle. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/dignified-python` | Production Python coding standards with automatic version detection (3.10-3.13). | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/github-cli` | GitHub CLI (gh) integration for managing issues, pull requests, branches, commits, and code reviews directly from the terminal. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/grill-me` | Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/improve-codebase-architecture` | Explore a codebase to find opportunities for architectural improvement, focusing on making the codebase more testable by deepening shallow modules. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/improve-skill` | Benchmark-driven skill improvement pipeline. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/plan-ceo-review` | CEO/founder-mode plan review. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/prd-to-issues` | Break a PRD into independently-grabbable GitHub issues using tracer-bullet vertical slices. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/prd-to-plan` | Turn a PRD into a multi-phase implementation plan using tracer-bullet vertical slices, saved as a local Markdown file in docs/plans/. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/project-context` | Generate or update the `.claude/docs/project.md` file that gives Claude project-specific context. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/readme-generator` | Generate comprehensive, high-quality README.md files for code repositories. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/request-refactor-plan` | Create a detailed refactor plan with tiny commits via user interview, then file it as a GitHub issue. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/security-review` | Security code review for vulnerabilities with confidence-based reporting. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/setup-pre-commit` | Set up pre-commit hooks for the current repo. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/tdd` | Test-driven development with red-green-refactor loop. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/triage-issue` | Triage a bug or issue by exploring the codebase to find root cause, then create a GitHub issue with a TDD-based fix plan. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/write-a-prd` | Create a PRD through user interview, codebase exploration, and module design, then submit as a GitHub issue. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/write-a-skill` | Create new agent skills with proper structure, progressive disclosure, and bundled resources. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+
+| Skill                            | Summary                                                                                                                                                                                                                                                   | Presets                                                                   |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `/add-claude-workflow-hook`      | Design and ship a new core hook in this repo (claude-workflow) — fetch the exact event schema, write a stdlib-only fail-open script, TDD it against real subprocess+git behavior, wire it into every affected preset, and push to both GitHub and GitLab. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/commit`                        | Git commit workflow with enforced conventional commit style.                                                                                                                                                                                              | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/create-hook`                   | Create and register Claude Code hooks (PreToolUse, PostToolUse) as Python scripts.                                                                                                                                                                        | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/daa-code-review`               | AI-powered code quality analysis for Python, Markdown, and Mermaid diagrams.                                                                                                                                                                              | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/design-an-interface`           | Generate multiple radically different interface designs for a module using parallel sub-agents.                                                                                                                                                           | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/dev-cycle`                     | Use when user says "dev cycle", "development workflow", "full development pipeline", or invokes /dev-cycle to take a GitHub-issues-driven feature from brainstorm through a merged PR.                                                                    | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/dignified-python`              | Production Python coding standards with automatic version detection (3.10-3.13).                                                                                                                                                                          | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/github-cli`                    | GitHub CLI (gh) integration for managing issues, pull requests, branches, commits, and code reviews directly from the terminal.                                                                                                                           | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/grill-me`                      | Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree.                                                                                                                   | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/improve-codebase-architecture` | Explore a codebase to find opportunities for architectural improvement, focusing on making the codebase more testable by deepening shallow modules.                                                                                                       | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/improve-skill`                 | Use when user says "improve skill", "benchmark skill", "make skill better", or invokes /improve-skill to raise a skill's benchmark pass rate before merging a PR.                                                                                         | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/plan-ceo-review`               | CEO/founder-mode review that rethinks a plan to find the 10-star product.                                                                                                                                                                                 | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/prd-to-issues`                 | Break a PRD into independently-grabbable GitHub issues using tracer-bullet vertical slices.                                                                                                                                                               | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/prd-to-plan`                   | Turn a PRD into a multi-phase implementation plan using tracer-bullet vertical slices, saved as a local Markdown file in docs/plans/.                                                                                                                     | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/project-context`               | Generate or update the `.claude/docs/project.md` file that gives Claude project-specific context.                                                                                                                                                         | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/readme-generator`              | Use when the user asks to create, write, generate, update, or improve a README for any project or repository, or asks for project documentation in markdown.                                                                                              | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/request-refactor-plan`         | Use when user wants to plan a refactor, create a refactoring RFC, or break a refactor into safe incremental steps.                                                                                                                                        | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/security-review`               | Security code review for vulnerabilities with confidence-based reporting.                                                                                                                                                                                 | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/setup-pre-commit`              | Set up pre-commit hooks for the current repo.                                                                                                                                                                                                             | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/tdd`                           | Test-driven development with red-green-refactor loop.                                                                                                                                                                                                     | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/triage-issue`                  | Use when user reports a bug, wants to file an issue, mentions "triage", or wants to investigate and plan a fix for a problem.                                                                                                                             | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/write-a-prd`                   | Use when user wants to write a PRD, create a product requirements document, or plan a new feature.                                                                                                                                                        | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/write-a-skill`                 | Create new agent skills with proper structure, progressive disclosure, and bundled resources.                                                                                                                                                             | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+
 <!-- END GENERATED: skills-table -->
 
 ### Preset-Specific Skills
@@ -181,34 +186,36 @@ These ship with every preset:
 These ship only with the presets that declare them:
 
 <!-- BEGIN GENERATED: preset-skills-table -->
-| Skill | Summary | Presets |
-| --- | --- | --- |
-| `/chart-taste` | Applies chart-design taste to React data visualization — a chart-type decision tree and adjustable dials (annotation density, complexity, color restraint) to stop charts from being technically-rendered-but-uninformative. | data-viz |
-| `/dagster-expert` | Expert guidance for working with Dagster and the dg CLI. | data-pipeline |
-| `/dbt-expert` | Expert guidance for working with dbt Core. | data-pipeline |
-| `/deploy` | Deploy the portfolio chat agent Lambda function to AWS. | python-api |
-| `/react-ui-ux` | Applies deliberate design taste to React UI generation — adjustable dials (variance, motion, density) and explicit anti-genericness rules to stop AI-generated components from defaulting to the generic shadcn/Tailwind look. | full-stack |
-| `/vault-audit` | Run Charles's My Brain /vault-audit structural audit across frontmatter, wikilinks, indexes, stale notes, duplicates, and templates. | vault-ops |
-| `/vault-budget` | Run Charles's My Brain /budget spend and subscription-value meter from local Claude transcripts. | vault-ops |
-| `/vault-clickup-task-sync` | Run Charles's My Brain /clickup-task-sync workflow to sync vault action items into ClickUp without duplicating tasks. | vault-ops |
-| `/vault-connect` | Run Charles's My Brain /connect autonomous graph connection pass with preview-gated wikilink edits. | vault-ops |
-| `/vault-context-then-delegate` | Run Charles's My Brain /context-then-delegate workflow to resolve real-world ambiguity (email/SharePoint/Slack) before writing a coding-agent prompt. | vault-ops |
-| `/vault-dispatch` | Run Charles's My Brain /dispatch workflow to turn a shaped idea into an afk-managed issue linked back into the vault. | vault-ops |
-| `/vault-dump` | Run Charles's My Brain /dump capture workflow for routing freeform input into durable vault notes, tasks, indexes, and wikilinks. | vault-ops |
-| `/vault-find` | Run Charles's My Brain /find semantic vault search workflow, including reindex and status modes. | vault-ops |
-| `/vault-fix-issue` | Run Charles's My Brain /fix-issue workflow to resolve a filed issue under TDD + mutation-teeth-check + review-before-commit discipline. | vault-ops |
-| `/vault-garden` | Run Charles's My Brain /garden graph-gardener apply workflow for queued link, profile, memory, index, and orphan repairs. | vault-ops |
-| `/vault-grill` | Run Charles's My Brain /grill active knowledge-extraction interview and route the result into the vault graph. | vault-ops |
-| `/vault-handoff` | Run Charles's My Brain /handoff workflow to refresh the machine-scoped rolling handoff digest. | vault-ops |
-| `/vault-link` | Run Charles's My Brain /link helper to find notes and suggest or insert correct Obsidian wikilinks. | vault-ops |
-| `/vault-mr-review-packet` | Run Charles's My Brain /mr-review-packet workflow to generate a self-guided reviewer packet for a large merge request. | vault-ops |
-| `/vault-recall` | Run Charles's My Brain /recall post-build consolidation workflow for afk merge outcomes, stubs, brag candidates, and handoff refresh. | vault-ops |
-| `/vault-standup` | Run Charles's My Brain /standup context-loading workflow, including lean, deep, and comprehensive modes. | vault-ops |
-| `/vault-start` | Run Charles's My Brain /start one-time productivity bootstrap for tasks, glossary, quick-reference, and term tracking. | vault-ops |
-| `/vault-sync` | Run Charles's My Brain /sync git synchronization workflow with rebase-before-push and conflict-safe handling. | vault-ops |
-| `/vault-teach` | Run Charles's My Brain /teach stateful learning workspace workflow for a topic. | vault-ops |
-| `/vault-wrap-up` | Run Charles's My Brain /wrap-up session audit, handoff refresh, and git sync workflow. | vault-ops |
-| `/vault-write` | Draft Outlook or Teams messages in Charles's voice using the My Brain /write communication rules. | vault-ops |
+
+| Skill                          | Summary                                                                                                                                                                                                                        | Presets       |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- |
+| `/chart-taste`                 | Applies chart-design taste to React data visualization — a chart-type decision tree and adjustable dials (annotation density, complexity, color restraint) to stop charts from being technically-rendered-but-uninformative.   | data-viz      |
+| `/dagster-expert`              | Expert guidance for working with Dagster and the dg CLI.                                                                                                                                                                       | data-pipeline |
+| `/dbt-expert`                  | Expert guidance for working with dbt Core.                                                                                                                                                                                     | data-pipeline |
+| `/deploy`                      | Deploy the portfolio chat agent Lambda function to AWS.                                                                                                                                                                        | python-api    |
+| `/react-ui-ux`                 | Applies deliberate design taste to React UI generation — adjustable dials (variance, motion, density) and explicit anti-genericness rules to stop AI-generated components from defaulting to the generic shadcn/Tailwind look. | full-stack    |
+| `/vault-audit`                 | Run Charles's My Brain /vault-audit structural audit across frontmatter, wikilinks, indexes, stale notes, duplicates, and templates.                                                                                           | vault-ops     |
+| `/vault-budget`                | Run Charles's My Brain /budget spend and subscription-value meter from local Claude transcripts.                                                                                                                               | vault-ops     |
+| `/vault-clickup-task-sync`     | Run Charles's My Brain /clickup-task-sync workflow to sync vault action items into ClickUp without duplicating tasks.                                                                                                          | vault-ops     |
+| `/vault-connect`               | Run Charles's My Brain /connect autonomous graph connection pass with preview-gated wikilink edits.                                                                                                                            | vault-ops     |
+| `/vault-context-then-delegate` | Run Charles's My Brain /context-then-delegate workflow to resolve real-world ambiguity (email/SharePoint/Slack) before writing a coding-agent prompt.                                                                          | vault-ops     |
+| `/vault-dispatch`              | Run Charles's My Brain /dispatch workflow to turn a shaped idea into an afk-managed issue linked back into the vault.                                                                                                          | vault-ops     |
+| `/vault-dump`                  | Run Charles's My Brain /dump capture workflow for routing freeform input into durable vault notes, tasks, indexes, and wikilinks.                                                                                              | vault-ops     |
+| `/vault-find`                  | Run Charles's My Brain /find semantic vault search workflow, including reindex and status modes.                                                                                                                               | vault-ops     |
+| `/vault-fix-issue`             | Run Charles's My Brain /fix-issue workflow to resolve a filed issue under TDD + mutation-teeth-check + review-before-commit discipline.                                                                                        | vault-ops     |
+| `/vault-garden`                | Run Charles's My Brain /garden graph-gardener apply workflow for queued link, profile, memory, index, and orphan repairs.                                                                                                      | vault-ops     |
+| `/vault-grill`                 | Run Charles's My Brain /grill active knowledge-extraction interview and route the result into the vault graph.                                                                                                                 | vault-ops     |
+| `/vault-handoff`               | Run Charles's My Brain /handoff workflow to refresh the machine-scoped rolling handoff digest.                                                                                                                                 | vault-ops     |
+| `/vault-link`                  | Run Charles's My Brain /link helper to find notes and suggest or insert correct Obsidian wikilinks.                                                                                                                            | vault-ops     |
+| `/vault-mr-review-packet`      | Run Charles's My Brain /mr-review-packet workflow to generate a self-guided reviewer packet for a large merge request.                                                                                                         | vault-ops     |
+| `/vault-recall`                | Run Charles's My Brain /recall post-build consolidation workflow for afk merge outcomes, stubs, brag candidates, and handoff refresh.                                                                                          | vault-ops     |
+| `/vault-standup`               | Run Charles's My Brain /standup context-loading workflow, including lean, deep, and comprehensive modes.                                                                                                                       | vault-ops     |
+| `/vault-start`                 | Run Charles's My Brain /start one-time productivity bootstrap for tasks, glossary, quick-reference, and term tracking.                                                                                                         | vault-ops     |
+| `/vault-sync`                  | Run Charles's My Brain /sync git synchronization workflow with rebase-before-push and conflict-safe handling.                                                                                                                  | vault-ops     |
+| `/vault-teach`                 | Run Charles's My Brain /teach stateful learning workspace workflow for a topic.                                                                                                                                                | vault-ops     |
+| `/vault-wrap-up`               | Run Charles's My Brain /wrap-up session audit, handoff refresh, and git sync workflow.                                                                                                                                         | vault-ops     |
+| `/vault-write`                 | Draft Outlook or Teams messages in Charles's voice using the My Brain /write communication rules.                                                                                                                              | vault-ops     |
+
 <!-- END GENERATED: preset-skills-table -->
 
 Full descriptions for every skill live in the [skills reference](docs/reference/skills.md).
@@ -224,14 +231,16 @@ Agents are specialized role definitions (`AGENT.md` with YAML frontmatter) that 
 These ship with every preset:
 
 <!-- BEGIN GENERATED: agents-core-table -->
-| Agent | Role | Skills | Presets |
-| --- | --- | --- | --- |
-| **code-reviewer** | `reviewer` | `daa-code-review`, `dignified-python` | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| **qa-tester** | `qa-tester` | — | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| **skill-analyst** | `analyst` | — | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| **skill-writer** | `skill-writer` | — | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| **strategy** | `strategy` | — | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| **tdd-implementer** | `implementer` | `tdd`, `commit`, `dignified-python` | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+
+| Agent               | Role           | Skills                                | Presets                                                                   |
+| ------------------- | -------------- | ------------------------------------- | ------------------------------------------------------------------------- |
+| **code-reviewer**   | `reviewer`     | `daa-code-review`, `dignified-python` | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| **qa-tester**       | `qa-tester`    | —                                     | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| **skill-analyst**   | `analyst`      | —                                     | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| **skill-writer**    | `skill-writer` | —                                     | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| **strategy**        | `strategy`     | —                                     | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| **tdd-implementer** | `implementer`  | `tdd`, `commit`, `dignified-python`   | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+
 <!-- END GENERATED: agents-core-table -->
 
 ### Preset Agents
@@ -239,18 +248,20 @@ These ship with every preset:
 Each preset adds domain-specific agents that override or extend the core set:
 
 <!-- BEGIN GENERATED: agents-preset-table -->
-| Agent | Role | Skills | Presets |
-| --- | --- | --- | --- |
-| **analysis-builder** | `implementer` | `tdd`, `commit` | analysis |
-| **api-builder** | `implementer` | `tdd`, `commit` | python-api |
-| **backend-builder** | `implementer` | `tdd`, `commit` | full-stack |
-| **data-quality-reviewer** | `reviewer` | `daa-code-review`, `dagster-expert`, `dbt-expert`, `dignified-python` | data-pipeline |
-| **frontend-builder** | `implementer` | `tdd`, `commit`, `react-ui-ux` | full-stack |
-| **pipeline-builder** | `implementer` | `tdd`, `commit`, `dagster-expert`, `dbt-expert`, `dignified-python` | data-pipeline |
-| **security-reviewer** | `reviewer` | `daa-code-review` | python-api |
-| **skill-builder** | `implementer` | `tdd`, `commit` | claude-tooling |
-| **skill-reviewer** | `reviewer` | `daa-code-review` | claude-tooling |
-| **ux-reviewer** | `reviewer` | `daa-code-review` | full-stack |
+
+| Agent                     | Role          | Skills                                                                | Presets        |
+| ------------------------- | ------------- | --------------------------------------------------------------------- | -------------- |
+| **analysis-builder**      | `implementer` | `tdd`, `commit`                                                       | analysis       |
+| **api-builder**           | `implementer` | `tdd`, `commit`                                                       | python-api     |
+| **backend-builder**       | `implementer` | `tdd`, `commit`                                                       | full-stack     |
+| **data-quality-reviewer** | `reviewer`    | `daa-code-review`, `dagster-expert`, `dbt-expert`, `dignified-python` | data-pipeline  |
+| **frontend-builder**      | `implementer` | `tdd`, `commit`, `react-ui-ux`                                        | full-stack     |
+| **pipeline-builder**      | `implementer` | `tdd`, `commit`, `dagster-expert`, `dbt-expert`, `dignified-python`   | data-pipeline  |
+| **security-reviewer**     | `reviewer`    | `daa-code-review`                                                     | python-api     |
+| **skill-builder**         | `implementer` | `tdd`, `commit`                                                       | claude-tooling |
+| **skill-reviewer**        | `reviewer`    | `daa-code-review`                                                     | claude-tooling |
+| **ux-reviewer**           | `reviewer`    | `daa-code-review`                                                     | full-stack     |
+
 <!-- END GENERATED: agents-preset-table -->
 
 See the [agents reference](docs/reference/agents.md) for full descriptions.
@@ -262,15 +273,17 @@ See the [agents reference](docs/reference/agents.md) for full descriptions.
 Hooks are scripts wired to Claude Code lifecycle events. The base set ships with every project preset; personas wire only their SessionStart injector. The event column is derived from the settings wiring, not the hook's name.
 
 <!-- BEGIN GENERATED: hooks-table -->
-| Hook | Event | Summary | Presets |
-| --- | --- | --- | --- |
-| `audit-config-change.py` | `ConfigChange` | ConfigChange hook: audit-log and surface mid-session config file changes. | all |
-| `inject_persona.py` | `SessionStart` | SessionStart hook: inject a persona output-style as additionalContext. | persona-pair-programmer, persona-ship-it, persona-staff-eng-deep, persona-terse-staff-eng, persona-thinking-partner |
-| `post-edit-lint.py` | `PostToolUse` | Post-edit hook: auto-format and lint Python files with Ruff. | analysis, claude-tooling, data-pipeline, full-stack, python-api |
-| `protect-files.py` | `PreToolUse` | Pre-edit hook: block edits to sensitive/generated files. | all |
-| `snapshot-subagent-start.py` | `SubagentStart` | SubagentStart hook: record a git baseline for the evidence check at stop. | all |
-| `verify-subagent-evidence.py` | `SubagentStop` | SubagentStop hook: catch a subagent claiming a change it never made. | all |
-| `verify-tests-before-stop.py` | `Stop` | Stop hook: verify the project's test suite is green before Claude stops. | all |
+
+| Hook                          | Event           | Summary                                                                   | Presets                                                                                                             |
+| ----------------------------- | --------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `audit-config-change.py`      | `ConfigChange`  | ConfigChange hook: audit-log and surface mid-session config file changes. | all                                                                                                                 |
+| `inject_persona.py`           | `SessionStart`  | SessionStart hook: inject a persona output-style as additionalContext.    | persona-pair-programmer, persona-ship-it, persona-staff-eng-deep, persona-terse-staff-eng, persona-thinking-partner |
+| `post-edit-lint.py`           | `PostToolUse`   | Post-edit hook: auto-format and lint Python files with Ruff.              | analysis, claude-tooling, data-pipeline, full-stack, python-api                                                     |
+| `protect-files.py`            | `PreToolUse`    | Pre-edit hook: block edits to sensitive/generated files.                  | all                                                                                                                 |
+| `snapshot-subagent-start.py`  | `SubagentStart` | SubagentStart hook: record a git baseline for the evidence check at stop. | all                                                                                                                 |
+| `verify-subagent-evidence.py` | `SubagentStop`  | SubagentStop hook: catch a subagent claiming a change it never made.      | all                                                                                                                 |
+| `verify-tests-before-stop.py` | `Stop`          | Stop hook: verify the project's test suite is green before Claude stops.  | all                                                                                                                 |
+
 <!-- END GENERATED: hooks-table -->
 
 See the [hooks reference](docs/reference/hooks.md) and [build & wiring reference](docs/reference/build-and-wiring.md) for details.
@@ -282,13 +295,15 @@ See the [hooks reference](docs/reference/hooks.md) and [build & wiring reference
 Methodology documents in `core/docs/` define how Claude Code agents should work. They are bundled into every preset under `docs/`:
 
 <!-- BEGIN GENERATED: methodology-table -->
-| Document | Summary |
-| --- | --- |
-| [`agent-matching.md`](../../core/docs/agent-matching.md) | This document is the canonical specification for how orchestrators select agents when dispatching subagents. All orchestrators — dev-cycle, subagent-development, parallel-agents — follow this algorithm. |
-| [`parallel-agents.md`](../../core/docs/parallel-agents.md) | When you have multiple unrelated failures (different test files, different subsystems, different bugs), investigating them sequentially wastes time. Each investigation is independent and can happen in parallel. |
-| [`root-cause-tracing.md`](../../core/docs/root-cause-tracing.md) | Bugs often manifest deep in the call stack (file created in wrong location, database opened with wrong path). Your instinct is to fix where the error appears, but that's treating a symptom. |
-| [`subagent-development.md`](../../core/docs/subagent-development.md) | Execute a plan by dispatching a fresh subagent per task, with code review after each. |
-| [`tdd.md`](../../core/docs/tdd.md) | Write the test first. Watch it fail. Write minimal code to pass. |
+
+| Document                                                             | Summary                                                                                                                                                                                                            |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [`agent-matching.md`](../../core/docs/agent-matching.md)             | This document is the canonical specification for how orchestrators select agents when dispatching subagents. All orchestrators — dev-cycle, subagent-development, parallel-agents — follow this algorithm.         |
+| [`parallel-agents.md`](../../core/docs/parallel-agents.md)           | When you have multiple unrelated failures (different test files, different subsystems, different bugs), investigating them sequentially wastes time. Each investigation is independent and can happen in parallel. |
+| [`root-cause-tracing.md`](../../core/docs/root-cause-tracing.md)     | Bugs often manifest deep in the call stack (file created in wrong location, database opened with wrong path). Your instinct is to fix where the error appears, but that's treating a symptom.                      |
+| [`subagent-development.md`](../../core/docs/subagent-development.md) | Execute a plan by dispatching a fresh subagent per task, with code review after each.                                                                                                                              |
+| [`tdd.md`](../../core/docs/tdd.md)                                   | Write the test first. Watch it fail. Write minimal code to pass.                                                                                                                                                   |
+
 <!-- END GENERATED: methodology-table -->
 
 Full summaries are in the [methodology reference](docs/reference/methodology.md).
@@ -446,16 +461,16 @@ claude-workflow/
 
 ### Scripts Reference
 
-| Command                                                       | Description                                                     |
-| ------------------------------------------------------------- | --------------------------------------------------------------- |
-| `make docs`                                                   | Regenerate `docs/reference/` and the README's generated tables  |
-| `make build`                                                  | Regenerate the marketplace and rebuild every preset into `dist/`|
-| `make test`                                                   | Run the suites plus the docs+dist drift gate                    |
-| `uv run python -m scripts.build_docs [--check]`               | Generate docs, or check for staleness (`--check`)               |
-| `uv run python -m scripts.build_preset <preset>`              | Assemble core + preset into `dist/<preset>/`                    |
-| `uv run python -m scripts.build_marketplace`                  | Regenerate `.claude-plugin/marketplace.json`                    |
-| `uv run python -m scripts.smoke_test <preset>`                | Validate internal consistency of a built preset                 |
-| `uv run python -m scripts.dev_cycle_validate docs/dev-cycle/` | Validate dev-cycle state file frontmatter and phase transitions |
+| Command                                                       | Description                                                      |
+| ------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `make docs`                                                   | Regenerate `docs/reference/` and the README's generated tables   |
+| `make build`                                                  | Regenerate the marketplace and rebuild every preset into `dist/` |
+| `make test`                                                   | Run the suites plus the docs+dist drift gate                     |
+| `uv run python -m scripts.build_docs [--check]`               | Generate docs, or check for staleness (`--check`)                |
+| `uv run python -m scripts.build_preset <preset>`              | Assemble core + preset into `dist/<preset>/`                     |
+| `uv run python -m scripts.build_marketplace`                  | Regenerate `.claude-plugin/marketplace.json`                     |
+| `uv run python -m scripts.smoke_test <preset>`                | Validate internal consistency of a built preset                  |
+| `uv run python -m scripts.dev_cycle_validate docs/dev-cycle/` | Validate dev-cycle state file frontmatter and phase transitions  |
 
 ### Running Tests
 
@@ -474,12 +489,12 @@ uv run pytest --cov=scripts --cov-report=term-missing
 
 ## Troubleshooting
 
-| Symptom                                        | Likely Cause                                                                            | Fix                                                                    |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `build_preset.py` fails with "skill not found" | Manifest references a skill that doesn't exist in `core/skills/` or `presets/*/skills/` | Check `manifest.json` `preset_skills` array against actual directories |
-| `make test` fails with "Documentation is stale" | A component changed but docs/dist weren't regenerated                                    | Run `make docs && make build` and commit the regenerated output        |
-| Smoke test reports missing hook                | Hook listed in `hooks.json` but script not in `hooks/scripts/`                          | Add the hook script or remove from settings                            |
-| Dev-cycle state file validation fails          | Frontmatter schema mismatch or phase transition error                                   | Check `schema_version: 1` and that phases follow strict order          |
+| Symptom                                         | Likely Cause                                                                            | Fix                                                                    |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `build_preset.py` fails with "skill not found"  | Manifest references a skill that doesn't exist in `core/skills/` or `presets/*/skills/` | Check `manifest.json` `preset_skills` array against actual directories |
+| `make test` fails with "Documentation is stale" | A component changed but docs/dist weren't regenerated                                   | Run `make docs && make build` and commit the regenerated output        |
+| Smoke test reports missing hook                 | Hook listed in `hooks.json` but script not in `hooks/scripts/`                          | Add the hook script or remove from settings                            |
+| Dev-cycle state file validation fails           | Frontmatter schema mismatch or phase transition error                                   | Check `schema_version: 1` and that phases follow strict order          |
 
 ---
 

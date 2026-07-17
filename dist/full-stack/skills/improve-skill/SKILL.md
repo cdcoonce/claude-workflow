@@ -1,11 +1,9 @@
 ---
 name: improve-skill
 description: >
-  Benchmark-driven skill improvement pipeline. Interviews the user to build
-  a test suite, scores the original skill, iterates with a Skill Writer and
-  QA Tester loop until the target pass rate is reached, then files a PR.
   Use when user says "improve skill", "benchmark skill", "make skill better",
-  or invokes /improve-skill.
+  or invokes /improve-skill to raise a skill's benchmark pass rate before
+  merging a PR.
 ---
 
 # Improve-Skill Orchestrator

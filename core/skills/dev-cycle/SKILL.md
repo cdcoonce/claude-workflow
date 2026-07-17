@@ -1,10 +1,9 @@
 ---
 name: dev-cycle
 description: >
-  Orchestrate the full GitHub-issues-driven development lifecycle.
-  7-phase pipeline from brainstorm through PR with state tracking
-  and cross-conversation resume. Use when user says "dev cycle",
-  "development workflow", "full development pipeline", or invokes /dev-cycle.
+  Use when user says "dev cycle", "development workflow", "full development
+  pipeline", or invokes /dev-cycle to take a GitHub-issues-driven feature from
+  brainstorm through a merged PR.
 ---
 
 # Dev Cycle Orchestrator
