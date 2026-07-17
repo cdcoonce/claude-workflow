@@ -8,7 +8,8 @@ Checks:
 - Agent roles are one of the documented roles (see VALID_ROLES)
 - Agent skills.add references resolve to existing skills in skills/
 - hooks/hooks.json references scripts that exist in hooks/scripts/
-- Every relative link in SKILL.md files resolves within the skill directory
+- Every relative link or backtick-quoted path in bundled skill/agent docs
+  resolves within that skill/agent directory
 - settings.json at root is valid JSON
 """
 
@@ -40,60 +41,131 @@ _URI_SCHEME_PATTERN = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
 
 _LINK_PATTERN = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 
+# Matches a backtick-quoted inline token, e.g. `references/foo.md`.
+_BACKTICK_PATTERN = re.compile(r"`([^`\n]+)`")
+
+
+def _fenced_line_numbers(doc_content: str) -> set[int]:
+    """Return line numbers of doc_content that fall inside a ``` fenced code block."""
+    in_fence = False
+    fenced_lines: set[int] = set()
+    for line_num, line in enumerate(doc_content.split("\n")):
+        if line.strip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            fenced_lines.add(line_num)
+    return fenced_lines
+
+
+def _is_out_of_contract(target: str) -> bool:
+    """Return True for anchors, project-root-relative paths, and URI-scheme targets."""
+    return target.startswith(_LINK_SKIP_PREFIXES) or bool(
+        _URI_SCHEME_PATTERN.match(target)
+    )
+
+
+def _backtick_reference_target(doc_md: Path, raw_token: str) -> str | None:
+    """Resolve a backtick-quoted token to a validate-able relative ``.md`` path.
+
+    Applies the scoping contract that separates genuine intra-skill doc
+    references from incidental backtick mentions: the token must parse as a
+    relative path ending in ``.md`` with no URI scheme and no skip-prefix, and
+    its first path segment must exist as a directory alongside ``doc_md``.
+    Bare basenames, root-relative mentions, and illustrative example paths
+    fail this check and are skipped.
+
+    Parameters
+    ----------
+    doc_md
+        The doc file the token was found in, used to resolve the reference.
+    raw_token
+        The raw text found between a pair of backticks.
+
+    Returns
+    -------
+    str | None
+        The path portion of the token (query/fragment stripped), or None if
+        the token is out of contract and should be skipped.
+    """
+    target = raw_token.strip()
+    if "/" not in target or _is_out_of_contract(target):
+        return None
+    file_part = re.split(r"[#?]", target, maxsplit=1)[0]
+    if not file_part.endswith(".md"):
+        return None
+    first_segment = file_part.split("/", 1)[0]
+    if not first_segment or not (doc_md.parent / first_segment).is_dir():
+        return None
+    return file_part
+
 
 def _validate_doc_links(docs_dir: Path, doc_filename: str, label: str) -> list[str]:
-    """Validate that relative links in doc files resolve to existing files.
+    """Validate that relative references in bundled docs resolve to existing files.
+
+    Scans every ``.md`` file bundled alongside each ``doc_filename`` (not just
+    ``doc_filename`` itself), checking both markdown-style links
+    (``[text](path)``) and in-contract backtick-quoted paths (see
+    ``_backtick_reference_target``).
 
     Parameters
     ----------
     docs_dir
         Root directory to search recursively for doc files (e.g., skills/).
     doc_filename
-        Name of the doc file to look for (e.g., "SKILL.md").
+        Name of the primary doc file that marks a skill/agent directory
+        (e.g., "SKILL.md").
     label
         Human-readable label used in error messages (e.g., "Skill").
 
     Returns
     -------
     list[str]
-        Error strings for any links that fail to resolve.
+        Error strings for any references that fail to resolve.
     """
     errors: list[str] = []
-    for doc_md in docs_dir.rglob(doc_filename):
-        doc_content = doc_md.read_text(encoding="utf-8")
-        in_fence = False
-        fenced_lines: set[int] = set()
-        for line_num, line in enumerate(doc_content.split("\n")):
-            if line.strip().startswith("```"):
-                in_fence = not in_fence
-                continue
-            if in_fence:
-                fenced_lines.add(line_num)
+    for primary_doc in docs_dir.rglob(doc_filename):
+        item_dir = primary_doc.parent
+        for doc_md in sorted(item_dir.rglob("*.md")):
+            doc_content = doc_md.read_text(encoding="utf-8")
+            fenced_lines = _fenced_line_numbers(doc_content)
+            doc_rel = doc_md.relative_to(item_dir.parent).as_posix()
 
-        for match in _LINK_PATTERN.finditer(doc_content):
-            line_num = doc_content.count("\n", 0, match.start())
-            if line_num in fenced_lines:
-                continue
-            link_target = match.group(2).strip()
-            # Strip an optional markdown link title — [text](path "Title") — keeping
-            # only the path token. Skip when the path is quote-wrapped, since such a
-            # path may legitimately contain spaces.
-            if link_target and not link_target.startswith(("'", '"')):
-                link_target = link_target.split(None, 1)[0]
-            if link_target.startswith(_LINK_SKIP_PREFIXES) or _URI_SCHEME_PATTERN.match(
-                link_target
-            ):
-                continue
-            file_part = re.split(r"[#?]", link_target, maxsplit=1)[0]
-            if not file_part:
-                continue
-            resolved = (doc_md.parent / file_part).resolve()
-            if not resolved.exists():
-                doc_name = doc_md.parent.name
-                errors.append(
-                    f"{label} '{doc_name}/{doc_filename}' links to "
-                    f"'{link_target}' but file not found"
-                )
+            for match in _LINK_PATTERN.finditer(doc_content):
+                line_num = doc_content.count("\n", 0, match.start())
+                if line_num in fenced_lines:
+                    continue
+                link_target = match.group(2).strip()
+                # Strip an optional markdown link title — [text](path "Title") —
+                # keeping only the path token. Skip when the path is
+                # quote-wrapped, since such a path may legitimately contain
+                # spaces.
+                if link_target and not link_target.startswith(("'", '"')):
+                    link_target = link_target.split(None, 1)[0]
+                if not link_target or _is_out_of_contract(link_target):
+                    continue
+                file_part = re.split(r"[#?]", link_target, maxsplit=1)[0]
+                if not file_part:
+                    continue
+                resolved = (doc_md.parent / file_part).resolve()
+                if not resolved.exists():
+                    errors.append(
+                        f"{label} '{doc_rel}' links to '{file_part}' but file not found"
+                    )
+
+            for match in _BACKTICK_PATTERN.finditer(doc_content):
+                line_num = doc_content.count("\n", 0, match.start())
+                if line_num in fenced_lines:
+                    continue
+                file_part = _backtick_reference_target(doc_md, match.group(1))
+                if file_part is None:
+                    continue
+                resolved = (doc_md.parent / file_part).resolve()
+                if not resolved.exists():
+                    errors.append(
+                        f"{label} '{doc_rel}' references "
+                        f"'{file_part}' but file not found"
+                    )
     return errors
 
 
