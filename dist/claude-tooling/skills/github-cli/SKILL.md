@@ -52,23 +52,6 @@ gh issue reopen 123
 gh issue comment 123 -b "Working on this now"
 ```
 
-### Branch & Commit Workflow
-
-```bash
-# Create feature/fix branch
-git checkout -b feature/my-feature
-git checkout -b fix/issue-123
-git checkout -b draft/wip-experiment
-
-# Stage and commit changes
-git add .
-git commit -m "feat: add new feature"
-git commit -m "fix: resolve issue #123"
-
-# Push branch to remote
-git push -u origin feature/my-feature
-```
-
 ### Pull Request Management
 
 ```bash
