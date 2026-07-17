@@ -1,7 +1,6 @@
 ---
 name: dignified-python
-description:
-  Production Python coding standards with automatic version detection (3.10-3.13). Use when writing,
+description: Production Python coding standards with automatic version detection (3.10-3.13). Use when writing,
   reviewing, or refactoring Python to ensure adherence to modern type syntax, LBYL exception
   handling, pathlib operations, ABC-based interfaces, and production-tested patterns. Not
   Dagster-specific - applies to any Python project.
@@ -29,15 +28,15 @@ Auto-invoke when users ask about:
 
 ## When to Use This Skill vs. Others
 
-| User Need                    | Use This Skill              | Alternative Skill         |
-| ---------------------------- | --------------------------- | ------------------------- |
-| "make this pythonic"         | ✅ Yes - Python standards   |                           |
-| "is this good python"        | ✅ Yes - code quality       |                           |
-| "type hints"                 | ✅ Yes - typing guidance    |                           |
-| "LBYL vs EAFP"               | ✅ Yes - exception patterns |                           |
-| "pathlib vs os.path"         | ✅ Yes - path handling      |                           |
-| "Dagster-specific patterns"  | ❌ No                       | `/dagster-expert`         |
-| "CLI argument parsing"       | ✅ Yes - CLI patterns       |                           |
+| User Need                   | Use This Skill              | Alternative Skill |
+| --------------------------- | --------------------------- | ----------------- |
+| "make this pythonic"        | ✅ Yes - Python standards   |                   |
+| "is this good python"       | ✅ Yes - code quality       |                   |
+| "type hints"                | ✅ Yes - typing guidance    |                   |
+| "LBYL vs EAFP"              | ✅ Yes - exception patterns |                   |
+| "pathlib vs os.path"        | ✅ Yes - path handling      |                   |
+| "Dagster-specific patterns" | ❌ No                       | `/dagster-expert` |
+| "CLI argument parsing"      | ✅ Yes - CLI patterns       |                   |
 
 ## Core Knowledge (ALWAYS Loaded)
 
@@ -131,7 +130,7 @@ Reference documents are organized across top-level files and subdirectories:
 - Seeing Path() or computation at module level
 - Considering inline imports
 
-### `references/api-design.md`
+### `references/advanced/api-design.md`
 
 **Read when**:
 

@@ -337,9 +337,9 @@ Benefits:
 
 For detailed guidance on specialized topics:
 
-- **Exception chaining (B904)**: `references/exception-handling.md`
-- **ABC vs Protocol**: `references/interfaces.md`
-- **typing.cast() assertions**: `references/typing-advanced.md`
+- **Exception chaining (B904)**: `references/advanced/exception-handling.md`
+- **ABC vs Protocol**: `references/advanced/interfaces.md`
+- **typing.cast() assertions**: `references/advanced/typing-advanced.md`
 - **Import-time side effects, @cache**: `references/module-design.md`
-- **Default parameters, keyword-only args**: `references/api-design.md`
+- **Default parameters, keyword-only args**: `references/advanced/api-design.md`
 - **All decision checklists**: `references/checklists.md`

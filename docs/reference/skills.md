@@ -106,7 +106,7 @@ Orchestrate the full GitHub-issues-driven development lifecycle. 7-phase pipelin
 
 *universal*
 
-Production Python coding standards with automatic version detection (3.10-3.13). Use when writing, reviewing, or refactoring Python to ensure adherence to modern type syntax, LBYL exception handling, pathlib operations, ABC-based interfaces, and production-tested patterns. Not Dagster-specific - applies to any Python project.
+Production Python coding standards with automatic version detection (3.10-3.13). Use when writing,
 
 ### `/github-cli`
 
