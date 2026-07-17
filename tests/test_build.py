@@ -612,6 +612,35 @@ class TestManifestLoading:
             build_preset("bad-json", repo_root=tmp_repo)
 
 
+class TestConflictCopyGuard:
+    """Build rejects macOS Finder conflict copies (e.g. 'SKILL 2.md') in skill dirs.
+
+    These files are gitignored ('* 2.*') so they never reach git, but copytree
+    would ship them verbatim into dist/.
+    """
+
+    def test_core_skill_conflict_copy_fails_build(self, tmp_repo: Path) -> None:
+        (tmp_repo / "core" / "skills" / "tdd" / "SKILL 2.md").write_text("dupe")
+
+        with pytest.raises(BuildValidationError, match=r"tdd/SKILL 2\.md"):
+            build_preset("python-api", repo_root=tmp_repo)
+
+    def test_preset_skill_conflict_copy_fails_build(self, tmp_repo: Path) -> None:
+        deploy = tmp_repo / "presets" / "python-api" / "skills" / "deploy"
+        (deploy / "references").mkdir()
+        (deploy / "references" / "guide 2.md").write_text("dupe")
+
+        with pytest.raises(BuildValidationError, match=r"guide 2\.md"):
+            build_preset("python-api", repo_root=tmp_repo)
+
+    def test_conflict_copy_never_reaches_dist(self, tmp_repo: Path) -> None:
+        (tmp_repo / "core" / "skills" / "tdd" / "SKILL 2.md").write_text("dupe")
+
+        with pytest.raises(BuildValidationError):
+            build_preset("python-api", repo_root=tmp_repo)
+        assert not (tmp_repo / "dist" / "python-api").exists()
+
+
 class TestSettingsMerge:
     """Settings merge handles edge cases correctly."""
 

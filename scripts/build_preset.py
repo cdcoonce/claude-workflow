@@ -19,13 +19,41 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 import shutil
 import sys
 from pathlib import Path
 
+# macOS Finder conflict copies ("SKILL 2.md") are gitignored ('* 2.*') so they
+# never reach git, but copytree ships them verbatim into dist/. Matches the
+# " N." infix Finder inserts before the extension.
+_CONFLICT_COPY_PATTERN = re.compile(r" \d+\.")
+
 
 class BuildValidationError(Exception):
     """Raised when manifest validation fails."""
+
+
+def _find_conflict_copies(skills_path: Path) -> list[str]:
+    """Find macOS conflict-copy files (e.g. 'SKILL 2.md') under a skills tree.
+
+    Parameters
+    ----------
+    skills_path
+        A skills/ source directory to scan recursively. May not exist.
+
+    Returns
+    -------
+    list[str]
+        Sorted paths (relative to ``skills_path``) of offending files.
+    """
+    if not skills_path.exists():
+        return []
+    return sorted(
+        str(path.relative_to(skills_path))
+        for path in skills_path.rglob("*")
+        if _CONFLICT_COPY_PATTERN.search(path.name)
+    )
 
 
 def _copy_with_override(src: Path, dest: Path, *, kind: str) -> None:
@@ -273,6 +301,17 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
             f"Preset '{preset_name}' has invalid JSON in {manifest_path}: {exc}"
         ) from exc
     _validate_manifest(manifest, core_path, preset_path)
+
+    conflict_copies = [
+        f"{skills_src.relative_to(root)}/{relative_path}"
+        for skills_src in (core_path / "skills", preset_path / "skills")
+        for relative_path in _find_conflict_copies(skills_src)
+    ]
+    if conflict_copies:
+        raise BuildValidationError(
+            "macOS conflict copies found in skill dirs (delete before building):\n"
+            + "\n".join(f"  - {c}" for c in conflict_copies)
+        )
 
     if dist_path.exists():
         shutil.rmtree(dist_path)
