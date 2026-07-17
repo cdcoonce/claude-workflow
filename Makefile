@@ -33,19 +33,26 @@ build: prune-dist
 	uv run python -m scripts.build_marketplace
 	@for p in $(PRESETS); do uv run python -m scripts.build_preset $$p >/dev/null; done
 
-# Drift gate: docs must be fresh (build_docs --check) and dist/marketplace must
-# match a fresh rebuild. Fails if any generated output diverges from source, so
-# a component change that skips `make docs && make build` can't land green.
+# Drift gate: docs must be fresh (build_docs --check) and a fresh rebuild of
+# dist/marketplace must be a NO-OP on the working tree. Staleness is judged by
+# content (scripts.dist_digest before vs after the rebuild), not by git status
+# against HEAD — an uncommitted-but-correct dist/ (e.g. an afk slice's
+# deliverable diff syncing shared core/ files into preset copies) passes; a
+# source change whose regenerated output wasn't included still fails.
 .PHONY: verify-generated
-verify-generated: prune-dist
+verify-generated:
 	uv run python -m scripts.build_docs --check
-	uv run python -m scripts.build_marketplace
-	@for p in $(PRESETS); do uv run python -m scripts.build_preset $$p >/dev/null; done
-	@dirty="$$(git status --porcelain -- dist .claude-plugin/marketplace.json .agents/plugins/marketplace.json)" \
-		|| { echo "ERROR: git status failed"; exit 1; }; \
-	if [ -n "$$dirty" ]; then \
-		echo "ERROR: dist/ or marketplace is stale — run 'make build' and commit:"; \
-		echo "$$dirty"; \
+	@before="$$(uv run python -m scripts.dist_digest)"; \
+	$(MAKE) prune-dist; \
+	uv run python -m scripts.build_marketplace >/dev/null; \
+	for p in $(PRESETS); do uv run python -m scripts.build_preset $$p >/dev/null; done; \
+	after="$$(uv run python -m scripts.dist_digest)"; \
+	if [ "$$before" != "$$after" ]; then \
+		echo "ERROR: dist/ or marketplace is stale — a fresh rebuild changed the generated output."; \
+		echo "digest before rebuild: $$before"; \
+		echo "digest after rebuild:  $$after"; \
+		echo "Run 'make build' and include the regenerated files in your change:"; \
+		git status --porcelain -- dist .claude-plugin/marketplace.json .agents/plugins/marketplace.json; \
 		exit 1; \
 	fi
 

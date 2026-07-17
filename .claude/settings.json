@@ -1,4 +1,13 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(uv run:*)",
+      "Bash(make test)",
+      "Bash(make docs)",
+      "Bash(make build)",
+      "Bash(make verify-generated)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {

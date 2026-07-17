@@ -675,3 +675,24 @@ class TestSettingsMerge:
         assert len(data["hooks"]["PreToolUse"]) == 2
         assert data["hooks"]["PreToolUse"][0]["matcher"] == "Edit|Write"
         assert data["hooks"]["PreToolUse"][1]["matcher"] == "Bash"
+
+
+class TestJunkDirExclusion:
+    """Cache/junk dirs in source trees must not ship into dist (a shipped
+    .ruff_cache churns on every test run and made the verify-generated drift
+    digest nondeterministic)."""
+
+    def test_junk_dirs_not_copied_into_dist(self, tmp_repo: Path) -> None:
+        scripts_dir = tmp_repo / "core" / "skills" / "daa-code-review" / "scripts"
+        (scripts_dir / ".ruff_cache").mkdir(parents=True)
+        (scripts_dir / ".ruff_cache" / "CACHEDIR.TAG").write_text("cache")
+        (scripts_dir / "__pycache__").mkdir()
+        (scripts_dir / "__pycache__" / "mod.cpython-312.pyc").write_text("pyc")
+        (scripts_dir / "analyzer.py").write_text("# real file ships")
+        build_preset("python-api", repo_root=tmp_repo)
+        shipped = (
+            tmp_repo / "dist" / "python-api" / "skills" / "daa-code-review" / "scripts"
+        )
+        assert (shipped / "analyzer.py").exists()
+        assert not (shipped / ".ruff_cache").exists()
+        assert not (shipped / "__pycache__").exists()

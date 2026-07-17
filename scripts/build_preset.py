@@ -29,6 +29,14 @@ from pathlib import Path
 # " N." infix Finder inserts before the extension.
 _CONFLICT_COPY_PATTERN = re.compile(r" \d+\.")
 
+# Cache/junk dirs that live in source trees (test runs regenerate them) must
+# never ship into dist: a shipped .ruff_cache churns on every `make test` and
+# made the verify-generated drift digest nondeterministic. Applied to every
+# copytree below.
+_JUNK_IGNORE = shutil.ignore_patterns(
+    ".ruff_cache", "__pycache__", ".pytest_cache", ".mypy_cache", ".DS_Store"
+)
+
 
 class BuildValidationError(Exception):
     """Raised when manifest validation fails."""
@@ -64,7 +72,7 @@ def _copy_with_override(src: Path, dest: Path, *, kind: str) -> None:
         )
         shutil.rmtree(dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(src, dest)
+    shutil.copytree(src, dest, ignore=_JUNK_IGNORE)
 
 
 def _validate_manifest(
@@ -320,12 +328,12 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     # 1. Copy core skills -> skills/ (root level)
     skills_setting = manifest["core"].get("skills", "all")
     if skills_setting == "all":
-        shutil.copytree(core_path / "skills", dist_path / "skills")
+        shutil.copytree(core_path / "skills", dist_path / "skills", ignore=_JUNK_IGNORE)
     elif isinstance(skills_setting, list):
         dest_skills = dist_path / "skills"
         dest_skills.mkdir(parents=True, exist_ok=True)
         for skill_name in skills_setting:
-            shutil.copytree(core_path / "skills" / skill_name, dest_skills / skill_name)
+            shutil.copytree(core_path / "skills" / skill_name, dest_skills / skill_name, ignore=_JUNK_IGNORE)
 
     # 2. Copy preset skills -> skills/ (override on collision)
     for skill_name in manifest.get("preset_skills", []):
@@ -339,13 +347,13 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     if core_agents_dir.exists():
         dest_agents = dist_path / "agents"
         if agents_setting == "all":
-            shutil.copytree(core_agents_dir, dest_agents)
+            shutil.copytree(core_agents_dir, dest_agents, ignore=_JUNK_IGNORE)
         elif isinstance(agents_setting, list):
             dest_agents.mkdir(parents=True, exist_ok=True)
             for agent_name in agents_setting:
                 src = core_agents_dir / agent_name
                 if src.exists():
-                    shutil.copytree(src, dest_agents / agent_name)
+                    shutil.copytree(src, dest_agents / agent_name, ignore=_JUNK_IGNORE)
 
     # 4. Copy preset agents -> agents/ (override on collision)
     for agent_name in manifest.get("preset_agents", []):
@@ -387,7 +395,7 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     # 7. Copy optional preset output styles used by persona SessionStart hooks.
     output_styles_src = preset_path / "output-styles"
     if output_styles_src.exists():
-        shutil.copytree(output_styles_src, dist_path / "output-styles")
+        shutil.copytree(output_styles_src, dist_path / "output-styles", ignore=_JUNK_IGNORE)
 
     # 8. Generate hooks/hooks.json (merged hook config). Some presets are
     # pure SessionStart/persona layers and opt out of base settings so they do
