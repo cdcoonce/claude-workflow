@@ -569,6 +569,196 @@ class TestSmokeIntraSkillLinks:
         )
 
 
+class TestSmokeBacktickReferences:
+    """Smoke test validates backtick-quoted intra-skill doc paths (#286)."""
+
+    def test_broken_backtick_reference_fails(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "test-skill"
+        (skill_dir / "references").mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\n"
+            "See `references/missing.md` for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is False
+        assert any(
+            "test-skill/SKILL.md" in e and "references/missing.md" in e
+            for e in result.errors
+        )
+
+    def test_valid_backtick_reference_passes(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "test-skill"
+        refs_dir = skill_dir / "references"
+        refs_dir.mkdir(parents=True)
+        (refs_dir / "guide.md").write_text("# Guide\n")
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\n"
+            "See `references/guide.md` for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
+
+    def test_root_relative_backtick_mention_skipped(self, tmp_repo: Path) -> None:
+        """A first segment that isn't a directory in the skill is not a reference."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "test-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\n"
+            "Report saved to `docs/skill-reviews/report.md`.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
+
+    def test_bare_basename_backtick_mention_skipped(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "test-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\n"
+            "See `CLAUDE.md` for project conventions.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
+
+    def test_claude_prefixed_backtick_mention_skipped(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "test-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\n"
+            "See `.claude/docs/project.md` for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
+
+    def test_uri_backtick_mention_skipped(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "test-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\n"
+            "See `https://example.com/foo.md` for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
+
+    def test_broken_backtick_reference_inside_fenced_code_block_skipped(
+        self, tmp_repo: Path
+    ) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "test-skill"
+        (skill_dir / "references").mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\n"
+            "```markdown\n"
+            "See `references/missing.md` for details.\n"
+            "```\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is True
+
+    def test_broken_backtick_reference_in_companion_doc_fails(
+        self, tmp_repo: Path
+    ) -> None:
+        """Companion docs bundled alongside SKILL.md are scanned too."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "test-skill"
+        (skill_dir / "references").mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\nSee companion.md.\n"
+        )
+        (skill_dir / "companion.md").write_text(
+            "See `references/missing.md` for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is False
+        assert any(
+            "test-skill/companion.md" in e and "references/missing.md" in e
+            for e in result.errors
+        )
+
+    def test_broken_markdown_link_in_companion_doc_fails(self, tmp_repo: Path) -> None:
+        """Companion docs are scanned for markdown-style links too, not just backticks."""
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "test-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\nSee companion.md.\n"
+        )
+        (skill_dir / "companion.md").write_text(
+            "See [missing](nonexistent.md) for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is False
+        assert any(
+            "test-skill/companion.md" in e and "nonexistent.md" in e
+            for e in result.errors
+        )
+
+    def test_stale_flat_path_after_reference_move_regression(
+        self, tmp_repo: Path
+    ) -> None:
+        """Regression for the dignified-python incident (#286): references moved
+        from a flat `references/` layout into `references/advanced/`, but
+        SKILL.md and a companion doc still named the stale flat path.
+        """
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "test-skill"
+        advanced_dir = skill_dir / "references" / "advanced"
+        advanced_dir.mkdir(parents=True)
+        (advanced_dir / "exception-handling.md").write_text("# Exceptions\n")
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: test\ndescription: test\n---\n\n"
+            "See `references/exception-handling.md` for details.\n"
+        )
+        (skill_dir / "companion.md").write_text(
+            "See `references/exception-handling.md` for details.\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is False
+        assert any(
+            "test-skill/SKILL.md" in e and "references/exception-handling.md" in e
+            for e in result.errors
+        )
+        assert any(
+            "test-skill/companion.md" in e and "references/exception-handling.md" in e
+            for e in result.errors
+        )
+
+
 class TestSmokeIntraAgentLinks:
     """Smoke test validates intra-agent reference links."""
 
