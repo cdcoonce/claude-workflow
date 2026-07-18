@@ -40,7 +40,7 @@ Notebooks, R/Python scripts, statistical analysis, exploratory work
 
 **Agents (7):** `analysis-builder`, `code-reviewer`, `qa-tester`, `skill-analyst`, `skill-writer`, `strategy`, `tdd-implementer`
 
-**Hooks (6):** `audit-config-change.py`, `post-edit-lint.py`, `protect-files.py`, `snapshot-subagent-start.py`, `verify-subagent-evidence.py`, `verify-tests-before-stop.py`
+**Hooks (7):** `audit-config-change.py`, `inject-skill-router.py`, `post-edit-lint.py`, `protect-files.py`, `snapshot-subagent-start.py`, `verify-subagent-evidence.py`, `verify-tests-before-stop.py`
 
 ### `claude-tooling`
 
@@ -58,7 +58,7 @@ Developing Claude skills, hooks, agents, and template configurations
 
 **Agents (8):** `code-reviewer`, `qa-tester`, `skill-analyst`, `skill-builder`, `skill-reviewer`, `skill-writer`, `strategy`, `tdd-implementer`
 
-**Hooks (6):** `audit-config-change.py`, `post-edit-lint.py`, `protect-files.py`, `snapshot-subagent-start.py`, `verify-subagent-evidence.py`, `verify-tests-before-stop.py`
+**Hooks (7):** `audit-config-change.py`, `inject-skill-router.py`, `post-edit-lint.py`, `protect-files.py`, `snapshot-subagent-start.py`, `verify-subagent-evidence.py`, `verify-tests-before-stop.py`
 
 ### `data-pipeline`
 
@@ -76,7 +76,7 @@ ETL/ELT pipelines, SQL transformations, scheduled data jobs
 
 **Agents (8):** `code-reviewer`, `data-quality-reviewer`, `pipeline-builder`, `qa-tester`, `skill-analyst`, `skill-writer`, `strategy`, `tdd-implementer`
 
-**Hooks (6):** `audit-config-change.py`, `post-edit-lint.py`, `protect-files.py`, `snapshot-subagent-start.py`, `verify-subagent-evidence.py`, `verify-tests-before-stop.py`
+**Hooks (7):** `audit-config-change.py`, `inject-skill-router.py`, `post-edit-lint.py`, `protect-files.py`, `snapshot-subagent-start.py`, `verify-subagent-evidence.py`, `verify-tests-before-stop.py`
 
 ### `data-viz`
 
@@ -94,7 +94,7 @@ Intuitive, context-forward chart design in React (Recharts/Nivo) — right chart
 
 **Agents (6):** `code-reviewer`, `qa-tester`, `skill-analyst`, `skill-writer`, `strategy`, `tdd-implementer`
 
-**Hooks (5):** `audit-config-change.py`, `protect-files.py`, `snapshot-subagent-start.py`, `verify-subagent-evidence.py`, `verify-tests-before-stop.py`
+**Hooks (6):** `audit-config-change.py`, `inject-skill-router.py`, `protect-files.py`, `snapshot-subagent-start.py`, `verify-subagent-evidence.py`, `verify-tests-before-stop.py`
 
 ### `full-stack`
 
@@ -112,7 +112,7 @@ React/Next.js frontend + Python backend
 
 **Agents (9):** `backend-builder`, `code-reviewer`, `frontend-builder`, `qa-tester`, `skill-analyst`, `skill-writer`, `strategy`, `tdd-implementer`, `ux-reviewer`
 
-**Hooks (6):** `audit-config-change.py`, `post-edit-lint.py`, `protect-files.py`, `snapshot-subagent-start.py`, `verify-subagent-evidence.py`, `verify-tests-before-stop.py`
+**Hooks (7):** `audit-config-change.py`, `inject-skill-router.py`, `post-edit-lint.py`, `protect-files.py`, `snapshot-subagent-start.py`, `verify-subagent-evidence.py`, `verify-tests-before-stop.py`
 
 ### `python-api`
 
@@ -130,7 +130,7 @@ Python backend services — Lambda, FastAPI, Flask
 
 **Agents (8):** `api-builder`, `code-reviewer`, `qa-tester`, `security-reviewer`, `skill-analyst`, `skill-writer`, `strategy`, `tdd-implementer`
 
-**Hooks (6):** `audit-config-change.py`, `post-edit-lint.py`, `protect-files.py`, `snapshot-subagent-start.py`, `verify-subagent-evidence.py`, `verify-tests-before-stop.py`
+**Hooks (7):** `audit-config-change.py`, `inject-skill-router.py`, `post-edit-lint.py`, `protect-files.py`, `snapshot-subagent-start.py`, `verify-subagent-evidence.py`, `verify-tests-before-stop.py`
 
 ### `vault-ops`
 
@@ -146,7 +146,7 @@ Charles Coonce's My Brain vault lifecycle, graph, capture, search, sync, and wri
 
 **Skills (21):** `vault-audit`, `vault-budget`, `vault-clickup-task-sync`, `vault-connect`, `vault-context-then-delegate`, `vault-dispatch`, `vault-dump`, `vault-find`, `vault-fix-issue`, `vault-garden`, `vault-grill`, `vault-handoff`, `vault-link`, `vault-mr-review-packet`, `vault-recall`, `vault-standup`, `vault-start`, `vault-sync`, `vault-teach`, `vault-wrap-up`, `vault-write`
 
-**Hooks (5):** `audit-config-change.py`, `protect-files.py`, `snapshot-subagent-start.py`, `verify-subagent-evidence.py`, `verify-tests-before-stop.py`
+**Hooks (6):** `audit-config-change.py`, `inject-skill-router.py`, `protect-files.py`, `snapshot-subagent-start.py`, `verify-subagent-evidence.py`, `verify-tests-before-stop.py`
 
 ### `persona-pair-programmer`
 
