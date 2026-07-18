@@ -27,31 +27,26 @@ def _print_report(report: InstallReport) -> None:
         print(f"  skipped {item}: {reason}")
 
 
-def _resolve_scope_target_adapter(
-    args: argparse.Namespace,
-) -> tuple[Scope, Path, AgentAdapter] | int:
-    scope = Scope.USER if args.user else Scope.PROJECT
-    target = _resolve_target(scope)
-
+def _resolve_adapter(args: argparse.Namespace, target: Path) -> AgentAdapter | None:
     if args.agent:
         if args.agent not in adapter_names():
             print(f"unknown agent {args.agent!r}. known: {adapter_names()}")
-            return 2
-        adapter = get_adapter(args.agent)
-    else:
-        adapter = detect_adapter(target)
-        if adapter is None:
-            print(f"no supported agent detected/selected. known: {adapter_names()}")
-            return 2
+            return None
+        return get_adapter(args.agent)
 
-    return scope, target, adapter
+    adapter = detect_adapter(target)
+    if adapter is None:
+        print(f"no supported agent detected/selected. known: {adapter_names()}")
+        return None
+    return adapter
 
 
 def cmd_install(args: argparse.Namespace) -> int:
-    resolved = _resolve_scope_target_adapter(args)
-    if isinstance(resolved, int):
-        return resolved
-    scope, target, adapter = resolved
+    scope = Scope.USER if args.user else Scope.PROJECT
+    target = _resolve_target(scope)
+    adapter = _resolve_adapter(args, target)
+    if adapter is None:
+        return 2
 
     try:
         bundle = Bundle.load(PRESETS_ROOT, args.preset)
@@ -71,10 +66,11 @@ def cmd_install(args: argparse.Namespace) -> int:
 
 
 def cmd_uninstall(args: argparse.Namespace) -> int:
-    resolved = _resolve_scope_target_adapter(args)
-    if isinstance(resolved, int):
-        return resolved
-    scope, target, adapter = resolved
+    scope = Scope.USER if args.user else Scope.PROJECT
+    target = _resolve_target(scope)
+    adapter = _resolve_adapter(args, target)
+    if adapter is None:
+        return 2
 
     if args.dry_run:
         print(
