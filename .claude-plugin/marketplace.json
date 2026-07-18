@@ -6,31 +6,31 @@
   "plugins": [
     {
       "name": "persona-pair-programmer",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "Collaborative pair-programmer voice — brief think-aloud, checks in at decision points.",
       "source": "./dist/persona-pair-programmer"
     },
     {
       "name": "persona-ship-it",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "Momentum-first voice — blunt, bias-to-action, picks a sensible default and moves.",
       "source": "./dist/persona-ship-it"
     },
     {
       "name": "persona-staff-eng-deep",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "Senior-staff-engineer voice at full depth — reasoning, tradeoffs, and edge cases spelled out.",
       "source": "./dist/persona-staff-eng-deep"
     },
     {
       "name": "persona-terse-staff-eng",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "Terse senior-staff-engineer voice — answer-first, minimal, expert assumptions. The least verbose persona.",
       "source": "./dist/persona-terse-staff-eng"
     },
     {
       "name": "persona-thinking-partner",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "Socratic thinking partner — sharp questions and decision-sharpening over answers.",
       "source": "./dist/persona-thinking-partner"
     },

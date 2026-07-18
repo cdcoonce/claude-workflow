@@ -56,7 +56,7 @@ The complete claude-workflow toolkit — every skill, agent, methodology doc, an
 
 ### `persona-pair-programmer`
 
-*persona plugin · v1.0.0*
+*persona plugin · v1.0.1*
 
 Collaborative pair-programmer voice — brief think-aloud, checks in at decision points.
 
@@ -64,7 +64,7 @@ Collaborative pair-programmer voice — brief think-aloud, checks in at decision
 
 ### `persona-ship-it`
 
-*persona plugin · v1.0.0*
+*persona plugin · v1.0.1*
 
 Momentum-first voice — blunt, bias-to-action, picks a sensible default and moves.
 
@@ -72,7 +72,7 @@ Momentum-first voice — blunt, bias-to-action, picks a sensible default and mov
 
 ### `persona-staff-eng-deep`
 
-*persona plugin · v1.0.0*
+*persona plugin · v1.0.1*
 
 Senior-staff-engineer voice at full depth — reasoning, tradeoffs, and edge cases spelled out.
 
@@ -80,7 +80,7 @@ Senior-staff-engineer voice at full depth — reasoning, tradeoffs, and edge cas
 
 ### `persona-terse-staff-eng`
 
-*persona plugin · v1.0.0*
+*persona plugin · v1.0.1*
 
 Terse senior-staff-engineer voice — answer-first, minimal, expert assumptions. The least verbose persona.
 
@@ -88,7 +88,7 @@ Terse senior-staff-engineer voice — answer-first, minimal, expert assumptions.
 
 ### `persona-thinking-partner`
 
-*persona plugin · v1.0.0*
+*persona plugin · v1.0.1*
 
 Socratic thinking partner — sharp questions and decision-sharpening over answers.
 
