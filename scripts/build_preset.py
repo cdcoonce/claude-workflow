@@ -11,8 +11,10 @@ Build order (plugin format):
 8. Generate hooks/hooks.json (merged hook config)
 9. Generate settings.json at root (hooks removed)
 10. Generate .claude-plugin/plugin.json
-11. Apply exclusions
-12. Generate README.md
+11. Write conventions.json -> dist/<preset>/conventions.json (preset conventions,
+    for the inject-skill-router SessionStart hook to read at runtime)
+12. Apply exclusions
+13. Generate README.md
 """
 
 from __future__ import annotations
@@ -203,7 +205,9 @@ def _skill_doc_from_dir(skill_dir: Path):
     from scripts.build_docs import SkillDoc
     from scripts.smoke_test import _parse_frontmatter
 
-    frontmatter = _parse_frontmatter((skill_dir / "SKILL.md").read_text(encoding="utf-8"))
+    frontmatter = _parse_frontmatter(
+        (skill_dir / "SKILL.md").read_text(encoding="utf-8")
+    )
     if not frontmatter:
         return SkillDoc(name=skill_dir.name, description="", source="dist")
     return SkillDoc(
@@ -218,7 +222,9 @@ def _agent_doc_from_dir(agent_dir: Path):
     from scripts.build_docs import AgentDoc
     from scripts.smoke_test import _parse_frontmatter
 
-    frontmatter = _parse_frontmatter((agent_dir / "AGENT.md").read_text(encoding="utf-8"))
+    frontmatter = _parse_frontmatter(
+        (agent_dir / "AGENT.md").read_text(encoding="utf-8")
+    )
     if not frontmatter:
         return AgentDoc(
             name=agent_dir.name, description="", role="", skills_add=(), source="dist"
@@ -333,7 +339,11 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
         dest_skills = dist_path / "skills"
         dest_skills.mkdir(parents=True, exist_ok=True)
         for skill_name in skills_setting:
-            shutil.copytree(core_path / "skills" / skill_name, dest_skills / skill_name, ignore=_JUNK_IGNORE)
+            shutil.copytree(
+                core_path / "skills" / skill_name,
+                dest_skills / skill_name,
+                ignore=_JUNK_IGNORE,
+            )
 
     # 2. Copy preset skills -> skills/ (override on collision)
     for skill_name in manifest.get("preset_skills", []):
@@ -395,7 +405,9 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
     # 7. Copy optional preset output styles used by persona SessionStart hooks.
     output_styles_src = preset_path / "output-styles"
     if output_styles_src.exists():
-        shutil.copytree(output_styles_src, dist_path / "output-styles", ignore=_JUNK_IGNORE)
+        shutil.copytree(
+            output_styles_src, dist_path / "output-styles", ignore=_JUNK_IGNORE
+        )
 
     # 8. Generate hooks/hooks.json (merged hook config). Some presets are
     # pure SessionStart/persona layers and opt out of base settings so they do
@@ -469,7 +481,14 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
         json.dumps(codex_plugin_json, indent=2) + "\n"
     )
 
-    # 11. Apply exclusions BEFORE the README scan, so the skill/agent listings
+    # 11. Write conventions.json -> dist/<preset>/conventions.json. The
+    # inject-skill-router SessionStart hook runs from the installed plugin root
+    # and has no other way to read the source manifest's conventions array.
+    (dist_path / "conventions.json").write_text(
+        json.dumps({"conventions": manifest.get("conventions", [])}, indent=2) + "\n"
+    )
+
+    # 12. Apply exclusions BEFORE the README scan, so the skill/agent listings
     # reflect the final built output — an excluded dir must not appear in the
     # generated README (#122). Paths are relative to dist_path, not .claude/.
     # Steps 7-9 (settings/hooks/plugin.json) read the manifest, not the dist tree,
@@ -490,7 +509,7 @@ def build_preset(preset_name: str, *, repo_root: Path | None = None) -> Path:
         else:
             print(f"WARNING: exclusion '{exclusion}' did not match anything, skipping")
 
-    # 12. Generate README.md (scans the post-exclusion dist tree), unless README.md
+    # 13. Generate README.md (scans the post-exclusion dist tree), unless README.md
     # is itself excluded — exclusions already ran, so generating it here would undo
     # a README-targeting exclusion.
     excluded_paths = {

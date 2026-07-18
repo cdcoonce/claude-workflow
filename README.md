@@ -5,7 +5,7 @@
 A **Claude Code plugin** that gives any project a fully configured AI development environment — skills, methodology docs, agents, and hooks — picked up in seconds by pasting a URL.
 
 <!-- BEGIN GENERATED: counts -->
-**25 universal skills · 6 core agents · 7 hooks · 7 project presets · 5 persona plugins**
+**25 universal skills · 6 core agents · 8 hooks · 7 project presets · 5 persona plugins**
 <!-- END GENERATED: counts -->
 
 > The counts and every component table below are generated from source by `scripts/build_docs.py`. Do not edit them by hand — run `make docs`. Deep reference lives in [`docs/reference/`](docs/reference/).
@@ -267,6 +267,7 @@ Hooks are scripts wired to Claude Code lifecycle events. The base set ships with
 | Hook | Event | Summary | Presets |
 | --- | --- | --- | --- |
 | `audit-config-change.py` | `ConfigChange` | ConfigChange hook: audit-log and surface mid-session config file changes. | all |
+| `inject-skill-router.py` | `SessionStart` | SessionStart hook: inject the skill router and preset conventions as additionalContext. | all |
 | `inject_persona.py` | `SessionStart` | SessionStart hook: inject a persona output-style as additionalContext. | persona-pair-programmer, persona-ship-it, persona-staff-eng-deep, persona-terse-staff-eng, persona-thinking-partner |
 | `post-edit-lint.py` | `PostToolUse` | Post-edit hook: auto-format and lint Python files with Ruff. | analysis, claude-tooling, data-pipeline, full-stack, python-api |
 | `protect-files.py` | `PreToolUse` | Pre-edit hook: block edits to sensitive/generated files. | all |

@@ -1,11 +1,7 @@
 {
   "name": "python-api",
-  "description": "Python backend services \u2014 Lambda, FastAPI, Flask",
-  "conventions": [
-    "Ruff for linting and formatting",
-    "Structured logging over print",
-    "Type hints on public functions"
-  ],
+  "description": "Python backend services — Lambda, FastAPI, Flask",
+  "conventions": ["Ruff for linting and formatting", "Structured logging over print", "Type hints on public functions"],
   "version": "1.0.0",
   "core": {
     "skills": "all",
@@ -14,18 +10,12 @@
       "verify-tests-before-stop.py",
       "snapshot-subagent-start.py",
       "verify-subagent-evidence.py",
-      "audit-config-change.py"
+      "audit-config-change.py",
+      "inject-skill-router.py"
     ]
   },
   "exclude": [],
-  "preset_skills": [
-    "deploy"
-  ],
-  "preset_hooks": [
-    "post-edit-lint.py"
-  ],
-  "preset_agents": [
-    "api-builder",
-    "security-reviewer"
-  ]
+  "preset_skills": ["deploy"],
+  "preset_hooks": ["post-edit-lint.py"],
+  "preset_agents": ["api-builder", "security-reviewer"]
 }
