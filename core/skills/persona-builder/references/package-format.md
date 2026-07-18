@@ -1,7 +1,7 @@
 # Phase 4/5 — Package Format + Behavior Eval
 
-A persona ships as a **`coach-<role>` preset** (role-generic name: `coach-product-design`,
-not `coach-kathy`) that builds like any other preset — `build_preset` emits the
+A persona ships as an **`advisor-<role>` preset** (role-generic name: `advisor-product-design`,
+not `advisor-kathy`) that builds like any other preset — `build_preset` emits the
 Claude, Codex, and Cortex manifests from the one shared source.
 
 ## The three layers
@@ -23,10 +23,10 @@ split is also the privacy boundary. The repo copy stays shareable-grade.
 ## Package skeleton (base layer)
 
 ```
-presets/coach-<role>/
+presets/advisor-<role>/
 ├── manifest.json              # name, description, semver version
 ├── settings-preset.json
-└── skills/coach-<role>/
+└── skills/advisor-<role>/
     ├── SKILL.md               # identity + stance contract + router + layer-loading rules
     ├── references/
     │   ├── cheat-sheet.md     # always loaded
@@ -66,7 +66,7 @@ sync output).
   context.
 - **Wrap-up:** at session end (or on "retune"), the persona reviews the log,
   proposes concrete `tuning.md` diffs, and applies only what the owner approves —
-  with a changelog line. No silent drift; one bad day never rewrites the coach.
+  with a changelog line. No silent drift; one bad day never rewrites the persona.
 - **Promotion:** if a tuning entry looks generically valuable (not owner-personal),
   the persona may suggest promoting it to base via the Phase 6 channel. Owner
   decides; personal entries are never promoted.

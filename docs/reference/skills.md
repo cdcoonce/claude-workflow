@@ -145,7 +145,7 @@ Use when user says "improve skill", "benchmark skill", "make skill better", or i
 
 *universal*
 
-Build an installable, portable, self-tuning coach/sounding-board persona for a named owner. Interviews the owner (grill + audition rounds), deep-researches their field into curated knowledge packs, assembles a three-layer persona package as a coach-* preset, and delivers it via PR. Use when the user wants to create a persona, coach, sounding board, advisor, or expert companion for themselves or someone else.
+Build an installable, portable, self-tuning coach/sounding-board persona for a named owner. Interviews the owner (grill + audition rounds), deep-researches their field into curated knowledge packs, assembles a three-layer persona package as an advisor-* preset, and delivers it via PR. Use when the user wants to create a persona, coach, sounding board, advisor, or expert companion for themselves or someone else.
 
 ### `/plan-ceo-review`
 

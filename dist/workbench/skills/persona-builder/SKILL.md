@@ -1,18 +1,18 @@
 ---
 name: persona-builder
-description: Build an installable, portable, self-tuning coach/sounding-board persona for a named owner. Interviews the owner (grill + audition rounds), deep-researches their field into curated knowledge packs, assembles a three-layer persona package as a coach-* preset, and delivers it via PR. Use when the user wants to create a persona, coach, sounding board, advisor, or expert companion for themselves or someone else.
+description: Build an installable, portable, self-tuning coach/sounding-board persona for a named owner. Interviews the owner (grill + audition rounds), deep-researches their field into curated knowledge packs, assembles a three-layer persona package as an advisor-* preset, and delivers it via PR. Use when the user wants to create a persona, coach, sounding board, advisor, or expert companion for themselves or someone else.
 ---
 
 # Persona Builder
 
-Turns "I want a coach for X" into an installable **coach-`*` preset**: a persona with a
+Turns "I want a coach for X" into an installable **advisor-`*` preset**: a persona with a
 spec'd point of view, field-specific knowledge packs, structured memory, and a
 self-tuning loop — portable across Claude Code, Codex, and Cortex Code via the
 existing three-manifest build.
 
-Not to be confused with `persona-*` presets (output-style layers). A **coach preset**
-is a knowledgeable counterpart with its own memory and stance; an output style is a
-voice.
+Not to be confused with `persona-*` presets (output-style layers). An **advisor
+preset** is a knowledgeable counterpart with its own memory and stance; an output
+style is a voice.
 
 ## Non-negotiable design rules
 
@@ -59,7 +59,7 @@ See [research-and-packs.md](references/research-and-packs.md).
 
 ### Phase 4 — Package Assembly
 
-Assemble the three-layer package as a `coach-<role>` preset: plugin-managed **base**
+Assemble the three-layer package as an `advisor-<role>` preset: plugin-managed **base**
 (behavior spec + packs + router), local **tuning** overlay (owner overrides, update-
 safe), local **private** layer (mini-vault memory + preferences log). Includes the
 retune/wrap-up feedback loop and staleness-nudged refresh.

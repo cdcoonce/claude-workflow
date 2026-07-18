@@ -11,7 +11,7 @@ property — do not skip it because "the interview already separated things".
 
 ## PR path (machine has write access to this repo)
 
-1. `git fetch origin`, branch `feat/coach-<role>` off `origin/main` — never off
+1. `git fetch origin`, branch `feat/advisor-<role>` off `origin/main` — never off
    current HEAD.
 2. Add the preset; `make docs`; `make build`; smoke-test the new preset; `uv run
 pytest`. The layering test and the persona's own tests.md suite must be green.
@@ -23,7 +23,7 @@ pytest`. The layering test and the persona's own tests.md suite must be green.
 ## Patch-bundle fallback (no write access — e.g. the owner's own machine)
 
 Detect before attempting: `gh auth status` + push permission on the repo. If
-absent, do not half-push. Instead produce `coach-<role>-bundle/` containing the
+absent, do not half-push. Instead produce `advisor-<role>-bundle/` containing the
 preset directory, a `git format-patch`-style diff against the repo's main, the
 tests.md results, and a one-paragraph handoff note. The owner sends the bundle to
 the maintainer, who applies it on a fresh branch and runs the same gate. The
@@ -31,7 +31,7 @@ builder must say plainly which path it took and why.
 
 ## Install walkthrough (with the owner, per harness)
 
-- **Claude Code / desktop:** add the marketplace once, install the `coach-<role>`
+- **Claude Code / desktop:** add the marketplace once, install the `advisor-<role>`
   plugin, verify the skill loads. Updates arrive as plugin updates.
 - **Codex / Cortex Code:** the built preset already carries `.codex-plugin/` and
   `.cortex-plugin/` manifests; install per that platform's plugin flow. Codex is
