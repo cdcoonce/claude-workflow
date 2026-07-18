@@ -139,3 +139,100 @@ How does this get to production and stay healthy?
 **Batching hints:** Deployment target and rollback questions batch well. Monitoring approach questions are a good multiSelect candidate since multiple strategies often coexist.
 
 **Preview candidates:** Use previews when comparing deployment configurations or infrastructure diagrams.
+
+---
+
+## Question Format Examples
+
+Every question MUST be asked via the `AskUserQuestion` tool. Structure each call as follows:
+
+```json
+{
+  "question": "When the Oura API returns a 429, how should we handle rate limiting?",
+  "header": "Rate Limits",
+  "options": [
+    {
+      "label": "Exponential backoff (Recommended)",
+      "description": "Retry with exponential backoff (1s, 2s, 4s). Handles transient limits gracefully and matches the retry pattern already used in src/api_client.py."
+    },
+    {
+      "label": "Queue for next run",
+      "description": "Skip the request and add it to the next scheduled run. Simpler but delays data by one cycle."
+    }
+  ],
+  "multiSelect": false
+}
+```
+
+**Depends on:** State any prior decisions this builds on in the `question` text, or note "No dependencies" if standalone.
+
+### Batched questions example
+
+```json
+{
+  "questions": [
+    {
+      "question": "What is the primary deployment target?",
+      "header": "Deploy",
+      "options": [
+        {
+          "label": "Docker + ECS (Recommended)",
+          "description": "Matches existing infra. Deployment pipeline already exists."
+        },
+        {
+          "label": "Kubernetes",
+          "description": "More flexible but requires new infra setup."
+        },
+        {
+          "label": "Serverless",
+          "description": "Lower ops burden but cold start latency concerns."
+        }
+      ],
+      "multiSelect": false
+    },
+    {
+      "question": "Which monitoring approaches should we include?",
+      "header": "Monitoring",
+      "options": [
+        {
+          "label": "Structured logging (Recommended)",
+          "description": "JSON logs to CloudWatch. Searchable and alertable."
+        },
+        {
+          "label": "APM traces",
+          "description": "Distributed tracing for request flow visibility."
+        },
+        {
+          "label": "Custom metrics",
+          "description": "Business-specific counters and gauges in Datadog."
+        }
+      ],
+      "multiSelect": true
+    }
+  ]
+}
+```
+
+### Preview example
+
+Use the `preview` field on options when the user needs to visually compare concrete artifacts — code snippets, architecture diagrams, schema shapes, or configuration examples. Preview content renders as markdown in a monospace box with side-by-side comparison. Previews are single-select only (`multiSelect: false`); if you need multi-select, omit previews and use descriptions instead.
+
+```json
+{
+  "question": "Which pattern should we use for the data pipeline?",
+  "header": "Pipeline",
+  "options": [
+    {
+      "label": "Generator pipeline (Recommended)",
+      "description": "Lazy evaluation, memory-efficient for large datasets.",
+      "preview": "def pipeline(source):\n    for record in source:\n        cleaned = clean(record)\n        validated = validate(cleaned)\n        yield validated"
+    },
+    {
+      "label": "Batch pipeline",
+      "description": "Processes all records at once. Simpler but higher memory usage.",
+      "preview": "def pipeline(source):\n    records = list(source)\n    cleaned = [clean(r) for r in records]\n    validated = [validate(r) for r in cleaned]\n    return validated"
+    }
+  ],
+  "multiSelect": false
+}
+```
