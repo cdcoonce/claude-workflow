@@ -652,3 +652,95 @@ class TestDocLinkTitles:
         assert len(errors) == 1
         assert "./missing.md" in errors[0]
         assert "A Title" not in errors[0]  # error names the path, not the title
+
+
+class TestLintDescriptionProcessMarkers:
+    """_lint_description_process_markers flags process/workflow-summary markers (#279).
+
+    A skill description is a retrieval index, not a spec: it must describe
+    only *when* to trigger the skill, never the skill's internal process,
+    workflow, or phase count. This heuristic flags common markers of a
+    workflow-bearing description, ignoring matches inside quoted trigger
+    phrases (e.g. "full development pipeline" as a literal user phrase).
+    """
+
+    def test_digit_phase_marker_flagged(self) -> None:
+        from scripts.smoke_test import _lint_description_process_markers
+
+        markers = _lint_description_process_markers(
+            "7-phase pipeline from brainstorm through PR."
+        )
+        assert markers
+
+    def test_pipeline_word_flagged(self) -> None:
+        from scripts.smoke_test import _lint_description_process_markers
+
+        markers = _lint_description_process_markers("Runs a build pipeline end to end.")
+        assert markers
+
+    def test_arrow_chain_flagged(self) -> None:
+        from scripts.smoke_test import _lint_description_process_markers
+
+        markers = _lint_description_process_markers("brainstorm → plan → PR.")
+        assert markers
+
+    def test_then_marker_flagged(self) -> None:
+        from scripts.smoke_test import _lint_description_process_markers
+
+        markers = _lint_description_process_markers(
+            "Interviews the user then files a PR."
+        )
+        assert markers
+
+    def test_marker_inside_quoted_trigger_phrase_not_flagged(self) -> None:
+        from scripts.smoke_test import _lint_description_process_markers
+
+        markers = _lint_description_process_markers(
+            'Use when user says "full development pipeline" or invokes /dev-cycle.'
+        )
+        assert markers == []
+
+    def test_clean_trigger_only_description_not_flagged(self) -> None:
+        from scripts.smoke_test import _lint_description_process_markers
+
+        markers = _lint_description_process_markers(
+            'Use when user says "commit my changes" or invokes /commit.'
+        )
+        assert markers == []
+
+
+class TestSmokeDescriptionProcessMarkers:
+    """Smoke test rejects skill descriptions that read like process summaries (#279)."""
+
+    def test_description_with_process_marker_fails(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        skill_md = dist / "skills" / "commit" / "SKILL.md"
+
+        skill_md.write_text(
+            "---\nname: commit\n"
+            'description: "7-phase pipeline. Use when user says \\"commit\\"."\n'
+            "---\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is False
+        assert any(
+            "commit/SKILL.md" in e and "trigger-only" in e for e in result.errors
+        )
+
+    def test_description_without_process_marker_passes(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        skill_md = dist / "skills" / "commit" / "SKILL.md"
+
+        skill_md.write_text(
+            "---\nname: commit\n"
+            'description: Use when user says "commit my changes" or invokes /commit.\n'
+            "---\n"
+        )
+
+        result = smoke_test(dist)
+        assert not any(
+            "commit/SKILL.md" in e and "trigger-only" in e for e in result.errors
+        )

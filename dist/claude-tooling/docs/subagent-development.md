@@ -56,10 +56,20 @@ Task tool (general-purpose):
     4. Commit your work
     5. Report back
 
-    Report: What you implemented, what you tested, test results, files changed, any issues
+    Report in 15 lines or less: what you implemented, what you tested, test
+    results, files changed, any issues. Detail belongs in files or commit
+    messages, not in this reply.
+
+    Bad work is worse than no work; you will not be penalized for reporting
+    BLOCKED.
+
+    End your reply with exactly one line:
+    STATUS: <one of DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT>
 ```
 
-**Subagent reports back** with summary of work.
+**Subagent reports back** with a ≤15-line summary of work, ending in the
+required `STATUS:` line. See [Status Contract](#status-contract) below for
+what each status means and how the controller must respond.
 
 ### 4. Review Subagent's Work
 
@@ -87,7 +97,10 @@ Task tool (code-reviewer):
 **Dispatch follow-up subagent if needed:**
 
 ```
-"Fix issues from code review: [list issues]"
+"Fix issues from code review: [list issues]
+
+End your reply with exactly one line:
+STATUS: <one of DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT>"
 ```
 
 ### 6. Mark Complete, Next Task
@@ -147,6 +160,44 @@ Final reviewer: All requirements met, ready to merge
 Done!
 ```
 
+## Status Contract
+
+Every subagent dispatch prompt (implementation, fix, and review dispatches
+alike) MUST end with the REQUIRED final line:
+
+```
+STATUS: <one of DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT>
+```
+
+Exactly one status, exactly once. Free-prose reports give the orchestrator no
+reliable outcome signal — the status line is what phase-transition logic and
+downstream tooling key off of (see `core/skills/dev-cycle/references/phase-transitions.md`).
+
+Reply text (report or dispatch prompt) stays ≤15 lines — it stays resident in
+the orchestrator's context for the rest of the session, so detail belongs in
+files, commits, or issue comments, not in the reply itself.
+
+**Bad work is worse than no work; the worker will not be penalized for
+reporting BLOCKED.** Escalating a real blocker is success, not failure.
+
+### Controller Playbook
+
+| Status               | Controller move                                                                                                                           |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `DONE`               | Verify the evidence (tests ran, files changed as claimed), then proceed.                                                                  |
+| `DONE_WITH_CONCERNS` | Read the concerns before proceeding. Address each one or consciously accept it — do not silently proceed past a concern you haven't read. |
+| `NEEDS_CONTEXT`      | Answer the worker's question, then re-dispatch the _same_ worker with the answer folded in.                                               |
+| `BLOCKED`            | Work the escalation ladder below. Never ignore a `BLOCKED` report, and never re-dispatch the same prompt unchanged.                       |
+
+### Escalation Ladder (for `BLOCKED`)
+
+Work these in order — stop at the first rung that resolves the block:
+
+1. **Supply missing context** — if the block is a missing fact, file, or decision the controller can provide, provide it and re-dispatch.
+2. **Retry on a more capable model** — if the block looks like a capability gap, re-dispatch the same task on a stronger model.
+3. **Split the task** — if the task is too large or coupled, break it into smaller, independent pieces and dispatch each separately.
+4. **Escalate to the human** — if none of the above resolves it, stop and surface the blocker to the human rather than guessing.
+
 ## Red Flags
 
 **Never:**
@@ -155,8 +206,4 @@ Done!
 - Proceed with unfixed Critical issues
 - Dispatch multiple implementation subagents in parallel (conflicts)
 - Implement without reading plan task
-
-**If subagent fails task:**
-
-- Dispatch fix subagent with specific instructions
-- Don't try to fix manually (context pollution)
+- Ignore a `BLOCKED` status or re-dispatch the same prompt unchanged
