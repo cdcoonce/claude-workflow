@@ -133,13 +133,7 @@ migration runs.
 
 ### Co-authorship
 
-When Claude writes or co-writes the code:
-
-```
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
-
-When multiple humans collaborate:
+Reserve co-author trailers for human collaborators — do not add `Co-Authored-By` (or any other signature) naming Claude or other AI tools. When multiple humans collaborate:
 
 ```
 Co-Authored-By: Name <email@example.com>

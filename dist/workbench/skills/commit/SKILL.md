@@ -76,11 +76,7 @@ Any of these means the commit isn't ready yet:
 - **No generated artifacts** — Don't commit build output, dependency directories, or compiled files. Check `.gitignore` coverage before staging.
 - **New commits only** — Always create a new commit. Never amend unless the user explicitly asks.
 - **No skipping hooks** — Never use `--no-verify`. If a hook fails, fix the underlying issue.
-- **Co-author line** — Append the co-author trailer when Claude authored or co-authored the changes:
-
-```
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
+- **No agent attribution** — do not add `Co-Authored-By` trailers (or any signature) naming Claude or other AI tools. Reserve co-author trailers for human collaborators.
 
 ## Reference Documentation
 
