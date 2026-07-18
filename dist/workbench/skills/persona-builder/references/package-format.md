@@ -28,6 +28,7 @@ presets/advisor-<role>/
 ├── settings-preset.json
 └── skills/advisor-<role>/
     ├── SKILL.md               # identity + stance contract + router + layer-loading rules
+    ├── README.md              # owner guide — how the persona works (see below)
     ├── references/
     │   ├── cheat-sheet.md     # always loaded
     │   └── packs/<topic>.md   # loaded via router, one per topic
@@ -49,6 +50,36 @@ the local overlay directory next to its install:
 
 `local/` is gitignored territory by construction — it exists only on the owner's
 machine.
+
+## Owner guide (README.md) — required in every package
+
+Owners are not plugin engineers. The first questions every owner asks after
+install — "how do I turn this off?", "will it interfere with my other setup?",
+"where did that conversation go?" — must be answered by a document in the
+package, not by whoever built it. Instance #1's owner hit exactly these within
+a day of install. The guide must cover, in the owner's language, role-generic:
+
+1. **What it is and when it activates** — a skill, not a hook or output style:
+   dormant until they raise an on-topic question or artifact; nothing injects
+   into their other sessions.
+2. **On/off** — the exact `claude plugin disable/enable <name>@<marketplace>`
+   commands, and that disabling never touches `local/`.
+3. **The three layers** — what plugin updates refresh (base), what is theirs
+   and never overwritten (tuning), what never leaves the machine (private).
+4. **Memory** — where `local/memory/` lives, that it is plain markdown they can
+   read and edit, and that conversation _substance_ persists there even though
+   chat transcripts stay in their app's session history.
+5. **Retune** — how corrections work and what saying "retune" does.
+6. **Updates** — how updates arrive, the version-dir `local/` migration caveat
+   (until the installer handles it), and rollback via version reinstall.
+7. **Coexistence** — interaction with output styles or other personas: a global
+   output style layers on top and may compress formatting; use the default
+   style for full-format sessions.
+
+The base spec must also carry a **self-explain duty**: when the owner asks how
+the persona works (activation, memory, tuning, updates, privacy), answer from
+README.md rather than improvising — and say plainly when a question falls
+outside it.
 
 ## Memory (mini-vault)
 

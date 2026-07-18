@@ -41,6 +41,9 @@ builder must say plainly which path it took and why.
   run the **first-conversation ritual**: one real scenario, one deliberate
   correction, wrap-up retune, confirm the tuning diff applied and memory wrote.
   The persona is not "delivered" until that ritual has happened.
+- Walk the owner through `README.md` (the owner guide) before leaving them with
+  it — at minimum on/off, what updates touch vs never touch, and where memory
+  lives. The guide exists so this walkthrough survives the conversation.
 
 ## After delivery
 

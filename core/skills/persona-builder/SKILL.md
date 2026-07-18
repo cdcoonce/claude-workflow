@@ -62,7 +62,8 @@ See [research-and-packs.md](references/research-and-packs.md).
 Assemble the three-layer package as an `advisor-<role>` preset: plugin-managed **base**
 (behavior spec + packs + router), local **tuning** overlay (owner overrides, update-
 safe), local **private** layer (mini-vault memory + preferences log). Includes the
-retune/wrap-up feedback loop and staleness-nudged refresh.
+retune/wrap-up feedback loop, staleness-nudged refresh, and the **owner guide**
+(README.md) explaining how the persona works to the person who owns it.
 See [package-format.md](references/package-format.md).
 
 ### Phase 5 — Behavior Eval
