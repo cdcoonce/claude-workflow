@@ -163,6 +163,147 @@ class TestSmokeSkills:
         assert not any("commit/SKILL.md" in e for e in result.errors)
 
 
+class TestSmokeSkillAuthoringBudgets:
+    """Smoke test enforces skill-authoring budgets (#281): line cap, frontmatter
+    shape, and reference depth."""
+
+    def test_skill_over_line_cap_fails(self, tmp_repo: Path) -> None:
+        # "commit" is grandfathered in SKILL_LINE_CAP_ALLOWLIST, so a new,
+        # non-allowlisted core skill is needed to exercise the cap itself.
+        skill_src = tmp_repo / "core" / "skills" / "oversized-skill"
+        skill_src.mkdir(parents=True)
+        body = "\n".join(f"line {i}" for i in range(150))
+        (skill_src / "SKILL.md").write_text(
+            f"---\nname: oversized-skill\ndescription: test\n---\n\n{body}\n"
+        )
+
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        result = smoke_test(dist)
+        assert result.passed is False
+        assert any(
+            "oversized-skill/SKILL.md" in e and "line" in e.lower()
+            for e in result.errors
+        )
+
+    def test_skill_under_line_cap_passes(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        skill_md = dist / "skills" / "commit" / "SKILL.md"
+
+        skill_md.write_text("---\nname: commit\ndescription: test\n---\n\nShort.\n")
+
+        result = smoke_test(dist)
+        assert not any("line" in e.lower() for e in result.errors)
+
+    def test_allowlisted_skill_over_line_cap_passes(self, tmp_repo: Path) -> None:
+        from scripts.smoke_test import SKILL_LINE_CAP_ALLOWLIST
+
+        assert "commit" in SKILL_LINE_CAP_ALLOWLIST
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        skill_md = dist / "skills" / "commit" / "SKILL.md"
+
+        body = "\n".join(f"line {i}" for i in range(150))
+        skill_md.write_text(f"---\nname: commit\ndescription: test\n---\n\n{body}\n")
+
+        result = smoke_test(dist)
+        assert not any(
+            "commit/SKILL.md" in e and "line" in e.lower() for e in result.errors
+        )
+
+    def test_frontmatter_with_extra_key_fails(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        skill_md = dist / "skills" / "commit" / "SKILL.md"
+
+        skill_md.write_text(
+            "---\nname: commit\ndescription: test\nrole: implementer\n---\n# Body\n"
+        )
+
+        result = smoke_test(dist)
+        assert result.passed is False
+        assert any(
+            "commit/SKILL.md" in e and "role" in e and "unexpected" in e.lower()
+            for e in result.errors
+        )
+
+    def test_frontmatter_with_only_name_and_description_passes(
+        self, tmp_repo: Path
+    ) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+        skill_md = dist / "skills" / "commit" / "SKILL.md"
+
+        skill_md.write_text("---\nname: commit\ndescription: test\n---\n# Body\n")
+
+        result = smoke_test(dist)
+        assert not any("unexpected" in e.lower() for e in result.errors)
+
+    def test_nested_references_directory_fails(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "commit"
+        nested_dir = skill_dir / "references" / "advanced"
+        nested_dir.mkdir(parents=True)
+        (nested_dir / "detail.md").write_text("# Detail\n")
+
+        result = smoke_test(dist)
+        assert result.passed is False
+        assert any(
+            "commit/references" in e and "one level deep" in e for e in result.errors
+        )
+
+    def test_flat_references_directory_passes(self, tmp_repo: Path) -> None:
+        build_preset("python-api", repo_root=tmp_repo)
+        dist = tmp_repo / "dist" / "python-api"
+
+        skill_dir = dist / "skills" / "commit"
+        refs_dir = skill_dir / "references"
+        refs_dir.mkdir(parents=True)
+        (refs_dir / "detail.md").write_text("# Detail\n")
+
+        result = smoke_test(dist)
+        assert not any("one level deep" in e for e in result.errors)
+
+
+class TestSmokeAllowlistShrinkOnly:
+    """The line-cap grandfather allowlist may only shrink (#281)."""
+
+    def test_shrinking_below_baseline_passes(self) -> None:
+        from scripts.smoke_test import _validate_allowlist_shrink_only
+
+        errors = _validate_allowlist_shrink_only(
+            current=frozenset({"a"}), baseline=frozenset({"a", "b"})
+        )
+        assert errors == []
+
+    def test_adding_entry_beyond_baseline_fails(self) -> None:
+        from scripts.smoke_test import _validate_allowlist_shrink_only
+
+        errors = _validate_allowlist_shrink_only(
+            current=frozenset({"a", "b"}), baseline=frozenset({"a"})
+        )
+        assert errors
+        assert "b" in errors[0]
+
+    def test_current_allowlist_has_not_grown_beyond_baseline(self) -> None:
+        from scripts.smoke_test import (
+            SKILL_LINE_CAP_ALLOWLIST,
+            SKILL_LINE_CAP_ALLOWLIST_BASELINE,
+            _validate_allowlist_shrink_only,
+        )
+
+        assert (
+            _validate_allowlist_shrink_only(
+                SKILL_LINE_CAP_ALLOWLIST, SKILL_LINE_CAP_ALLOWLIST_BASELINE
+            )
+            == []
+        )
+
+
 class TestSmokeAgents:
     """Smoke test validates agent integrity."""
 
