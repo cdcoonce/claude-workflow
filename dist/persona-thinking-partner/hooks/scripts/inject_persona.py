@@ -6,9 +6,10 @@
 
 Shipped inside each `persona-*` plugin. On session start Claude Code runs it via
 `uv run`; it reads the plugin's single `output-styles/*.md`, strips the YAML
-frontmatter, and emits the body as SessionStart `additionalContext` so the persona
-is layered on top of the default engineering instructions (purely additive — it
-never replaces the base prompt).
+frontmatter, and emits the body — wrapped in an explicit precedence frame — as
+SessionStart `additionalContext`. The frame declares the persona overrides the
+base prompt's communication style while leaving safety, tool policy, and
+engineering judgment unchanged.
 
 Cross-platform by design: pure Python via `uv run`, no bash. Fails safe — any error
 prints nothing and exits 0, so a broken persona can never break a session.
@@ -20,6 +21,14 @@ import json
 import os
 import sys
 from pathlib import Path
+
+PRECEDENCE_HEADER = """<user-selected-output-style>
+The user has explicitly enabled this persona as their output style. It OVERRIDES the default communication style: when these rules conflict with any other verbosity or tone guidance (the base prompt's communication section or other session-start context), these rules win. Scope is communication style only — safety rules, tool policy, and engineering judgment are unchanged. Apply these rules to every response in this session, including after context compaction.
+
+"""
+
+PRECEDENCE_FOOTER = """
+</user-selected-output-style>"""
 
 
 def _strip_frontmatter(text: str) -> str:
@@ -49,7 +58,7 @@ def main() -> int:
             {
                 "hookSpecificOutput": {
                     "hookEventName": "SessionStart",
-                    "additionalContext": body,
+                    "additionalContext": PRECEDENCE_HEADER + body + PRECEDENCE_FOOTER,
                 }
             }
         )

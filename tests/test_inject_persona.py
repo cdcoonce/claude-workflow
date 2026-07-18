@@ -94,10 +94,14 @@ class TestMainSuccess:
         assert main() == 0
         output = json.loads(capsys.readouterr().out)
 
-        assert output == {
-            "hookSpecificOutput": {
-                "hookEventName": "SessionStart",
-                "additionalContext": "# Grumpy Reviewer\n\nBe grumpy.",
-            }
-        }
-        assert "---" not in output["hookSpecificOutput"]["additionalContext"]
+        context = output["hookSpecificOutput"]["additionalContext"]
+        assert output["hookSpecificOutput"]["hookEventName"] == "SessionStart"
+        assert context == (
+            inject_persona.PRECEDENCE_HEADER
+            + "# Grumpy Reviewer\n\nBe grumpy."
+            + inject_persona.PRECEDENCE_FOOTER
+        )
+        assert "# Grumpy Reviewer\n\nBe grumpy." in context
+        assert "---" not in context.replace(
+            inject_persona.PRECEDENCE_HEADER, ""
+        ).replace(inject_persona.PRECEDENCE_FOOTER, "")

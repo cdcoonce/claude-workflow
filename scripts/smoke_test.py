@@ -56,12 +56,7 @@ SKILL_LINE_CAP_ALLOWLIST = frozenset(
         "dignified-python",
         "github-cli",
         "grill-me",
-        "plan-ceo-review",
-        "prd-to-plan",
         "project-context",
-        "readme-generator",
-        "tdd",
-        "triage-issue",
     }
 )
 

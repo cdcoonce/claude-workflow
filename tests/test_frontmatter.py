@@ -155,3 +155,51 @@ class TestParseFrontmatterCommentsAndSpacing:
     def test_full_line_comment_with_colon_is_ignored(self) -> None:
         text = "---\nname: foo\n# TODO: revisit\nrole: bar\n---\n"
         assert _parse_frontmatter(text) == {"name": "foo", "role": "bar"}
+
+
+class TestParseFrontmatterBlockScalar:
+    """YAML block scalars (``>`` folded and ``|`` literal) fold indented
+    continuation lines into a single space-joined string.
+    """
+
+    def test_folded_block_scalar_spans_multiple_lines(self) -> None:
+        # Mirrors core/skills/commit/SKILL.md's `description: >` style.
+        text = (
+            "---\n"
+            "name: commit\n"
+            "description: >\n"
+            "  Git commit workflow with enforced conventional commit style. Use when Claude\n"
+            "  needs to stage and commit changes, craft commit messages, or the user asks to\n"
+            "  commit, make a commit, or save their work.\n"
+            "---\n"
+        )
+        assert _parse_frontmatter(text) == {
+            "name": "commit",
+            "description": (
+                "Git commit workflow with enforced conventional commit style. Use when Claude "
+                "needs to stage and commit changes, craft commit messages, or the user asks to "
+                "commit, make a commit, or save their work."
+            ),
+        }
+
+    def test_literal_block_scalar_folds_same_as_folded(self) -> None:
+        # The parser doesn't distinguish `|` from `>`; both fold onto one line.
+        text = "---\ndescription: |\n  line one\n  line two\n---\n"
+        assert _parse_frontmatter(text) == {"description": "line one line two"}
+
+    def test_block_scalar_as_last_field_before_closing_delimiter(self) -> None:
+        text = (
+            "---\n"
+            "name: security-review\n"
+            "description: >\n"
+            "  Security code review for vulnerabilities with confidence-based reporting.\n"
+            "  Use when the user asks for a security review.\n"
+            "---\n"
+        )
+        assert _parse_frontmatter(text) == {
+            "name": "security-review",
+            "description": (
+                "Security code review for vulnerabilities with confidence-based reporting. "
+                "Use when the user asks for a security review."
+            ),
+        }

@@ -1,6 +1,6 @@
 {
   "name": "persona-terse-staff-eng",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Terse senior-staff-engineer voice \u2014 answer-first, minimal, expert assumptions. The least verbose persona.",
   "author": {
     "name": "Charles Coonce"
