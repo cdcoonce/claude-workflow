@@ -35,7 +35,7 @@ Clear `new_test_ids` in the state file once this step completes (whether rows we
 
 ## Step 4 — Dispatch QA Tester
 
-Dispatch a subagent using the `qa-tester` agent identity (defined in Phase 6) in **static text-judge mode**.
+Dispatch a subagent using the `qa-tester` agent identity (defined in Phase 6) in **static text-judge mode**. **Model is required** — set it per the rubric in `.claude/docs/agent-matching.md#model-selection` (QA Tester is a reviewer role: never below `mid` tier). An omitted model silently inherits the orchestrator's own model.
 
 Provide the subagent with:
 
