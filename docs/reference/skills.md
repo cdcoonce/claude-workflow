@@ -14,25 +14,25 @@ Every skill available in the plugin, parsed from each skill's `SKILL.md` frontma
 | `/create-hook` | Create and register Claude Code hooks (PreToolUse, PostToolUse) as Python scripts. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
 | `/daa-code-review` | AI-powered code quality analysis for Python, Markdown, and Mermaid diagrams. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
 | `/design-an-interface` | Generate multiple radically different interface designs for a module using parallel sub-agents. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/dev-cycle` | Orchestrate the full GitHub-issues-driven development lifecycle. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/dev-cycle` | Use when user says "dev cycle", "development workflow", "full development pipeline", or invokes /dev-cycle to take a GitHub-issues-driven feature from brainstorm through a merged PR. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
 | `/dignified-python` | Production Python coding standards with automatic version detection (3.10-3.13). | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
 | `/finish-branch` | Use when implementation is complete, all tests pass, and you need to decide how to integrate a finished development branch — merge, open a PR, keep it, or discard it. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
 | `/github-cli` | GitHub CLI (gh) integration for managing issues, pull requests, branches, commits, and code reviews directly from the terminal. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
 | `/grill-me` | Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
 | `/improve-codebase-architecture` | Explore a codebase to find opportunities for architectural improvement, focusing on making the codebase more testable by deepening shallow modules. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/improve-skill` | Benchmark-driven skill improvement pipeline. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/plan-ceo-review` | CEO/founder-mode plan review. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/improve-skill` | Use when user says "improve skill", "benchmark skill", "make skill better", or invokes /improve-skill to raise a skill's benchmark pass rate before merging a PR. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/plan-ceo-review` | CEO/founder-mode review that rethinks a plan to find the 10-star product. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
 | `/prd-to-issues` | Break a PRD into independently-grabbable GitHub issues using tracer-bullet vertical slices. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
 | `/prd-to-plan` | Turn a PRD into a multi-phase implementation plan using tracer-bullet vertical slices, saved as a local Markdown file in docs/plans/. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
 | `/project-context` | Generate or update the `.claude/docs/project.md` file that gives Claude project-specific context. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/readme-generator` | Generate comprehensive, high-quality README.md files for code repositories. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/request-refactor-plan` | Create a detailed refactor plan with tiny commits via user interview, then file it as a GitHub issue. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/readme-generator` | Use when the user asks to create, write, generate, update, or improve a README for any project or repository, or asks for project documentation in markdown. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/request-refactor-plan` | Use when user wants to plan a refactor, create a refactoring RFC, or break a refactor into safe incremental steps. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
 | `/security-review` | Security code review for vulnerabilities with confidence-based reporting. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
 | `/setup-pre-commit` | Set up pre-commit hooks for the current repo. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
 | `/tdd` | Test-driven development with red-green-refactor loop. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/triage-issue` | Triage a bug or issue by exploring the codebase to find root cause, then create a GitHub issue with a TDD-based fix plan. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/triage-issue` | Use when user reports a bug, wants to file an issue, mentions "triage", or wants to investigate and plan a fix for a problem. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
 | `/using-workflow` | Use when starting any conversation or task in this project — establishes precedence between instructions and skills, requires invoking any skill that might apply, and sets the order skills run in before any response or action. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
-| `/write-a-prd` | Create a PRD through user interview, codebase exploration, and module design, then submit as a GitHub issue. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
+| `/write-a-prd` | Use when user wants to write a PRD, create a product requirements document, or plan a new feature. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
 | `/write-a-skill` | Create new agent skills with proper structure, progressive disclosure, and bundled resources. | analysis, claude-tooling, data-pipeline, data-viz, full-stack, python-api |
 
 ## Preset skills
@@ -90,7 +90,7 @@ Create and register Claude Code hooks (PreToolUse, PostToolUse) as Python script
 
 *universal*
 
-AI-powered code quality analysis for Python, Markdown, and Mermaid diagrams. Use this skill when: (1) reviewing code for quality issues, (2) checking Python files for PEP8 violations, unused code, missing type hints, docstring problems, complexity issues, or potential runtime errors, (3) validating Markdown documentation for broken links, heading structure, or formatting issues, (4) validating Mermaid diagram syntax, (5) the user asks for a "code review" or "quality check", (6) analyzing code snippets pasted in conversation, or (7) suggesting and applying fixes for code quality issues.
+AI-powered code quality analysis for Python, Markdown, and Mermaid diagrams. Use when the user asks for a "code review" or "quality check"; when Python files need checking for PEP8 violations, unused code, missing type hints, docstring problems, complexity issues, or potential runtime errors; when Markdown documentation needs validation for broken links, heading structure, or formatting; when Mermaid diagram syntax needs validation; or when the user pastes code snippets for analysis.
 
 ### `/design-an-interface`
 
@@ -102,7 +102,7 @@ Generate multiple radically different interface designs for a module using paral
 
 *universal*
 
-Orchestrate the full GitHub-issues-driven development lifecycle. 7-phase pipeline from brainstorm through PR with state tracking and cross-conversation resume. Use when user says "dev cycle", "development workflow", "full development pipeline", or invokes /dev-cycle.
+Use when user says "dev cycle", "development workflow", "full development pipeline", or invokes /dev-cycle to take a GitHub-issues-driven feature from brainstorm through a merged PR.
 
 ### `/dignified-python`
 
@@ -138,13 +138,13 @@ Explore a codebase to find opportunities for architectural improvement, focusing
 
 *universal*
 
-Benchmark-driven skill improvement pipeline. Interviews the user to build a test suite, scores the original skill, iterates with a Skill Writer and QA Tester loop until the target pass rate is reached, then files a PR. Use when user says "improve skill", "benchmark skill", "make skill better", or invokes /improve-skill.
+Use when user says "improve skill", "benchmark skill", "make skill better", or invokes /improve-skill to raise a skill's benchmark pass rate before merging a PR.
 
 ### `/plan-ceo-review`
 
 *universal*
 
-CEO/founder-mode plan review. Rethink the problem, find the 10-star product, challenge premises, expand scope when it creates a better product. Three modes: SCOPE EXPANSION (dream big), HOLD SCOPE (maximum rigor), SCOPE REDUCTION (strip to essentials). Use when the user asks for a plan review, CEO review, mega review, or wants a plan challenged/stress-tested before implementation.
+CEO/founder-mode review that rethinks a plan to find the 10-star product. Use when the user asks for a plan review, CEO review, mega review, or wants a plan challenged or stress-tested before implementation.
 
 ### `/prd-to-issues`
 
@@ -168,13 +168,13 @@ Generate or update the `.claude/docs/project.md` file that gives Claude project-
 
 *universal*
 
-Generate comprehensive, high-quality README.md files for code repositories. Use this skill whenever the user asks to create, write, generate, update, or improve a README for any project or repository. Also trigger when the user says things like "document this project", "write docs for this repo", "this repo needs a README", "help me onboard developers to this codebase", or asks for project documentation in markdown. Even if the user just says "README" or "readme" in the context of a codebase, use this skill.
+Use when the user asks to create, write, generate, update, or improve a README for any project or repository, or asks for project documentation in markdown. Also trigger when the user says things like "document this project", "write docs for this repo", "this repo needs a README", "help me onboard developers to this codebase". Even if the user just says "README" or "readme" in the context of a codebase, use this skill.
 
 ### `/request-refactor-plan`
 
 *universal*
 
-Create a detailed refactor plan with tiny commits via user interview, then file it as a GitHub issue. Use when user wants to plan a refactor, create a refactoring RFC, or break a refactor into safe incremental steps.
+Use when user wants to plan a refactor, create a refactoring RFC, or break a refactor into safe incremental steps. Produces a detailed refactor plan with tiny commits, filed as a GitHub issue.
 
 ### `/security-review`
 
@@ -198,7 +198,7 @@ Test-driven development with red-green-refactor loop. Use when user wants to bui
 
 *universal*
 
-Triage a bug or issue by exploring the codebase to find root cause, then create a GitHub issue with a TDD-based fix plan. Use when user reports a bug, wants to file an issue, mentions "triage", or wants to investigate and plan a fix for a problem.
+Use when user reports a bug, wants to file an issue, mentions "triage", or wants to investigate and plan a fix for a problem. Finds the root cause and files a GitHub issue with a TDD-based fix plan.
 
 ### `/using-workflow`
 
@@ -210,7 +210,7 @@ Use when starting any conversation or task in this project — establishes prece
 
 *universal*
 
-Create a PRD through user interview, codebase exploration, and module design, then submit as a GitHub issue. Use when user wants to write a PRD, create a product requirements document, or plan a new feature.
+Use when user wants to write a PRD, create a product requirements document, or plan a new feature. Produces a PRD via user interview, codebase exploration, and module design, submitted as a GitHub issue.
 
 ### `/write-a-skill`
 

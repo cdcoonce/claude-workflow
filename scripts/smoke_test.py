@@ -209,6 +209,49 @@ def _parse_frontmatter(text: str) -> dict | None:
     return result if result else None
 
 
+# Matches a double-quoted span so literal quoted trigger phrases (e.g. a user
+# phrase that happens to contain "pipeline") are excluded before linting.
+_QUOTED_SPAN_PATTERN = re.compile(r'"[^"]*"')
+
+# (human-readable label, pattern) pairs for process/workflow-summary markers
+# that don't belong in a trigger-only skill description.
+_PROCESS_MARKER_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    (
+        "a phase-count marker (e.g. '7-phase')",
+        re.compile(r"\d+[- ]phase", re.IGNORECASE),
+    ),
+    ("the word 'pipeline'", re.compile(r"\bpipeline\b", re.IGNORECASE)),
+    ("a '→' step chain", re.compile("→")),
+    ("' then '", re.compile(r" then ", re.IGNORECASE)),
+)
+
+
+def _lint_description_process_markers(description: str) -> list[str]:
+    """Flag process/workflow-summary markers in a skill description.
+
+    A skill description is a retrieval index, not a spec: it should name only
+    the conditions that trigger the skill, never the skill's internal
+    process, workflow, or phase count. Matches inside double-quoted spans are
+    ignored so a literal quoted trigger phrase is never flagged.
+
+    Parameters
+    ----------
+    description
+        The skill's frontmatter ``description`` value.
+
+    Returns
+    -------
+    list[str]
+        Human-readable names of the process markers found, empty if none.
+    """
+    text_outside_quotes = _QUOTED_SPAN_PATTERN.sub("", description)
+    return [
+        label
+        for label, pattern in _PROCESS_MARKER_PATTERNS
+        if pattern.search(text_outside_quotes)
+    ]
+
+
 def smoke_test(dist_path: Path) -> SmokeTestResult:
     """Validate internal consistency of a built plugin.
 
@@ -267,6 +310,16 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
                     result.errors.append(
                         f"Skill '{skill_dir.name}/SKILL.md' missing required "
                         f"field '{req_field}'"
+                    )
+
+            description = frontmatter.get("description")
+            if isinstance(description, str):
+                process_markers = _lint_description_process_markers(description)
+                if process_markers:
+                    markers_str = ", ".join(process_markers)
+                    result.errors.append(
+                        f"Skill '{skill_dir.name}/SKILL.md' description is not "
+                        f"trigger-only: found {markers_str}"
                     )
 
     # 3. Validate agents: every directory in agents/ has a valid AGENT.md
