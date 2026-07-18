@@ -25,7 +25,7 @@ Every phase is mandatory. No phase can be skipped.
 | 4   | **Issues**      | Orchestrator (plan slices → GitHub issues)             | All issue URLs recorded           |
 | 5   | **Implement**   | Orchestrator (`tdd` per issue, `subagent-development`) | All issues resolved, tests pass   |
 | 6   | **Code Review** | `daa-code-review`                                      | Clean review                      |
-| 7   | **PR**          | `commit` + `github-cli`                                | PR URL recorded                   |
+| 7   | **PR**          | `commit` + `finish-branch`                             | PR URL recorded                   |
 
 ## Re-entry Logic
 
@@ -108,7 +108,10 @@ If architectural issues requiring plan rework → trigger backwards transition t
 
 ### Phase 7: MR
 
-Check for conflicts with default branch first. Invoke `commit` for conventional commit, then `github-cli` to open PR. Include `Closes #N` for the PRD issue and all implementation issues in the PR description so GitHub auto-closes them on merge. Record PR URL, set `status: completed`. Then run the archival step (see Archival below).
+Invoke `commit` for a conventional commit, then hand off to `finish-branch`, which presents its four-option menu (merge locally, push + open PR, keep as-is, discard) and owns its own test-gate around any rebase or merge it performs.
+
+- **Push + open PR:** `finish-branch` invokes `github-cli` to open the PR. Include `Closes #N` for the PRD issue and all implementation issues in the PR description so GitHub auto-closes them on merge. Record PR URL, set `status: completed`. Then run the archival step (see Archival below).
+- **Merge locally / keep / discard:** These paths do not produce a PR URL, so there is no PR URL to record. Set `status: completed` or `status: abandoned` as appropriate per the existing Archival section (merge locally and keep-as-is are `completed`; discard is `abandoned`), then run the archival step.
 
 ## State File
 
