@@ -1,5 +1,13 @@
 # Changelog — advisor-product-design
 
+## 0.1.2 — 2026-07-18
+
+- Owner guide (README.md) added: what the persona is, on/off, the three
+  layers, memory location, retune, updates, output-style coexistence — written
+  from the owner's actual post-install questions.
+- Self-explain duty added to the spec: mechanics questions are answered from
+  the owner guide, never improvised.
+
 ## 0.1.1 — 2026-07-18
 
 - Promoted from owner tuning: pre-send self-check on the review-format contract
