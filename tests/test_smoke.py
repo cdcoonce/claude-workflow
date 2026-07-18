@@ -200,17 +200,25 @@ class TestSmokeSkillAuthoringBudgets:
     def test_allowlisted_skill_over_line_cap_passes(self, tmp_repo: Path) -> None:
         from scripts.smoke_test import SKILL_LINE_CAP_ALLOWLIST
 
-        assert "commit" in SKILL_LINE_CAP_ALLOWLIST
+        # `commit` was removed from the allowlist (#306), so this test picks
+        # whatever skill is still allowlisted as its over-cap exemplar instead of
+        # naming one. Decoupling keeps it green as the line-cap burn-down removes
+        # further entries.
+        allowlisted = sorted(SKILL_LINE_CAP_ALLOWLIST)[0]
+        skill_src = tmp_repo / "core" / "skills" / allowlisted
+        skill_src.mkdir(parents=True)
+        body = "\n".join(f"line {i}" for i in range(150))
+        (skill_src / "SKILL.md").write_text(
+            f"---\nname: {allowlisted}\ndescription: test\n---\n\n{body}\n"
+        )
+
         build_preset("python-api", repo_root=tmp_repo)
         dist = tmp_repo / "dist" / "python-api"
-        skill_md = dist / "skills" / "commit" / "SKILL.md"
-
-        body = "\n".join(f"line {i}" for i in range(150))
-        skill_md.write_text(f"---\nname: commit\ndescription: test\n---\n\n{body}\n")
 
         result = smoke_test(dist)
         assert not any(
-            "commit/SKILL.md" in e and "line" in e.lower() for e in result.errors
+            f"{allowlisted}/SKILL.md" in e and "line" in e.lower()
+            for e in result.errors
         )
 
     def test_frontmatter_with_extra_key_fails(self, tmp_repo: Path) -> None:

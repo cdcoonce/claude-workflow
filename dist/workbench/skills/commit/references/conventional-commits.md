@@ -103,6 +103,20 @@ git add src/formatter.py
 git commit -m "style: apply black formatting to formatter module"
 ```
 
+## Multi-line Commits
+
+For commits that need a body (rare — prefer concise single-line messages):
+
+```
+<type>(<scope>): <summary>
+
+<body explaining why, not what>
+```
+
+- Blank line between summary and body
+- Body wraps at 72 characters
+- Use body only when the summary alone can't convey the reasoning
+
 ## Commit Body Best Practices
 
 Most commits should be single-line. Use a body when:
@@ -168,6 +182,34 @@ Closes #87
 ```
 
 Valid keywords: `Closes`, `Fixes`, `Resolves` (and lowercase variants).
+
+## Worked Examples
+
+```bash
+# Feature — new capability
+feat: add webhook notification system
+
+# Feature with scope
+feat(api): add rate limiting middleware
+
+# Fix — bug correction
+fix: prevent crash on malformed JSON input
+
+# Style — formatting only
+style: apply consistent indentation across modules
+
+# Docs — documentation
+docs: add architecture decision records
+
+# Chore — tooling/config
+chore: broaden gitignore to cover build artifacts
+
+# Test with scope
+test(auth): add integration tests for token refresh
+
+# Refactor with scope
+refactor(db): replace raw queries with query builder
+```
 
 ## Common Mistakes
 

@@ -25,52 +25,34 @@ Stage and commit changes following conventional commit style and atomic commit p
 
 ### Types
 
-| Type       | When to use                                             | Example                                           |
-| ---------- | ------------------------------------------------------- | ------------------------------------------------- |
-| `feat`     | New feature or capability                               | `feat: add user authentication flow`              |
-| `fix`      | Bug fix                                                 | `fix: resolve null pointer on empty input`        |
-| `refactor` | Code change that neither fixes a bug nor adds a feature | `refactor: extract parser into standalone module` |
-| `style`    | Formatting, whitespace, semicolons — no logic change    | `style: apply formatter to config files`          |
-| `docs`     | Documentation only                                      | `docs: add API usage examples to readme`          |
-| `test`     | Adding or updating tests                                | `test: add edge case coverage for validator`      |
-| `chore`    | Build process, tooling, dependencies, config            | `chore: update dependency lockfile`               |
-| `perf`     | Performance improvement                                 | `perf: cache repeated database lookups`           |
-| `ci`       | CI/CD pipeline changes                                  | `ci: add lint step to PR workflow`                |
+| Type       | When to use                                             | Example                                    |
+| ---------- | ------------------------------------------------------- | ------------------------------------------ |
+| `feat`     | New feature or capability                               | `feat: add user authentication flow`       |
+| `fix`      | Bug fix                                                 | `fix: resolve null pointer on empty input` |
+| `refactor` | Code change that neither fixes a bug nor adds a feature | `refactor: extract parser module`          |
+| `style`    | Formatting, whitespace, semicolons — no logic change    | `style: apply formatter to config`         |
+| `docs`     | Documentation only                                      | `docs: add API usage examples`             |
+| `test`     | Adding or updating tests                                | `test: add edge case coverage`             |
+| `chore`    | Build process, tooling, dependencies, config            | `chore: update dependency lockfile`        |
+| `perf`     | Performance improvement                                 | `perf: cache repeated DB lookups`          |
+| `ci`       | CI/CD pipeline changes                                  | `ci: add lint step to PR workflow`         |
+
+See `references/conventional-commits.md` for feat/refactor/chore edge cases and breaking-change (`!`) syntax.
 
 ### Scope (Optional)
 
-Use scope to narrow context when the type alone is ambiguous. Derive scopes from the project's directory structure or domain areas:
-
-```
-feat(auth): add OAuth2 token refresh
-fix(api): handle timeout on large payloads
-docs(contributing): add setup instructions
-```
+Use scope to narrow context when the type alone is ambiguous, e.g. `fix(api): handle timeout on large payloads`. Derive scopes from the project's directory structure or domain areas — see `references/conventional-commits.md` for derivation and consistency guidance.
 
 ## Workflow
 
 1. **Review changes** — Run `git status` and `git diff` (staged + unstaged) to understand what changed
 2. **Check recent history** — Run `git log --oneline -10` to match the project's existing commit style
-3. **Verify intent** — Confirm the changes form a single logical unit; if not, suggest splitting into multiple commits
+3. **Verify intent** — Confirm the changes form a single logical unit; if not, suggest splitting into multiple commits (grouping guidance in `references/conventional-commits.md`)
 4. **Run CI checks** — Before staging, run the project's linters, formatters, and test suite to catch issues early. Check `package.json` scripts, `Makefile`, or CI config for available commands. Fix any failures before proceeding.
 5. **Stage files** — Add specific files by name (`git add file1 file2`), never `git add -A` or `git add .`
-6. **Craft message** — Select the correct type, add scope if helpful, write an imperative summary
+6. **Craft message** — Select the correct type, add scope if helpful, write an imperative summary. For multi-line bodies, see `references/conventional-commits.md`.
 7. **Commit** — Use a heredoc for the message to ensure clean formatting
 8. **Verify** — Run `git status` after to confirm the commit succeeded
-
-### Multi-line Commits
-
-For commits that need a body (rare — prefer concise single-line messages):
-
-```
-<type>(<scope>): <summary>
-
-<body explaining why, not what>
-```
-
-- Blank line between summary and body
-- Body wraps at 72 characters
-- Use body only when the summary alone can't convey the reasoning
 
 ## Red Flags — Stop Before Committing
 
@@ -94,34 +76,6 @@ Any of these means the commit isn't ready yet:
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-## Examples
-
-```bash
-# Feature — new capability
-feat: add webhook notification system
-
-# Feature with scope
-feat(api): add rate limiting middleware
-
-# Fix — bug correction
-fix: prevent crash on malformed JSON input
-
-# Style — formatting only
-style: apply consistent indentation across modules
-
-# Docs — documentation
-docs: add architecture decision records
-
-# Chore — tooling/config
-chore: broaden gitignore to cover build artifacts
-
-# Test with scope
-test(auth): add integration tests for token refresh
-
-# Refactor with scope
-refactor(db): replace raw queries with query builder
-```
-
 ## Reference Documentation
 
-- [conventional-commits.md](references/conventional-commits.md) — type selection guide, breaking changes, scope strategies, multi-file commit decisions, body formatting, trailers, and common mistakes
+- [conventional-commits.md](references/conventional-commits.md) — type selection guide, breaking changes, scope strategies, multi-file commit decisions, multi-line commit bodies, trailers, worked examples for every type, and common mistakes
