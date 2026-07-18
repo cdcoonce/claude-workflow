@@ -40,6 +40,82 @@ _URI_SCHEME_PATTERN = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
 
 _LINK_PATTERN = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 
+# Authoring budget from core/skills/write-a-skill/references/quality-criteria.md.
+SKILL_LINE_CAP = 100
+
+# Frozen at #281: the skills that already exceeded SKILL_LINE_CAP when this
+# check was introduced. Shrink-only — remove an entry once its SKILL.md drops
+# under the cap; never add a new one (see SKILL_LINE_CAP_ALLOWLIST_BASELINE).
+SKILL_LINE_CAP_ALLOWLIST = frozenset(
+    {
+        "add-claude-workflow-hook",
+        "commit",
+        "daa-code-review",
+        "dev-cycle",
+        "dignified-python",
+        "github-cli",
+        "grill-me",
+        "plan-ceo-review",
+        "prd-to-plan",
+        "project-context",
+        "readme-generator",
+        "tdd",
+        "triage-issue",
+    }
+)
+
+# High-water mark for SKILL_LINE_CAP_ALLOWLIST, frozen independently of it so
+# an edit to the allowlist above can't silently drag this along. Never edit
+# this set — it exists only so _validate_allowlist_shrink_only can detect a
+# future addition to SKILL_LINE_CAP_ALLOWLIST.
+SKILL_LINE_CAP_ALLOWLIST_BASELINE = frozenset(
+    {
+        "add-claude-workflow-hook",
+        "commit",
+        "daa-code-review",
+        "dev-cycle",
+        "dignified-python",
+        "github-cli",
+        "grill-me",
+        "plan-ceo-review",
+        "prd-to-plan",
+        "project-context",
+        "readme-generator",
+        "tdd",
+        "triage-issue",
+    }
+)
+
+# Frontmatter keys a SKILL.md may declare (write-a-skill quality-criteria.md).
+_SKILL_FRONTMATTER_ALLOWED_KEYS = frozenset({"name", "description"})
+
+
+def _validate_allowlist_shrink_only(
+    current: frozenset[str], baseline: frozenset[str]
+) -> list[str]:
+    """Check that a grandfather allowlist has only shrunk from its baseline.
+
+    Parameters
+    ----------
+    current
+        The active allowlist.
+    baseline
+        The frozen snapshot captured when the allowlist was introduced.
+
+    Returns
+    -------
+    list[str]
+        Error strings for any entries in ``current`` but not ``baseline``.
+    """
+    added = sorted(current - baseline)
+    if not added:
+        return []
+    return [
+        f"SKILL_LINE_CAP_ALLOWLIST added entries {added} not present in "
+        "SKILL_LINE_CAP_ALLOWLIST_BASELINE — the allowlist is shrink-only, "
+        "remove them instead"
+    ]
+
 
 def _validate_doc_links(docs_dir: Path, doc_filename: str, label: str) -> list[str]:
     """Validate that relative links in doc files resolve to existing files.
@@ -252,6 +328,32 @@ def _lint_description_process_markers(description: str) -> list[str]:
     ]
 
 
+def _core_skill_names(dist_path: Path) -> frozenset[str]:
+    """Names of skills sourced from core/skills/, given a built plugin path.
+
+    The skill-authoring budget checks (line cap, frontmatter shape, reference
+    depth) enforce this repo's own authoring standard and apply only to core
+    skills, not preset-specific skills bundled alongside them in the same
+    built ``skills/`` directory.
+
+    Parameters
+    ----------
+    dist_path
+        Path to the built plugin directory (e.g., dist/python-api/), expected
+        at ``<repo_root>/dist/<preset_name>``.
+
+    Returns
+    -------
+    frozenset[str]
+        Directory names under core/skills/, or an empty set if core/skills/
+        can't be located relative to ``dist_path``.
+    """
+    core_skills_dir = dist_path.parent.parent / "core" / "skills"
+    if not core_skills_dir.is_dir():
+        return frozenset()
+    return frozenset(d.name for d in core_skills_dir.iterdir() if d.is_dir())
+
+
 def smoke_test(dist_path: Path) -> SmokeTestResult:
     """Validate internal consistency of a built plugin.
 
@@ -266,6 +368,12 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
         Result with any errors found.
     """
     result = SmokeTestResult()
+
+    result.errors.extend(
+        _validate_allowlist_shrink_only(
+            SKILL_LINE_CAP_ALLOWLIST, SKILL_LINE_CAP_ALLOWLIST_BASELINE
+        )
+    )
 
     # 1. Validate .claude-plugin/plugin.json
     plugin_json_path = dist_path / ".claude-plugin" / "plugin.json"
@@ -287,6 +395,7 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
 
     # 2. Validate skills: every directory in skills/ has a valid SKILL.md
     skills_dir = dist_path / "skills"
+    core_skill_names = _core_skill_names(dist_path)
     if skills_dir.exists():
         for skill_dir in sorted(skills_dir.iterdir()):
             if not skill_dir.is_dir():
@@ -298,7 +407,21 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
                 )
                 continue
 
-            frontmatter = _parse_frontmatter(skill_md.read_text(encoding="utf-8"))
+            is_core_skill = skill_dir.name in core_skill_names
+            skill_md_text = skill_md.read_text(encoding="utf-8")
+
+            if is_core_skill:
+                line_count = len(skill_md_text.splitlines())
+                if (
+                    line_count > SKILL_LINE_CAP
+                    and skill_dir.name not in SKILL_LINE_CAP_ALLOWLIST
+                ):
+                    result.errors.append(
+                        f"Skill '{skill_dir.name}/SKILL.md' has {line_count} "
+                        f"lines, exceeding the {SKILL_LINE_CAP}-line cap"
+                    )
+
+            frontmatter = _parse_frontmatter(skill_md_text)
             if frontmatter is None:
                 result.errors.append(
                     f"Skill '{skill_dir.name}/SKILL.md' has no valid frontmatter"
@@ -321,6 +444,25 @@ def smoke_test(dist_path: Path) -> SmokeTestResult:
                         f"Skill '{skill_dir.name}/SKILL.md' description is not "
                         f"trigger-only: found {markers_str}"
                     )
+
+            if is_core_skill:
+                extra_keys = sorted(set(frontmatter) - _SKILL_FRONTMATTER_ALLOWED_KEYS)
+                if extra_keys:
+                    result.errors.append(
+                        f"Skill '{skill_dir.name}/SKILL.md' frontmatter has "
+                        f"unexpected keys {extra_keys} (only 'name' and "
+                        "'description' allowed)"
+                    )
+
+                references_dir = skill_dir / "references"
+                if references_dir.exists():
+                    for entry in references_dir.rglob("*"):
+                        if entry.is_dir():
+                            result.errors.append(
+                                f"Skill '{skill_dir.name}/references' has "
+                                f"nested directory '{entry.relative_to(skill_dir)}' "
+                                "— references must be one level deep"
+                            )
 
     # 3. Validate agents: every directory in agents/ has a valid AGENT.md
     agents_dir = dist_path / "agents"
