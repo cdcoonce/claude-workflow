@@ -36,17 +36,7 @@ Do NOT make any code changes. Do NOT start implementation. Your only job right n
 
 ## Engineering Preferences (use these to guide every recommendation)
 
-- DRY is important — flag repetition aggressively.
-- Well-tested code is non-negotiable; I'd rather have too many tests than too few.
-- I want code that's "engineered enough" — not under-engineered (fragile, hacky) and not over-engineered (premature abstraction, unnecessary complexity).
-- I err on the side of handling more edge cases, not fewer; thoughtfulness > speed.
-- Bias toward explicit over clever.
-- Minimal diff: achieve the goal with the fewest new abstractions and files touched.
-- Observability is not optional — new codepaths need logs, metrics, or traces.
-- Security is not optional — new codepaths need threat modeling.
-- Deployments are not atomic — plan for partial states, rollbacks, and feature flags.
-- ASCII diagrams in code comments for complex designs — Models (state transitions), Services (pipelines), Controllers (request flow), Modules (mixin behavior), Tests (non-obvious setup).
-- Diagram maintenance is part of the change — stale diagrams are worse than none.
+Load the Engineering Preferences section of [references/review-sections.md](references/review-sections.md#engineering-preferences) now — these preferences drive every recommendation from Step 0 onward, including the "map the reasoning to my engineering preferences" requirement below.
 
 ## Priority Hierarchy Under Context Pressure
 
@@ -54,138 +44,25 @@ Step 0 > System audit > Error/rescue map > Test diagram > Failure modes > Opinio
 
 Never skip Step 0, the system audit, the error/rescue map, or the failure modes section. These are the highest-leverage outputs.
 
-## PRE-REVIEW SYSTEM AUDIT (before Step 0)
+## Pre-Review System Audit (before Step 0)
 
-Before doing anything else, run a system audit. This is not the plan review — it is the context you need to review the plan intelligently.
+Before doing anything else, run a system audit — this is not the plan review, it is the context you need to review the plan intelligently. Run: `git log --oneline -30`, `git diff main --stat`, `git stash list`, a `TODO\|FIXME\|HACK\|XXX` grep, and a recently-modified-files listing. Then read CLAUDE.md and any `docs/plans/` docs. Map current system state, in-flight work (other PRs/branches/stashes), known pain points, and TODO/FIXME comments in touched files.
 
-Run the following commands:
-
-```bash
-git log --oneline -30                          # Recent history
-git diff main --stat                           # What's already changed
-git stash list                                 # Any stashed work
-grep -r "TODO\|FIXME\|HACK\|XXX" -l           # Known debt markers
-git log --diff-filter=M --name-only --pretty=format: -20 | sort -u | head -20  # Recently modified files
-```
-
-Then read CLAUDE.md and any existing architecture docs or plan files in `docs/plans/`. Map:
-
-- What is the current system state?
-- What is already in flight (other open PRs, branches, stashed changes)?
-- What are the existing known pain points most relevant to this plan?
-- Are there any FIXME/TODO comments in files this plan touches?
-
-### Grounding Workflow (scale to the target)
-
-For a large plan, a multi-document set, or docs that may contradict each other, do not review from the prose alone — run an adversarial grounding pass before Step 0 so you enter the review already knowing what the docs got wrong. Where a subagent-orchestration tool is available (e.g. Claude Code's Workflow), fan these lenses out in parallel; otherwise run them as sequential sub-analyses. Each lens reads the REAL artifacts on disk — the actual repos, configs, base images, sibling skills — not the doc's description of them, which is how it resolves the doc's own open questions instead of forwarding them:
-
-- **Contradiction & currency** — with multiple docs, map where they agree vs. diverge and determine which is authoritative (mtime, `git log --follow`, which one actually ran the measurements, outward-facing framing). Flag inconsistent titles/links and stale decision registers.
-- **Premise challenge** — attack the core premise (feeds 0A): alternative framings, "what if we did nothing," is there a real forcing function.
-- **Existing-code leverage** — map every sub-problem to existing code/infra on disk (feeds 0B); reading the real repos often answers the doc's escalated open questions directly.
-- **Failure-mode hunt** — landmines the plan did NOT name, and places where its own proposed fix is the hazard. Exclude findings already in the doc.
-- **Verification skeptic** — the load-bearing claims that are asserted, not verified; for each, the cheapest test and what breaks if it is false. A recorded blocker is a claim, not a fact — verify the measurement before building on it.
-
-Synthesize the lenses into the Step 0 brief. If any lens finds the doc set self-contradictory or a load-bearing claim unverified, that is a Step 0 finding, not a mid-review surprise.
-
-### Retrospective Check
-
-Check the git log for this branch. If there are prior commits suggesting a previous review cycle (review-driven refactors, reverted changes), note what was changed and whether the current plan re-touches those areas. Be MORE aggressive reviewing areas that were previously problematic. Recurring problem areas are architectural smells — surface them as architectural concerns.
-
-### Taste Calibration (EXPANSION mode only)
-
-Identify 2-3 files or patterns in the existing codebase that are particularly well-designed. Note them as style references for the review. Also note 1-2 patterns that are frustrating or poorly designed — these are anti-patterns to avoid repeating.
+For a large plan, a multi-document set, or docs that may contradict each other, run the adversarial grounding pass, retrospective check, and taste calibration described in the Pre-Review Grounding section of [references/review-sections.md](references/review-sections.md#pre-review-grounding--grounding-retrospective-and-taste-checks) before Step 0.
 
 Report findings before proceeding to Step 0.
 
 ## Step 0: Nuclear Scope Challenge + Mode Selection
 
-### 0A. Premise Challenge
+Work through 0A-0F in the Step 0 section of [references/review-sections.md](references/review-sections.md#step-0-nuclear-scope-challenge--mode-selection): premise challenge, existing-code leverage, dream-state mapping, mode-specific analysis (EXPANSION/HOLD/REDUCTION), temporal interrogation, and mode selection with context-dependent defaults.
 
-1. Is this the right problem to solve? Could a different framing yield a dramatically simpler or more impactful solution?
-2. What is the actual user/business outcome? Is the plan the most direct path to that outcome, or is it solving a proxy problem?
-3. What would happen if we did nothing? Real pain point or hypothetical one?
-
-### 0B. Existing Code Leverage
-
-1. What existing code already partially or fully solves each sub-problem? Map every sub-problem to existing code. Can we capture outputs from existing flows rather than building parallel ones?
-2. Is this plan rebuilding anything that already exists? If yes, explain why rebuilding is better than refactoring.
-
-### 0C. Dream State Mapping
-
-Describe the ideal end state of this system 12 months from now. Does this plan move toward that state or away from it?
-
-```
-  CURRENT STATE                  THIS PLAN                  12-MONTH IDEAL
-  [describe]          --->       [describe delta]    --->    [describe target]
-```
-
-### 0D. Mode-Specific Analysis
-
-**For SCOPE EXPANSION** — run all three:
-
-1. **10x check:** What's the version that's 10x more ambitious and delivers 10x more value for 2x the effort? Describe it concretely.
-2. **Platonic ideal:** If the best engineer in the world had unlimited time and perfect taste, what would this system look like? What would the user feel when using it? Start from experience, not architecture.
-3. **Delight opportunities:** What adjacent 30-minute improvements would make this feature sing? Things where a user would think "oh nice, they thought of that." List at least 3.
-
-**For HOLD SCOPE** — run this:
-
-1. **Complexity check:** If the plan touches more than 8 files or introduces more than 2 new classes/services, treat that as a smell and challenge whether the same goal can be achieved with fewer moving parts.
-2. What is the minimum set of changes that achieves the stated goal? Flag any work that could be deferred without blocking the core objective.
-
-**For SCOPE REDUCTION** — run this:
-
-1. **Ruthless cut:** What is the absolute minimum that ships value to a user? Everything else is deferred. No exceptions.
-2. What can be a follow-up PR? Separate "must ship together" from "nice to ship together."
-
-### 0E. Temporal Interrogation (EXPANSION and HOLD modes)
-
-Think ahead to implementation: What decisions will need to be made during implementation that should be resolved NOW in the plan?
-
-```
-  HOUR 1 (foundations):     What does the implementer need to know?
-  HOUR 2-3 (core logic):   What ambiguities will they hit?
-  HOUR 4-5 (integration):  What will surprise them?
-  HOUR 6+ (polish/tests):  What will they wish they'd planned for?
-```
-
-Surface these as questions for the user NOW, not as "figure it out later."
-
-### 0F. Mode Selection
-
-Present three options:
-
-1. **SCOPE EXPANSION:** The plan is good but could be great. Propose the ambitious version, then review that. Push scope up. Build the cathedral.
-2. **HOLD SCOPE:** The plan's scope is right. Review it with maximum rigor — architecture, security, edge cases, observability, deployment. Make it bulletproof.
-3. **SCOPE REDUCTION:** The plan is overbuilt or wrong-headed. Propose a minimal version that achieves the core goal, then review that.
-
-Context-dependent defaults:
-
-- Greenfield feature → default EXPANSION
-- Bug fix or hotfix → default HOLD SCOPE
-- Refactor → default HOLD SCOPE
-- Plan touching >15 files → suggest REDUCTION unless user pushes back
-- User says "go big" / "ambitious" / "cathedral" → EXPANSION, no question
-
-Once selected, commit fully. Do not silently drift.
+Once a mode is selected, commit fully. Do not silently drift.
 
 **STOP.** AskUserQuestion once per issue. Do NOT batch. Recommend + WHY. If no issues or fix is obvious, state what you'll do and move on — don't waste a question. Do NOT proceed until user responds.
 
 ## Review Sections (10 sections, after scope and mode are agreed)
 
-See [references/review-sections.md](references/review-sections.md) for the full 10-section review framework:
-
-1. Architecture Review
-2. Error & Rescue Map
-3. Security & Threat Model
-4. Data Flow & Interaction Edge Cases
-5. Code Quality Review
-6. Test Review
-7. Performance Review
-8. Observability & Debuggability Review
-9. Deployment & Rollout Review
-10. Long-Term Trajectory Review
-
-Each section ends with a STOP — AskUserQuestion once per issue, then wait for feedback.
+See [references/review-sections.md](references/review-sections.md) for the full 10-section review framework (Architecture, Error & Rescue Map, Security & Threat Model, Data Flow & Interaction Edge Cases, Code Quality, Test, Performance, Observability & Debuggability, Deployment & Rollout, Long-Term Trajectory). Each section ends with a STOP — AskUserQuestion once per issue, then wait for feedback.
 
 ## Required Outputs
 
@@ -217,31 +94,4 @@ Every AskUserQuestion MUST: (1) present 2-3 concrete lettered options, (2) state
 
 ## Mode Quick Reference
 
-```
-  ┌─────────────────────────────────────────────────────────────────┐
-  │                     MODE COMPARISON                             │
-  ├─────────────┬──────────────┬──────────────┬────────────────────┤
-  │             │  EXPANSION   │  HOLD SCOPE  │  REDUCTION         │
-  ├─────────────┼──────────────┼──────────────┼────────────────────┤
-  │ Scope       │ Push UP      │ Maintain     │ Push DOWN          │
-  │ 10x check   │ Mandatory    │ Optional     │ Skip               │
-  │ Platonic    │ Yes          │ No           │ No                 │
-  │ ideal       │              │              │                    │
-  │ Delight     │ 5+ items     │ Note if seen │ Skip               │
-  │ opps        │              │              │                    │
-  │ Complexity  │ "Is it big   │ "Is it too   │ "Is it the bare    │
-  │ question    │  enough?"    │  complex?"   │  minimum?"         │
-  │ Taste       │ Yes          │ No           │ No                 │
-  │ calibration │              │              │                    │
-  │ Temporal    │ Full (hr 1-6)│ Key decisions│ Skip               │
-  │ interrogate │              │  only        │                    │
-  │ Observ.     │ "Joy to      │ "Can we      │ "Can we see if     │
-  │ standard    │  operate"    │  debug it?"  │  it's broken?"     │
-  │ Deploy      │ Infra as     │ Safe deploy  │ Simplest possible  │
-  │ standard    │ feature scope│  + rollback  │  deploy            │
-  │ Error map   │ Full + chaos │ Full         │ Critical paths     │
-  │             │  scenarios   │              │  only              │
-  │ Phase 2/3   │ Map it       │ Note it      │ Skip               │
-  │ planning    │              │              │                    │
-  └─────────────┴──────────────┴──────────────┴────────────────────┘
-```
+See the Mode Quick Reference section of [references/review-sections.md](references/review-sections.md#mode-quick-reference) for the full EXPANSION vs HOLD SCOPE vs REDUCTION comparison table.
