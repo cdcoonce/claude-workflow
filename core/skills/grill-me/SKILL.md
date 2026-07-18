@@ -7,31 +7,11 @@ description: Interview the user relentlessly about a plan or design until reachi
 
 ## Philosophy
 
-The purpose of grilling is to build **shared understanding** between the agent and the user. Every plan contains implicit assumptions, unstated constraints, and ambiguous decisions. Grilling walks through every branch of the decision tree, one by one, until both parties are fully aligned.
-
-The goal is zero unexamined assumptions before implementation begins.
-
-## Prime Directives
-
-1. **Use AskUserQuestion for every question.** All interrogation questions must go through the `AskUserQuestion` tool. Never output a question as plain text.
-2. **Batch within domains.** Group up to 4 related questions within the same interrogation domain into a single `AskUserQuestion` call. Never mix questions from different domains in one call.
-3. **Lead with your recommendation.** Your recommended answer is always the first option, with `(Recommended)` appended to the label.
-4. **Explore before asking.** If a question can be answered by reading the codebase, reading docs, or checking existing patterns — do that instead of asking. Only ask the user about decisions that require their judgment.
-5. **Resolve dependencies in order.** Some decisions depend on others. Identify the dependency chain and resolve upstream decisions first.
-6. **Track everything with structured records.** Maintain a decisions log as a structured table. For each resolved question, record: domain, topic (header), selected option label, and any custom text if 'Other' was chosen. Present the log in conversation context — no file I/O.
-7. **No assumptions survive.** If something is implied but not stated, surface it. If something seems obvious, confirm it. Shared understanding means explicit agreement, not comfortable silence.
-8. **Stay concrete.** Frame questions around specific behaviors, data flows, and user-visible outcomes — not abstract concepts.
+The purpose of grilling is to build **shared understanding** between the agent and the user. Every plan contains implicit assumptions, unstated constraints, and ambiguous decisions. Grilling walks through every branch of the decision tree, one by one, until both parties are fully aligned. The goal is zero unexamined assumptions before implementation begins.
 
 ## Pre-Interrogation Setup
 
-Before asking any questions, build context silently:
-
-1. Read the plan or design document the user wants grilled
-2. Explore the codebase for existing patterns, constraints, and relevant code
-3. Check recent git history for context on current work
-4. Read project.md and CLAUDE.md for project conventions
-
-Then present a brief summary of what you understand so far, organized by the interrogation domains. This gives the user a chance to correct major misunderstandings before diving into branch-by-branch questioning.
+Before asking any questions, build context silently: read the plan or design document, explore the codebase for existing patterns and constraints, check recent git history for context, and read project.md and CLAUDE.md for conventions. Then present a brief summary of what you understand, organized by interrogation domain, so the user can correct major misunderstandings before branch-by-branch questioning begins.
 
 ## Interrogation Domains
 
@@ -39,144 +19,41 @@ Work through the domains defined in [references/interrogation-domains.md](refere
 
 ## Interrogation Process
 
-```
-1. Read and summarize your understanding of the plan
-2. User confirms or corrects the summary
-3. For each interrogation domain (ordered by relevance):
-   a. Identify all decision points and assumptions in this domain
-   b. Group related decision points into batches of up to 4 questions
-   c. For each batch, invoke a single AskUserQuestion call
-      (recommendation first for each question). Record all selected options.
-   d. After resolving all points in a domain, summarize decisions made
-      Present the domain's decisions as rows in the structured table format.
-4. After all domains are covered:
-   - Present the complete decisions log as a structured table:
-     | # | Domain | Topic | Decision | Notes |
-     |---|--------|-------|----------|-------|
-     | 1 | Intent | Goal  | Other | Internal dashboard for ops team, not customer-facing |
-   - Flag any unresolved or deferred items
-   - Ask if any domain needs revisiting
-```
+1. Read and summarize your understanding of the plan; the user confirms or corrects it.
+2. For each interrogation domain, ordered by relevance: identify all decision points and assumptions in that domain, group related ones into batches of up to 4 questions, invoke one `AskUserQuestion` call per batch (recommendation first, every selected option recorded).
+3. After resolving all points in a domain, summarize its decisions as rows in the decisions log below.
+4. After all domains are covered: present the complete decisions log, flag any unresolved or deferred items, and ask if any domain needs revisiting.
 
-## Question Format
+Decisions log format:
 
-Every question MUST be asked via the `AskUserQuestion` tool. Structure each call as follows:
+| #   | Domain | Topic | Decision | Notes                                                |
+| --- | ------ | ----- | -------- | ---------------------------------------------------- |
+| 1   | Intent | Goal  | Other    | Internal dashboard for ops team, not customer-facing |
 
-```json
-{
-  "question": "When the Oura API returns a 429, how should we handle rate limiting?",
-  "header": "Rate Limits",
-  "options": [
-    {
-      "label": "Exponential backoff (Recommended)",
-      "description": "Retry with exponential backoff (1s, 2s, 4s). Handles transient limits gracefully and matches the retry pattern already used in src/api_client.py."
-    },
-    {
-      "label": "Queue for next run",
-      "description": "Skip the request and add it to the next scheduled run. Simpler but delays data by one cycle."
-    }
-  ],
-  "multiSelect": false
-}
-```
+## Directives
 
-**Depends on:** State any prior decisions this builds on in the `question` text, or note "No dependencies" if standalone.
+1. **Use `AskUserQuestion` for every question.** Never output a question as plain text.
+2. **Batch within domains.** Up to 4 related questions from the same domain per call; never mix domains in one call.
+3. **Lead with your recommendation.** First option always carries `(Recommended)` in its label.
+4. **Explore before asking.** If the codebase, docs, or existing patterns answer it, don't ask — only ask what requires the user's judgment.
+5. **Resolve dependencies in order.** Identify the dependency chain among decisions and resolve upstream ones first. State the dependency (or "No dependencies") in each question's text.
+6. **Track everything.** Maintain a decisions log table (domain, topic, selected option label, custom text if 'Other') in conversation context — no file I/O.
+7. **No assumptions survive.** Surface anything implied but unstated; confirm anything that seems obvious. Shared understanding means explicit agreement, not comfortable silence.
+8. **Stay concrete.** Frame questions around specific behaviors, data flows, and user-visible outcomes — not abstractions. "How should we handle errors?" is too vague; "When the Oura API returns a 429, retry with backoff or queue for next run?" is specific.
+9. **Respect tool constraints.** 2-4 options per question, headers max 12 characters, `multiSelect: true` only when options aren't mutually exclusive.
+10. **Filter options.** When more than 4 valid choices exist, present the 3 most relevant based on codebase context; the user can pick "Other" for anything else.
+11. **Show your work.** If a recommendation comes from the codebase, cite the file and line.
+12. **Accept the answer.** Record the decision and move on — don't re-litigate unless a later decision conflicts with it.
 
-### Batched questions example
+See [references/interrogation-domains.md](references/interrogation-domains.md) for full `AskUserQuestion` JSON examples — single question, batched questions, and preview usage.
 
-```json
-{
-  "questions": [
-    {
-      "question": "What is the primary deployment target?",
-      "header": "Deploy",
-      "options": [
-        {
-          "label": "Docker + ECS (Recommended)",
-          "description": "Matches existing infra. Deployment pipeline already exists."
-        },
-        {
-          "label": "Kubernetes",
-          "description": "More flexible but requires new infra setup."
-        },
-        {
-          "label": "Serverless",
-          "description": "Lower ops burden but cold start latency concerns."
-        }
-      ],
-      "multiSelect": false
-    },
-    {
-      "question": "Which monitoring approaches should we include?",
-      "header": "Monitoring",
-      "options": [
-        {
-          "label": "Structured logging (Recommended)",
-          "description": "JSON logs to CloudWatch. Searchable and alertable."
-        },
-        {
-          "label": "APM traces",
-          "description": "Distributed tracing for request flow visibility."
-        },
-        {
-          "label": "Custom metrics",
-          "description": "Business-specific counters and gauges in Datadog."
-        }
-      ],
-      "multiSelect": true
-    }
-  ]
-}
-```
+## Previews
 
-### Using previews
+Use the `preview` field on options when the user needs to visually compare concrete artifacts — code snippets, architecture diagrams, schema shapes, or configuration examples. Previews render as markdown in a monospace box with side-by-side comparison. Previews are single-select only (`multiSelect: false`); if you need multi-select, omit previews and use descriptions instead.
 
-Use the `preview` field on options when the user needs to visually compare concrete artifacts — code snippets, architecture diagrams, schema shapes, or configuration examples. Preview content renders as markdown in a monospace box with side-by-side comparison.
+## Fallback (no `AskUserQuestion` available)
 
-**When to use previews:**
-
-- Comparing two code patterns or implementations
-- Showing different schema shapes or data structures
-- Presenting architecture alternatives with ASCII diagrams
-
-**Constraint:** Previews are single-select only (`multiSelect: false`). If you need multi-select, omit previews and use descriptions instead.
-
-Example with previews:
-
-```json
-{
-  "question": "Which pattern should we use for the data pipeline?",
-  "header": "Pipeline",
-  "options": [
-    {
-      "label": "Generator pipeline (Recommended)",
-      "description": "Lazy evaluation, memory-efficient for large datasets.",
-      "preview": "def pipeline(source):\n    for record in source:\n        cleaned = clean(record)\n        validated = validate(cleaned)\n        yield validated"
-    },
-    {
-      "label": "Batch pipeline",
-      "description": "Processes all records at once. Simpler but higher memory usage.",
-      "preview": "def pipeline(source):\n    records = list(source)\n    cleaned = [clean(r) for r in records]\n    validated = [validate(r) for r in cleaned]\n    return validated"
-    }
-  ],
-  "multiSelect": false
-}
-```
-
-## Rules for Asking Questions
-
-- **Use AskUserQuestion for every question.** Period.
-- **First option = recommendation.** The first option always has `(Recommended)` in the label.
-- **Batch related questions.** Group up to 4 related questions from the same domain into one AskUserQuestion call. Cross-domain questions must be separate calls.
-- **Respect tool constraints.** 2-4 options per question. Headers max 12 characters. Use `multiSelect: true` when options are not mutually exclusive (e.g., 'Which testing approaches should we use?' or 'Which domains need coverage?').
-- **Filter options.** When more than 4 valid choices exist, present the 3 most relevant based on codebase context. Users select "Other" for anything not listed.
-- **Be specific.** "How should we handle errors?" is too vague. "When the Oura API returns a 429, should we retry with backoff or queue for the next run?" is specific.
-- **Show your work.** If your recommendation is based on something you found in the codebase, reference the file and line.
-- **Accept the answer.** When the user decides, record it and move on. Don't re-litigate unless a later decision creates a conflict with a prior one.
-
-## Fallback (no AskUserQuestion available)
-
-If AskUserQuestion is not available in the runtime environment, fall back to this text format:
+If `AskUserQuestion` is not available in the runtime environment, fall back to this text format:
 
 **[Header] — [Topic]**
 

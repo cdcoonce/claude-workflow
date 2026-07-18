@@ -55,7 +55,6 @@ SKILL_LINE_CAP_ALLOWLIST = frozenset(
         "dev-cycle",
         "dignified-python",
         "github-cli",
-        "grill-me",
         "project-context",
     }
 )
