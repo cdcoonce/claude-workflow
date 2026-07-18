@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 presets/claude-tooling/hooks/post-edit-lint.py"
+            "command": "python3 presets/workbench/hooks/post-edit-lint.py"
           }
         ]
       }
