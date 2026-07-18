@@ -89,19 +89,5 @@ A concise description of this vertical slice. Describe the end-to-end behavior, 
 - [ ] Criterion 2
 - [ ] Criterion 3
 
----
-
-## Phase 2: <Title>
-
-**User stories**: <list from PRD>
-
-### What to build
-
-...
-
-### Acceptance criteria
-
-- [ ] ...
-
-<!-- Repeat for each phase -->
+<!-- Repeat the "## Phase N" block above (separated by a `---` rule) for each phase -->
 </plan-template>
