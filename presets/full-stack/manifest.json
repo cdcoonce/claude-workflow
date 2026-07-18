@@ -14,19 +14,12 @@
       "verify-tests-before-stop.py",
       "snapshot-subagent-start.py",
       "verify-subagent-evidence.py",
-      "audit-config-change.py"
+      "audit-config-change.py",
+      "inject-skill-router.py"
     ]
   },
   "exclude": [],
-  "preset_skills": [
-    "react-ui-ux"
-  ],
-  "preset_hooks": [
-    "post-edit-lint.py"
-  ],
-  "preset_agents": [
-    "frontend-builder",
-    "backend-builder",
-    "ux-reviewer"
-  ]
+  "preset_skills": ["react-ui-ux"],
+  "preset_hooks": ["post-edit-lint.py"],
+  "preset_agents": ["frontend-builder", "backend-builder", "ux-reviewer"]
 }

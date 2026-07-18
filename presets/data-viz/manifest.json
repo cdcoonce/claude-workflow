@@ -1,6 +1,6 @@
 {
   "name": "data-viz",
-  "description": "Intuitive, context-forward chart design in React (Recharts/Nivo) \u2014 right chart type for the data, guided insight over decoration",
+  "description": "Intuitive, context-forward chart design in React (Recharts/Nivo) — right chart type for the data, guided insight over decoration",
   "conventions": [
     "Chart type follows the data, not the default",
     "Restrained, accessible color palettes",
@@ -14,13 +14,12 @@
       "verify-tests-before-stop.py",
       "snapshot-subagent-start.py",
       "verify-subagent-evidence.py",
-      "audit-config-change.py"
+      "audit-config-change.py",
+      "inject-skill-router.py"
     ]
   },
   "exclude": [],
-  "preset_skills": [
-    "chart-taste"
-  ],
+  "preset_skills": ["chart-taste"],
   "preset_hooks": [],
   "preset_agents": []
 }

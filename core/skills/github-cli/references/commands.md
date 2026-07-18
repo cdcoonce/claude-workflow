@@ -402,35 +402,24 @@ gh alias delete co
 
 ### Complete Feature Branch Workflow
 
+Create the branch, commit with the `commit` skill, then push and open a PR:
+
 ```bash
 # 1. Create feature branch from issue
 git checkout -b feature/issue-123-add-auth
 
-# 2. Make changes and commit
-git add .
-git commit -m "feat: add OAuth2 authentication
-
-Implements login flow with:
-- Google OAuth2 provider
-- Session management
-- Token refresh
-
-Closes #123"
-
-# 3. Push and create draft PR
+# 2. Push and create draft PR (after committing with the commit skill)
 git push -u origin feature/issue-123-add-auth
 gh pr create --draft --fill
 
-# 4. Continue working, push updates
-git add .
-git commit -m "fix: handle token expiration"
+# 3. Continue working, push updates (after committing with the commit skill)
 git push
 
-# 5. Mark ready for review
+# 4. Mark ready for review
 gh pr ready
 gh pr edit --add-reviewer "senior-dev"
 
-# 6. After approval, merge
+# 5. After approval, merge
 gh pr merge --squash --delete-branch
 ```
 

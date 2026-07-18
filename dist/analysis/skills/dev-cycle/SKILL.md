@@ -25,7 +25,19 @@ Every phase is mandatory. No phase can be skipped.
 | 4   | **Issues**      | Orchestrator (plan slices → GitHub issues)             | All issue URLs recorded           |
 | 5   | **Implement**   | Orchestrator (`tdd` per issue, `subagent-development`) | All issues resolved, tests pass   |
 | 6   | **Code Review** | `daa-code-review`                                      | Clean review                      |
-| 7   | **PR**          | `commit` + `github-cli`                                | PR URL recorded                   |
+| 7   | **PR**          | `commit` + `finish-branch`                             | PR URL recorded                   |
+
+### Excuse → Reality: Skipping a Phase
+
+Every one of these is a rationalization for skipping mandatory work, not a legitimate exception:
+
+| Excuse                                              | Reality                                                                                                     |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| "This feature is too small for a PRD"               | Small features are where unexamined assumptions cost most; the PRD can be 5 lines but it must exist.        |
+| "The plan is obvious, skip CEO Review"              | "Obvious" plans are exactly where a second pass catches scope creep or a missed edge case cheaply.          |
+| "I'll write the issue and implement it in one step" | Skipping Phase 4 means no acceptance criteria exist to implement against or verify later.                   |
+| "Code review can happen after the PR is open"       | Phase 6 exists to catch issues before they're public; deferring it just moves the fix into review comments. |
+| "This is a hotfix, the pipeline doesn't apply"      | Hotfixes still need a record of what changed and why — use the same phases, compressed, not skipped.        |
 
 ## Re-entry Logic
 
@@ -100,6 +112,8 @@ Log per-subagent events:
 - `"Subagent completed for issue #N: {pass/fail}"`
 - `"Code review after issue #N: {clean/blocking issues found}"`
 
+**Escalation threshold:** After 3 failed fix attempts on the same issue, stop retrying. A 4th attempt at the same fix is not more diligence, it's a sign the architecture is wrong for the problem. Question the approach, then ask the human before continuing.
+
 ### Phase 6: Code Review
 
 Invoke `daa-code-review` against all changed files on the feature branch. If blocking issues found → fix, re-run. Loop until clean.
@@ -108,7 +122,10 @@ If architectural issues requiring plan rework → trigger backwards transition t
 
 ### Phase 7: MR
 
-Check for conflicts with default branch first. Invoke `commit` for conventional commit, then `github-cli` to open PR. Include `Closes #N` for the PRD issue and all implementation issues in the PR description so GitHub auto-closes them on merge. Record PR URL, set `status: completed`. Then run the archival step (see Archival below).
+Invoke `commit` for a conventional commit, then hand off to `finish-branch`, which presents its four-option menu (merge locally, push + open PR, keep as-is, discard) and owns its own test-gate around any rebase or merge it performs.
+
+- **Push + open PR:** `finish-branch` invokes `github-cli` to open the PR. Include `Closes #N` for the PRD issue and all implementation issues in the PR description so GitHub auto-closes them on merge. Record PR URL, set `status: completed`. Then run the archival step (see Archival below).
+- **Merge locally / keep / discard:** These paths do not produce a PR URL, so there is no PR URL to record. Set `status: completed` or `status: abandoned` as appropriate per the existing Archival section (merge locally and keep-as-is are `completed`; discard is `abandoned`), then run the archival step.
 
 ## State File
 

@@ -39,6 +39,7 @@ See the 7-Phase Pipeline table in SKILL.md for delegation targets. This document
   - If branch already exists and belongs to this feature (per state file): check it out
   - If branch exists but is unrecognized: error, ask user to resolve
 - **Handoff:** Load plan file. Dispatch one subagent per issue following `subagent-development` methodology, each invoking `tdd`. Code review between each dispatch.
+- **Model (required):** Every dispatch — implementer and reviewer — must set `model` explicitly per the rubric in `.claude/docs/agent-matching.md#model-selection`. An omitted model silently inherits the orchestrator's own model. Implementer dispatches default to `mid`; reviewer dispatches never go below `mid`.
 - **State updates:** After each subagent completes:
   - Log dispatch and result: `"Subagent completed for issue #N: pass/fail"`
   - Log code review result: `"Code review after issue #N: clean/blocking"`
@@ -55,14 +56,12 @@ See the 7-Phase Pipeline table in SKILL.md for delegation targets. This document
 ## Code Review → PR
 
 - **Validate:** Code review passed with no blocking issues
-- **Conflict check:** Before PR creation:
-  - Check for conflicts with default branch (via `gh repo view --json defaultBranchRef`)
-  - If conflicts exist: rebase or merge default branch, resolve conflicts
-  - If a PR already exists for this branch: update it instead of creating duplicate
-- **Handoff:** Invoke `commit` for conventional commit, then `github-cli` to open PR
-- **Record:** PR URL in artifacts table, set feature `status: completed`
+- **Handoff:** Invoke `commit` for a conventional commit, then hand off to `finish-branch`. `finish-branch` owns the merge/PR/keep/discard decision, presents its own four-option menu, and runs its own test-gate around any rebase or merge it performs — the orchestrator does not check for conflicts or invoke `github-cli` directly.
+- **Post-rebase/merge re-test (required):** Whenever `finish-branch` performs a rebase or merge (its "merge locally" and "push + open PR" options), the full project test suite must be green on the resulting tree before this phase counts as complete. This is not optional bookkeeping: `core/hooks/verify-tests-before-stop.py` only fingerprints uncommitted working-tree changes (`git status --porcelain` plus file contents), so a rebase that already landed as a clean commit leaves no uncommitted diff for the stop hook to hash — it will not detect that the tree changed and cannot catch a stale or unverified rebase on its own. The orchestrator must confirm the re-test ran and passed rather than relying on the stop hook to catch a skipped one.
+- **Record (push + open PR):** PR URL in artifacts table, set feature `status: completed`
+- **Record (merge locally / keep / discard):** No PR URL is produced. Set `status: completed` (merge locally, keep-as-is) or `status: abandoned` (discard) per the existing Archival section.
 - **Archive:** Run archival step — `mkdir -p docs/archive/dev-cycle docs/archive/plans`, then `git mv` the state file to `docs/archive/dev-cycle/` and the plan file (read path from artifacts table) to `docs/archive/plans/`. Commit with `chore(dev-cycle): archive {slug}`.
-- **Failure:** If PR creation fails (no remote, auth error), set phase to `blocked`
+- **Failure:** If `finish-branch`'s post-rebase/merge re-test is red, treat the phase as `blocked` — do not record a PR URL or run archival. If PR creation fails (no remote, auth error), set phase to `blocked`.
 
 ---
 
