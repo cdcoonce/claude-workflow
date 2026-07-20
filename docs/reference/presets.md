@@ -10,7 +10,7 @@ Every preset the marketplace can install, with the skills, agents, hooks, and co
 | Preset | Kind | Skills | Agents | Conventions |
 | --- | --- | --- | --- | --- |
 | **`vault-ops`** | project | 21 | 0 | Frontmatter on every note; Wikilinks over bare references; Rebase-before-push git sync, refreshed handoff |
-| **`workbench`** | project | 31 | 16 | Test-driven development: write the failing test first; Regenerate docs and dist after changing any component; Progressive disclosure over monolithic instructions; Conventional commits; stage explicitly, never git add . |
+| **`workbench`** | project | 32 | 16 | Test-driven development: write the failing test first; Regenerate docs and dist after changing any component; Progressive disclosure over monolithic instructions; Conventional commits; stage explicitly, never git add . |
 | **`advisor-product-design`** | persona | 1 | 0 | Artifact-first: reviews anchor to who the user is and what they decide; Position first, cite the pack, yield only to user evidence; Base/tuning/private layering — local/ is the owner's, never the repo's |
 | **`advisor-product-strategy`** | persona | 1 | 0 | Owner drives: 2-3 structural questions, then a committed read in the same message; Steelman duty: the strongest opposing case before endorsing the owner's lean; Base/tuning/private layering — local/ is the owner's, never the repo's |
 | **`persona-pair-programmer`** | persona | 0 | 0 | — |
@@ -50,7 +50,7 @@ The complete Workshop toolkit — every skill, agent, methodology doc, and safet
 - Progressive disclosure over monolithic instructions
 - Conventional commits; stage explicitly, never git add .
 
-**Skills (31):** `add-the-workshop-hook`, `chart-taste`, `commit`, `create-hook`, `daa-code-review`, `dagster-expert`, `dbt-expert`, `deploy`, `design-an-interface`, `dev-cycle`, `dignified-python`, `finish-branch`, `github-cli`, `grill-me`, `improve-codebase-architecture`, `improve-skill`, `persona-builder`, `plan-ceo-review`, `prd-to-issues`, `prd-to-plan`, `project-context`, `react-ui-ux`, `readme-generator`, `request-refactor-plan`, `security-review`, `setup-pre-commit`, `tdd`, `triage-issue`, `using-workflow`, `write-a-prd`, `write-a-skill`
+**Skills (32):** `add-the-workshop-hook`, `chart-taste`, `commit`, `create-hook`, `daa-code-review`, `dagster-expert`, `dbt-expert`, `deploy`, `design-an-interface`, `dev-cycle`, `dignified-python`, `finish-branch`, `github-cli`, `gitlab-mr-create`, `grill-me`, `improve-codebase-architecture`, `improve-skill`, `persona-builder`, `plan-ceo-review`, `prd-to-issues`, `prd-to-plan`, `project-context`, `react-ui-ux`, `readme-generator`, `request-refactor-plan`, `security-review`, `setup-pre-commit`, `tdd`, `triage-issue`, `using-workflow`, `write-a-prd`, `write-a-skill`
 
 **Agents (16):** `analysis-builder`, `api-builder`, `backend-builder`, `code-reviewer`, `data-quality-reviewer`, `frontend-builder`, `pipeline-builder`, `qa-tester`, `security-reviewer`, `skill-analyst`, `skill-builder`, `skill-reviewer`, `skill-writer`, `strategy`, `tdd-implementer`, `ux-reviewer`
 

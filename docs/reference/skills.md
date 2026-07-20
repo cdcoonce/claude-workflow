@@ -46,6 +46,7 @@ Every skill available in the plugin, parsed from each skill's `SKILL.md` frontma
 | `/dagster-expert` | Expert guidance for working with Dagster and the dg CLI. | workbench |
 | `/dbt-expert` | Expert guidance for working with dbt Core. | workbench |
 | `/deploy` | Deploy the portfolio chat agent Lambda function to AWS. | workbench |
+| `/gitlab-mr-create` | Create GitLab merge requests with `glab` using the `HEAD` conventional-commit subject as the exact title, a Markdown description file with real newlines, and API read-back verification. | workbench |
 | `/react-ui-ux` | Applies deliberate design taste to React UI generation — adjustable dials (variance, motion, density) and explicit anti-genericness rules to stop AI-generated components from defaulting to the generic shadcn/Tailwind look. | workbench |
 | `/vault-audit` | Run Charles's My Brain /vault-audit structural audit across frontmatter, wikilinks, indexes, stale notes, duplicates, and templates. | vault-ops |
 | `/vault-budget` | Run Charles's My Brain /budget spend and subscription-value meter from local Claude transcripts. | vault-ops |
@@ -262,6 +263,12 @@ Expert guidance for working with dbt Core. ALWAYS use before doing any task that
 *`workbench` preset*
 
 Deploy the portfolio chat agent Lambda function to AWS. Use when the user asks to deploy, redeploy, push to Lambda, update the chat agent, or after updating context files or lambda_function.py. Rebuilds the knowledge base, packages dependencies, and deploys to AWS Lambda.
+
+### `/gitlab-mr-create`
+
+*`workbench` preset*
+
+Create GitLab merge requests with `glab` using the `HEAD` conventional-commit subject as the exact title, a Markdown description file with real newlines, and API read-back verification. Use whenever creating a GitLab merge request.
 
 ### `/react-ui-ux`
 
