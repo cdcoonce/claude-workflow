@@ -1,0 +1,48 @@
+# Mirror GitHub -> GitLab so both hosts stay in sync and GitLab's independent
+# CI always has current code to gate. Runs after a push lands on main or dev.
+#
+# Best-effort by design: if the sync token/target aren't configured yet, the
+# job logs a notice and exits 0 so it never blocks the required `test` gate.
+# Non-force push: if GitLab has diverged (someone pushed there directly), the
+# push fails loudly rather than silently clobbering that work — the correct
+# signal for two independently-developed hosts.
+#
+# One-time setup:
+#   1. GitLab: create a Project Access Token on the mirror project with the
+#      `write_repository` scope (Settings -> Access Tokens; role Maintainer).
+#   2. GitHub: repo Settings -> Secrets and variables -> Actions:
+#        - Secret    GITLAB_MIRROR_TOKEN = <the token value>
+#        - Variable  GITLAB_PATH         = Charles.Coonce/the-workshop
+name: mirror-to-gitlab
+
+on:
+  push:
+    branches: [main, dev]
+
+concurrency:
+  group: mirror-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history + tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push branch and tags to GitLab
+        env:
+          TOKEN: ${{ secrets.GITLAB_MIRROR_TOKEN }}
+          GITLAB_PATH: ${{ vars.GITLAB_PATH }}
+        run: |
+          if [ -z "$TOKEN" ] || [ -z "$GITLAB_PATH" ]; then
+            echo "::notice::GITLAB_MIRROR_TOKEN secret or GITLAB_PATH variable not set — skipping mirror."
+            exit 0
+          fi
+          branch="${GITHUB_REF_NAME}"
+          remote="https://oauth2:${TOKEN}@gitlab.com/${GITLAB_PATH}.git"
+          echo "Mirroring ${branch} + tags to gitlab.com/${GITLAB_PATH}"
+          git push "$remote" "HEAD:refs/heads/${branch}"
+          git push "$remote" --tags
