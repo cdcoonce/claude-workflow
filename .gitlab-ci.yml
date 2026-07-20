@@ -1,0 +1,34 @@
+# GitLab CI — the GitLab-side independent gate.
+#
+# Mirrors the GitHub Actions gate exactly: one `make test` invocation runs the
+# root pytest suite, the daa-code-review analyzer suite, and the generated
+# docs/dist drift check. Runs on `dev`, `main`, and every merge request.
+#
+# Auth: this job needs no minted token — it uses GitLab's automatic
+# CI_JOB_TOKEN for the checkout.
+#
+# Prerequisite: enable Shared Runners on the project
+# (Settings -> CI/CD -> Runners). GitLab.com's free tier includes CI minutes.
+
+stages:
+  - test
+
+# Gate the whole pipeline to the branches we care about, so pushes to unrelated
+# branches don't burn runner minutes. Merge requests always run.
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+
+test:
+  stage: test
+  image: python:3.12
+  before_script:
+    # The full test target shells out to `make` (recursive) and `git`; install
+    # both, then uv for the Python toolchain.
+    - apt-get update -qq && apt-get install -y -qq --no-install-recommends make git
+    - pip install --quiet uv
+    - uv sync
+  script:
+    - make test
