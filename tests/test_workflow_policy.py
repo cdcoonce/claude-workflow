@@ -21,3 +21,15 @@ def test_workshop_declares_dev_first_promotion_path() -> None:
 
     assert "GitHub `dev` first" in instructions
     assert "Never push directly to `main`" in instructions
+
+
+def test_router_requires_policy_resolution_and_afk_mode() -> None:
+    """The universal router must work unattended without assuming CI policy."""
+    repository_root = Path(__file__).resolve().parents[1]
+    router = " ".join(
+        (repository_root / "core/skills/using-workflow/SKILL.md").read_text().split()
+    )
+
+    assert "Resolve repository policy before selecting an integration workflow." in router
+    assert "AFK / unattended" in router
+    assert "capability gap" in router
