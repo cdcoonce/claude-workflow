@@ -5,10 +5,21 @@ import json
 import sys
 from pathlib import PurePath
 
-data = json.load(sys.stdin)
-file_path = data.get("tool_input", {}).get("file_path", "")
+try:
+    data = json.load(sys.stdin)
+except (json.JSONDecodeError, ValueError):
+    # Fail open: an unparseable payload names no file, so there is nothing
+    # to protect — never surface an error on an unrelated edit.
+    sys.exit(0)
 
-if not file_path:
+if not isinstance(data, dict):
+    # Fail open: a payload that isn't a JSON object isn't ours to act on.
+    sys.exit(0)
+
+tool_input = data.get("tool_input")
+file_path = tool_input.get("file_path", "") if isinstance(tool_input, dict) else ""
+
+if not isinstance(file_path, str) or not file_path:
     sys.exit(0)
 
 PROTECTED_DIRS = ["node_modules", ".git"]

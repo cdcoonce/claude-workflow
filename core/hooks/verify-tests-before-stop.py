@@ -28,6 +28,10 @@ try:
 except json.JSONDecodeError:
     sys.exit(0)
 
+if not isinstance(data, dict):
+    # Fail open: a payload that isn't a JSON object isn't ours to act on.
+    sys.exit(0)
+
 # Claude Code sets this once it has already blocked a Stop to force a
 # continuation loop. Codex/CoCo may never send it — absence just means
 # "not currently in a continuation loop," so default to False.

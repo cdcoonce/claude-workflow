@@ -17,6 +17,10 @@ try:
 except json.JSONDecodeError:
     # Fail open: a malformed/empty stdin payload should no-op, not traceback.
     sys.exit(0)
+
+if not isinstance(data, dict):
+    # Fail open: a payload that isn't a JSON object isn't ours to act on.
+    sys.exit(0)
 file_path = data.get("tool_input", {}).get("file_path", "")
 
 if not file_path:
