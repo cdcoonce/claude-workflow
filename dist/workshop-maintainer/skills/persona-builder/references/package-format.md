@@ -37,10 +37,10 @@ presets/advisor-<role>/
 ```
 
 The persona's SKILL.md instructs it, at session start, to read (creating if absent)
-the local overlay directory next to its install:
+the owner's store, which lives **outside the install**:
 
 ```
-<install>/local/
+~/.workshop/personas/<preset>/
 ├── tuning.md                  # overrides — read AFTER base spec, wins on conflict
 ├── preferences.md             # in-flight correction log
 └── memory/
@@ -48,8 +48,24 @@ the local overlay directory next to its install:
     ├── projects/  people/  decisions/  threads/
 ```
 
-`local/` is gitignored territory by construction — it exists only on the owner's
-machine.
+This is gitignored territory by construction — it exists only on the owner's
+machine — and it must **never** sit inside the install. `claude plugin install`
+caches plugins at `<cache>/<marketplace>/<preset>/<version>/`, and an update
+writes a _sibling_ version directory rather than reusing one. An overlay stored
+next to the install therefore does not travel: it is stranded in the old version
+dir while the new install starts empty. Preserving it across reinstall does not
+help, because the cache never reuses a destination.
+
+Storing it under `~/.workshop/` (the machine-local convention in CLAUDE.md) makes
+updates, uninstalls, and manual cache deletion all incapable of touching it.
+
+Packages built before this rule ship the `migrate-persona-local.py` SessionStart
+hook, which copies a version-dir `local/` to the store once, leaves the original
+in place as a backup, and tells the owner where it went.
+
+**Do not ship a change to the install/update path without the layering test
+passing** (`tests/test_installer_layering.py`) or, for the store location, the
+migration test (`tests/test_migrate_persona_local_hook.py`).
 
 ## Owner guide (README.md) — required in every package
 

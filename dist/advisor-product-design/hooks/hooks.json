@@ -1,3 +1,15 @@
 {
-  "hooks": {}
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact|fork",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}\"/hooks/run-hook.sh migrate-persona-local.py"
+          }
+        ]
+      }
+    ]
+  }
 }
