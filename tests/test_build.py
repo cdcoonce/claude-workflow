@@ -749,6 +749,38 @@ class TestBuildPresetAgentValidation:
             build_preset("python-api", repo_root=tmp_repo)
 
 
+class TestConventionsValidation:
+    """`conventions` must be a list of strings — build_docs' copy of this check
+    was covered, build_preset's was not."""
+
+    def _with_conventions(self, tmp_repo: Path, value: object) -> None:
+        manifest_path = tmp_repo / "presets" / "python-api" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["conventions"] = value
+        manifest_path.write_text(json.dumps(manifest))
+
+    def test_non_list_conventions_fails(self, tmp_repo: Path) -> None:
+        self._with_conventions(tmp_repo, "Lowercase SQL")
+
+        with pytest.raises(BuildValidationError, match="conventions must be a list"):
+            build_preset("python-api", repo_root=tmp_repo)
+
+    def test_non_string_element_in_conventions_fails(self, tmp_repo: Path) -> None:
+        self._with_conventions(tmp_repo, ["Lowercase SQL", {"rule": "Idempotent"}])
+
+        with pytest.raises(BuildValidationError, match="conventions must be a list"):
+            build_preset("python-api", repo_root=tmp_repo)
+
+    def test_list_of_strings_is_accepted(self, tmp_repo: Path) -> None:
+        """The guard must not reject the valid shape it exists to protect."""
+        self._with_conventions(tmp_repo, ["Lowercase SQL", "Idempotent stages"])
+
+        build_preset("python-api", repo_root=tmp_repo)
+
+        conventions = tmp_repo / "dist" / "python-api" / "conventions.json"
+        assert "Lowercase SQL" in conventions.read_text()
+
+
 class TestManifestRequiredFields:
     """Validation for manifest.json required top-level fields."""
 
