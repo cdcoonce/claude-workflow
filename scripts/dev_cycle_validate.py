@@ -20,7 +20,12 @@ VALID_ARTIFACT_STATUSES = ("pending", "in_progress", "completed", "blocked")
 CURRENT_SCHEMA_VERSION = 1
 
 _FRONTMATTER_RE = re.compile(r"\A---\n(.+?)\n---", re.DOTALL)
-_FIELD_RE = re.compile(r"^(\w+):\s*(.+?)(?:\s*#.*)?$", re.MULTILINE)
+# A trailing `# comment` counts only when whitespace precedes the `#`. With
+# `\s*` the optional comment group matches at the first `#` anywhere in the
+# value — the lazy `(.+?)` stops there — so `branch: fix/issue-#123` parsed as
+# `fix/issue-`, silently dropping the issue number. Matches the `\s+#` rule
+# smoke_test._parse_frontmatter already uses.
+_FIELD_RE = re.compile(r"^(\w+):\s*(.+?)(?:\s+#.*)?$", re.MULTILINE)
 _ARTIFACT_ROW_RE = re.compile(
     r"^\|\s*(\w+)\s*\|\s*(\w+)\s*\|\s*(.+?)\s*\|$", re.MULTILINE
 )
