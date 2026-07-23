@@ -22,8 +22,16 @@
     ]
   },
   "exclude": [],
-  "preset_skills": ["dagster-expert", "dbt-expert", "chart-taste", "react-ui-ux", "deploy", "gitlab-mr-create"],
-  "preset_hooks": ["post-edit-lint.py"],
+  "preset_skills": [
+    "dagster-expert",
+    "dbt-expert",
+    "chart-taste",
+    "react-ui-ux",
+    "gitlab-mr-create"
+  ],
+  "preset_hooks": [
+    "post-edit-lint.py"
+  ],
   "preset_agents": [
     "analysis-builder",
     "pipeline-builder",
