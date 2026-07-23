@@ -44,7 +44,6 @@ Every skill available in the plugin, parsed from each skill's `SKILL.md` frontma
 | `/chart-taste` | Applies chart-design taste to React data visualization — a chart-type decision tree and adjustable dials (annotation density, complexity, color restraint) to stop charts from being technically-rendered-but-uninformative. | workbench |
 | `/dagster-expert` | Expert guidance for working with Dagster and the dg CLI. | workbench |
 | `/dbt-expert` | Expert guidance for working with dbt Core. | workbench |
-| `/deploy` | Deploy the portfolio chat agent Lambda function to AWS. | workbench |
 | `/gitlab-mr-create` | Create GitLab merge requests with `glab` using the `HEAD` conventional-commit subject as the exact title, a Markdown description file with real newlines, and API read-back verification. | workbench |
 | `/improve-skill` | Use when user says "improve skill", "benchmark skill", "make skill better", or invokes /improve-skill to raise a skill's benchmark pass rate before merging a PR. | workshop-maintainer |
 | `/persona-builder` | Build an installable, portable, self-tuning coach/sounding-board persona for a named owner. | workshop-maintainer |
@@ -254,12 +253,6 @@ Expert guidance for working with Dagster and the dg CLI. ALWAYS use before doing
 *`workbench` preset*
 
 Expert guidance for working with dbt Core. ALWAYS use before doing any task that requires knowledge specific to dbt, including building or modifying models, writing SQL transformations, configuring tests, running dbt CLI commands, or working with dbt project structure. Common triggers include references to dbt, models, ref(), source(), materializations, seeds, snapshots, dbt build/run/test, YAML schema files, or analytics engineering patterns.
-
-### `/deploy`
-
-*`workbench` preset*
-
-Deploy the portfolio chat agent Lambda function to AWS. Use when the user asks to deploy, redeploy, push to Lambda, update the chat agent, or after updating context files or lambda_function.py. Rebuilds the knowledge base, packages dependencies, and deploys to AWS Lambda.
 
 ### `/gitlab-mr-create`
 
