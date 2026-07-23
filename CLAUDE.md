@@ -109,6 +109,12 @@ before a second category of skill could diverge from it.
 This repo **integrates on GitHub**. The GitLab remote is a one-way downstream
 mirror — never push or merge the-workshop on GitLab.
 
+- **`origin` is GitHub; `gitlab` is the mirror.** Confirm with `git remote -v`
+  before branching — do not assume, and do not trust `origin` to be the
+  integration remote in a clone you did not configure. A clone that had these
+  reversed branched work off a GitLab `dev` that was 56 commits behind, which
+  silently deleted merged skills from the working tree; the remotes were renamed
+  afterwards so `origin` means the integration remote here.
 - **Branch off `dev`**, one concern per branch, named `<type>/<kebab-slug>` using
   Conventional Commit types (`feat/`, `fix/`, `docs/`, `refactor/`, `test/`,
   `chore/`, `ci/`, `perf/`, `style/`). No vendor or agent prefixes.
