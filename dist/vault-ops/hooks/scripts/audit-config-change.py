@@ -29,6 +29,10 @@ try:
 except json.JSONDecodeError:
     sys.exit(0)
 
+if not isinstance(data, dict):
+    # Fail open: a payload that isn't a JSON object isn't ours to act on.
+    sys.exit(0)
+
 config_source = data.get("config_source", "unknown")
 file_path = data.get("file_path", "")
 cwd = Path(data.get("cwd") or ".").resolve()

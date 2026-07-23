@@ -18,6 +18,10 @@ try:
 except json.JSONDecodeError:
     sys.exit(0)
 
+if not isinstance(data, dict):
+    # Fail open: a payload that isn't a JSON object isn't ours to act on.
+    sys.exit(0)
+
 cwd = Path(data.get("cwd") or ".").resolve()
 agent_id = data.get("agent_id")
 if not agent_id:
