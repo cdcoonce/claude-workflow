@@ -108,6 +108,51 @@ updated: 2026-03-21
         with pytest.raises(ValueError, match="test-feature.state.md.*draft"):
             parse_state_file(state_file)
 
+    def test_parse_keeps_hash_inside_a_value(self, tmp_path: Path) -> None:
+        """A `#` with no whitespace before it is part of the value, not a comment.
+
+        `branch: fix/issue-#123` used to parse as `fix/issue-`, silently dropping
+        the issue number — the state file then pointed at a branch that does not
+        exist, with no error.
+        """
+        content = """\
+---
+schema_version: 1
+feature: issue-#123-fix
+status: in_progress
+current_phase: plan
+created: 2026-03-21
+updated: 2026-03-21
+branch: fix/issue-#123
+---
+"""
+        state_file = tmp_path / "issue-fix.state.md"
+        state_file.write_text(content)
+
+        result = parse_state_file(state_file)
+
+        assert result.branch == "fix/issue-#123"
+        assert result.feature == "issue-#123-fix"
+
+    def test_parse_strips_a_genuine_trailing_comment(self, tmp_path: Path) -> None:
+        content = """\
+---
+schema_version: 1
+feature: dark-mode  # the toggle, not the palette
+status: in_progress  # currently on step 3
+current_phase: plan
+created: 2026-03-21
+updated: 2026-03-21
+---
+"""
+        state_file = tmp_path / "dark-mode.state.md"
+        state_file.write_text(content)
+
+        result = parse_state_file(state_file)
+
+        assert result.feature == "dark-mode"
+        assert result.status == "in_progress"
+
 
 class TestValidateStateFile:
     """Tests for field value validation."""
