@@ -20,7 +20,6 @@ The complete Workshop toolkit — every skill, agent, methodology doc, and safet
 | `/daa-code-review` | AI-powered code quality analysis for Python, Markdown, and Mermaid diagrams. |
 | `/dagster-expert` | Expert guidance for working with Dagster and the dg CLI. |
 | `/dbt-expert` | Expert guidance for working with dbt Core. |
-| `/deploy` | Deploy the portfolio chat agent Lambda function to AWS. |
 | `/design-an-interface` | Generate multiple radically different interface designs for a module using parallel sub-agents. |
 | `/dev-cycle` | Use when user says "dev cycle", "development workflow", "full development pipeline", or invokes /dev-cycle to take a GitHub-issues-driven feature from brainstorm through a merged PR. |
 | `/dignified-python` | Production Python coding standards with automatic version detection (3.10-3.13). |
