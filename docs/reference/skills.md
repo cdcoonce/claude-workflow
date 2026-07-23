@@ -26,6 +26,7 @@ Every skill available in the plugin, parsed from each skill's `SKILL.md` frontma
 | `/prd-to-plan` | Turn a PRD into a multi-phase implementation plan using tracer-bullet vertical slices, saved as a local Markdown file in docs/plans/. | workbench |
 | `/project-context` | Generate or update the `.claude/docs/project.md` file that gives Claude project-specific context. | workbench |
 | `/readme-generator` | Use when the user asks to create, write, generate, update, or improve a README for any project or repository, or asks for project documentation in markdown. | workbench |
+| `/repo-reference-docs` | Create and maintain a thorough, human-readable Markdown reference-docs set for a repository under docs/reference/ — architecture overview, module/directory map, data and control flow, conventions and glossary, plus an index. | workbench |
 | `/request-refactor-plan` | Use when user wants to plan a refactor, create a refactoring RFC, break a refactor into safe incremental steps, or find architectural improvement opportunities (deepening shallow modules, consolidating tightly-coupled code, making a codebase more testable or AI-navigable). | workbench |
 | `/security-review` | Security code review for vulnerabilities with confidence-based reporting. | workbench |
 | `/setup-pre-commit` | Set up pre-commit hooks for the current repo. | workbench |
@@ -179,6 +180,12 @@ Generate or update the `.claude/docs/project.md` file that gives Claude project-
 *universal*
 
 Use when the user asks to create, write, generate, update, or improve a README for any project or repository, or asks for project documentation in markdown. Also trigger when the user says things like "document this project", "write docs for this repo", "this repo needs a README", "help me onboard developers to this codebase". Even if the user just says "README" or "readme" in the context of a codebase, use this skill.
+
+### `/repo-reference-docs`
+
+*universal*
+
+Create and maintain a thorough, human-readable Markdown reference-docs set for a repository under docs/reference/ — architecture overview, module/directory map, data and control flow, conventions and glossary, plus an index. Use when someone wants deep repo documentation, a reference-docs set, an architecture doc, a "where does X live" module map, a data-flow write-up, or wants existing repo reference docs refreshed, updated, or checked for staleness against the code. Not for a single front-door README (use readme-generator) or the Claude-facing project.md (use project-context).
 
 ### `/request-refactor-plan`
 
