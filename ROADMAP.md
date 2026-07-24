@@ -11,8 +11,9 @@ Shipped:
 - Every preset build emits three plugin manifests from one shared source —
   `.claude-plugin/plugin.json` (Claude Code), `.codex-plugin/plugin.json` (Codex),
   `.cortex-plugin/plugin.json` (Cortex Code) — see `scripts/build_preset.py`.
-- Cortex Code currently reuses the Codex manifest shape verbatim (`CoCo` and
-  Codex expose an equivalent plugin interface today).
+- Cortex Code currently reuses the Codex manifest shape verbatim — **now known
+  to be wrong**: Cortex reads `.claude-plugin/plugin.json`, and the
+  `.cortex-plugin/` manifest appears to be read by nothing. See COMPATIBILITY.md.
 - Hook matchers cover all three platforms' tool-ID naming conventions in one
   pattern (`edit|write|multi_edit|Edit|Write|MultiEdit`).
 - Codex plugin marketplace support (`.agents/plugins/marketplace.json`,
@@ -20,10 +21,19 @@ Shipped:
 
 Open questions (tracked here until resolved, not blocking):
 
-- Do Codex and Cortex Code have hook systems with matching semantics beyond
-  matcher syntax (ordering, stdin payload shape, exit-code handling)?
-- Does skill auto-discovery work identically across all three, or does one
-  platform need an explicit skill index?
+- **Cortex hook semantics — ANSWERED 2026-07-23.** Payload shape, exit codes,
+  and JSON output match Claude Code's. But Cortex has **no `SubagentStart` and
+  no `ConfigChange`**, so two shipped hooks never fire and the subagent evidence
+  gate is silently inert. Details in COMPATIBILITY.md.
+- **Cortex skill auto-discovery — ANSWERED 2026-07-23.** Works, from
+  `.cortex/skills/`, `.claude/skills/`, and `.snova/skills/`; `~/.claude/skills/`
+  is treated as project-level for compatibility.
+- Does Cortex read a plugin-level `hooks/hooks.json`, the layout this repo
+  builds? Its own bundled plugin declares hooks inline in `plugin.json` instead.
+  **This is the question that decides whether Workshop hooks run on Cortex at
+  all**, and it needs a live install to answer.
+- Do Codex's hook semantics match? Unverified — the same probe has not been run
+  against Codex.
 - Is there a Codex/Cortex equivalent of `settings.json` (non-hook settings),
   or does that concept not transfer?
 
